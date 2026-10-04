@@ -40,12 +40,12 @@ Shared conventions for all sections:
 - [x] Settings sheet: goals, croissant settings, dark mode, accent colour (per device), invite code, log out
 
 ### S2 — Snap → meal
-- [ ] Ingredient search API (`GET /api/ingredients?q=`) for add/replace
-- [ ] Verdict: tap chip → grams/remove/replace sheet, resolve unmatched items, add ingredient, portions eaten, live macros
-- [ ] Meal details: meal type, prep time, cost (auto from ingredient prices), portions made, used-up ingredients, auto recipe preview
-- [ ] `POST /api/meals` from an analysis → `Meal` + ingredients + `CookLog` + `FoodLog` (portion share) + stock deduction + used-up → shopping list; corrections stored
-- [ ] Recipe steps: template right away, replaced by a model-generated recipe in the background
-- [ ] Snap can start from Home's "+" per meal type
+- [x] Ingredient search API (`GET /api/ingredients?q=`) for add/replace; multi-word model phrases also suggest single-word matches ("ground meat" → Beef mince)
+- [x] Verdict: tap chip → grams/remove/replace sheet, resolve unmatched items, add ingredient, portions eaten, live macros
+- [x] Meal details: meal type, prep time, cost (auto from ingredient prices), portions made, used-up ingredients, auto recipe preview
+- [x] `POST /api/meals` from an analysis → `Meal` + ingredients + `CookLog` + `FoodLog` (portion share) + stock deduction + used-up → shopping list; corrections stored
+- [x] Recipe steps: template right away, replaced by a model-generated recipe in the background
+- [x] Snap can start with a meal type (`/snap?type=lunch`); the Home "+" buttons arrive with S6
 
 ### S3 — Meals & ratings
 - [ ] Feed: meal-type filter, Any/Top rated/≤30 min/≤4 €, sort (top rated / most recent / most cooked), cards with rating, cost per portion, cooked N×

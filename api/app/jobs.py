@@ -10,5 +10,5 @@ from app.config import get_settings
 
 jobs_app = App(
     connector=PsycopgConnector(conninfo=get_settings().psycopg_conninfo),
-    import_paths=["app.analysis.tasks"],
+    import_paths=["app.analysis.tasks", "app.meals.tasks"],
 )

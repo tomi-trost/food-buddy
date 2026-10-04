@@ -1,45 +1,22 @@
-import { useQuery } from '@tanstack/react-query'
-import { type CSSProperties, useEffect, useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { api } from '../api/client'
-import type { AnalysisResult } from '../api/types'
-import { scale, sum } from '../lib/macros'
+import type { AnalysisResult, MealType } from '../api/types'
+import { todayISO } from '../lib/dates'
+import { Details, type DetailsState } from '../snap/Details'
+import { fromAnalysis, type PlateItem, recipeCost, toMealCreate } from '../snap/plate'
+import { Verdict } from '../snap/Verdict'
+import { Icon } from '../ui/Icon'
+import { Photo } from '../ui/Photo'
+import { useToast } from '../ui/Toast'
 
 const POLL_MS = 2000
-
-const TILES = [
-  { key: 'kcal', label: 'kcal', color: 'var(--k)', unit: '' },
-  { key: 'protein', label: 'protein', color: 'var(--p)', unit: ' g' },
-  { key: 'carbs', label: 'carbs', color: 'var(--c)', unit: ' g' },
-  { key: 'fat', label: 'fat', color: 'var(--f)', unit: ' g' },
-  { key: 'fiber', label: 'fiber', color: 'var(--fi)', unit: ' g' },
-  { key: 'sugar', label: 'sugar', color: 'var(--sg)', unit: ' g' },
-] as const
-
-function usePhoto(url: string | undefined) {
-  const [src, setSrc] = useState<string>()
-  useEffect(() => {
-    if (!url) return
-    let objectUrl: string | undefined
-    let cancelled = false
-    api
-      .photoBlob(url)
-      .then((blob) => {
-        if (cancelled) return
-        objectUrl = URL.createObjectURL(blob)
-        setSrc(objectUrl)
-      })
-      .catch(() => {})
-    return () => {
-      cancelled = true
-      if (objectUrl) URL.revokeObjectURL(objectUrl)
-    }
-  }, [url])
-  return src
-}
+const TYPES: MealType[] = ['breakfast', 'lunch', 'dinner']
 
 export function AnalysisPage() {
   const { id = '' } = useParams()
+  const navigate = useNavigate()
   const job = useQuery({
     queryKey: ['analysis', id],
     queryFn: () => api.analysis(id),
@@ -48,90 +25,126 @@ export function AnalysisPage() {
       return status === 'done' || status === 'failed' ? false : POLL_MS
     },
   })
-  const photo = usePhoto(job.data?.photo_url)
+
+  const close = (
+    <button className="icon" aria-label="Close" onClick={() => navigate('/')}>
+      <Icon name="close" />
+    </button>
+  )
+
+  if (job.data?.status === 'done' && job.data.result) {
+    return <SnapFlow analysisId={job.data.id} photoUrl={job.data.photo_url} result={job.data.result} close={close} />
+  }
 
   return (
     <>
-      <Link to="/" className="sub">← Home</Link>
-      {photo ? <img className="photo" src={photo} alt="Your meal" /> : <div className="photo" />}
+      <div className="top">
+        {close}
+        <span className="sub">{job.data?.status === 'failed' ? '' : 'Analyzing…'}</span>
+        <span style={{ width: 44 }} />
+      </div>
+      <Photo url={job.data?.photo_url} emoji="🍽️" alt="Your meal" />
       {job.isError && <p className="error" role="alert">{job.error.message}</p>}
-      {(job.isPending || job.data?.status === 'queued' || job.data?.status === 'running') && (
-        <p className="pulse" role="status">Analyzing your meal… this can take a minute.</p>
-      )}
-      {job.data?.status === 'failed' && (
-        <section className="card">
-          <h2>Couldn't analyze this photo</h2>
+      {job.data?.status === 'failed' ? (
+        <section className="card" style={{ marginTop: 12 }}>
+          <h3>Couldn't analyze this photo</h3>
           <p className="sub">{job.data.error}</p>
           <Link to="/snap" className="btn">Try another photo</Link>
         </section>
+      ) : (
+        <div role="status" aria-label="Analyzing your meal">
+          <div className="shimmer" style={{ width: '60%', height: 26 }} />
+          <div className="shimmer" />
+          <div className="shimmer" style={{ width: '80%' }} />
+          <div className="shimmer" />
+          <p className="sub">Analyzing your meal… this can take a minute.</p>
+        </div>
       )}
-      {job.data?.status === 'done' && job.data.result && <Verdict result={job.data.result} />}
     </>
   )
 }
 
-function Verdict({ result }: { result: AnalysisResult }) {
-  const [grams, setGrams] = useState(() => result.items.map((i) => i.grams))
-  const totals = useMemo(
-    () =>
-      sum(
-        result.items.flatMap((item, i) =>
-          item.ingredient ? [scale(item.ingredient.per100, grams[i])] : [],
-        ),
+function SnapFlow({ analysisId, photoUrl, result, close }: {
+  analysisId: number
+  photoUrl: string
+  result: AnalysisResult
+  close: React.ReactNode
+}) {
+  const navigate = useNavigate()
+  const toast = useToast()
+  const qc = useQueryClient()
+  const [params] = useSearchParams()
+  const [step, setStep] = useState<'verdict' | 'details'>('verdict')
+  const [items, setItemsState] = useState<PlateItem[]>(() => fromAnalysis(result))
+  const [servings, setServings] = useState(1)
+  const typeParam = params.get('type') as MealType | null
+  const [details, setDetails] = useState<DetailsState>(() => ({
+    name: result.dish.charAt(0).toUpperCase() + result.dish.slice(1),
+    mealType: typeParam && TYPES.includes(typeParam) ? typeParam : (result.meal_type === 'snack' ? 'lunch' : result.meal_type),
+    prepMinutes: 30,
+    portions: 2,
+    cost: 0,
+    usedUp: [],
+  }))
+  const [costTouched, setCostTouched] = useState(false)
+
+  // Cost follows the estimate until the user changes it.
+  useEffect(() => {
+    if (!costTouched) setDetails((d) => ({ ...d, cost: Math.max(0, Math.round(recipeCost(items, d.portions))) }))
+  }, [items, details.portions, costTouched])
+
+  const post = useMutation({
+    mutationFn: () =>
+      api.createMeal(
+        toMealCreate({
+          items, name: details.name, mealType: details.mealType, eatenOn: todayISO(),
+          prepMinutes: details.prepMinutes, portions: details.portions, servingsEaten: servings,
+          cost: costTouched ? details.cost : null, usedUp: details.usedUp, analysisId,
+        }),
       ),
-    [result.items, grams],
-  )
+    onSuccess: (meal) => {
+      qc.invalidateQueries({ queryKey: ['meals'] })
+      qc.invalidateQueries({ queryKey: ['day'] })
+      qc.invalidateQueries({ queryKey: ['inventory'] })
+      navigate(`/meals/${meal.id}?rate=1`, { replace: true })
+      toast('Posted. Ingredients and shopping list updated.')
+    },
+  })
 
   return (
     <>
-      <div>
-        <h1>{result.dish}</h1>
-        <p className="sub">
-          {result.meal_type} · {result.servings} serving{result.servings > 1 ? 's' : ''}
-        </p>
+      <div className="top">
+        {step === 'verdict' ? close : (
+          <button className="icon" aria-label="Back" onClick={() => setStep('verdict')}><Icon name="back" /></button>
+        )}
+        <span className="sub">Step {step === 'verdict' ? 1 : 2} of 2</span>
+        <span style={{ width: 44 }} />
       </div>
-      <section className="macros" aria-label="Totals">
-        {TILES.map((t) => (
-          <div key={t.key} className="macro" style={{ '--mc': t.color } as CSSProperties}>
-            <b data-testid={`total-${t.key}`}>
-              {Math.round(totals[t.key])}
-              {t.unit}
-            </b>
-            <small>{t.label}</small>
-          </div>
-        ))}
-      </section>
-      <section className="card">
-        <h2 style={{ marginBottom: 10 }}>Ingredients</h2>
-        <ul className="items">
-          {result.items.map((item, i) => (
-            <li key={i} className="item">
-              <div className="name">
-                {item.ingredient?.name ?? item.name}
-                {item.ingredient ? (
-                  <small>{Math.round(scale(item.ingredient.per100, grams[i]).kcal)} kcal</small>
-                ) : (
-                  <small className="warn">“{item.name}” isn't in the food database yet</small>
-                )}
-              </div>
-              <label>
-                <span className="visually-hidden">Grams of {item.ingredient?.name ?? item.name}</span>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  min={0}
-                  value={grams[i]}
-                  onChange={(e) => {
-                    const value = Number(e.target.value)
-                    setGrams((g) => g.map((v, j) => (j === i ? (Number.isFinite(value) ? value : 0) : v)))
-                  }}
-                />
-              </label>
-              <span className="sub">g</span>
-            </li>
-          ))}
-        </ul>
-      </section>
+      {step === 'verdict' ? (
+        <>
+          <Photo url={photoUrl} emoji="🍽️" alt="Your meal" style={{ aspectRatio: '16 / 9' }} />
+          <Verdict
+            dish={details.name}
+            items={items}
+            setItems={(f) => setItemsState(f)}
+            servings={servings}
+            setServings={setServings}
+            onNext={() => setStep('details')}
+          />
+        </>
+      ) : (
+        <Details
+          items={items}
+          state={details}
+          set={(patch) => {
+            if ('cost' in patch) setCostTouched(true)
+            setDetails((d) => ({ ...d, ...patch }))
+          }}
+          onPost={() => post.mutate()}
+          posting={post.isPending}
+          error={post.isError ? post.error.message : undefined}
+        />
+      )}
     </>
   )
 }

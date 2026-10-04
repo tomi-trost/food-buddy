@@ -1,4 +1,4 @@
-import type { Me } from '../api/types'
+import type { AnalysisJob, Ingredient, Me, Nutrients } from '../api/types'
 
 export const me = (over: Partial<Me> = {}): Me => ({
   id: 1,
@@ -19,3 +19,34 @@ export const me = (over: Partial<Me> = {}): Me => ({
   },
   ...over,
 })
+
+
+const n = (kcal: number, protein: number, carbs: number, fat: number, fiber = 0, sugar = 0): Nutrients =>
+  ({ kcal, protein, carbs, fat, fiber, sugar })
+
+export const ING: Record<string, Ingredient> = {
+  chicken: { id: 1, name: 'Chicken breast', emoji: '🍗', category: 'Meat', location: 'fridge', price_per_100g: 0.9, per100: n(165, 31, 0, 3.6) },
+  rice: { id: 2, name: 'Rice (cooked)', emoji: '🍚', category: 'Pantry', location: 'pantry', price_per_100g: 0.2, per100: n(130, 2.7, 28, 0.3, 0.4) },
+  soy: { id: 4, name: 'Soy sauce', emoji: '🫙', category: 'Pantry', location: 'pantry', price_per_100g: 0.5, per100: n(60, 8, 5, 0, 0.8, 0.5) },
+  oil: { id: 5, name: 'Olive oil', emoji: '🫒', category: 'Pantry', location: 'pantry', price_per_100g: 0.8, per100: n(884, 0, 0, 100) },
+}
+
+export const analysisJob = (over: Partial<AnalysisJob> = {}): AnalysisJob => ({
+  id: 5, status: 'queued', photo_url: '/api/analyses/5/photo', provider: null, result: null,
+  error: null, created_at: '2026-10-04T12:00:00Z', finished_at: null, ...over,
+})
+
+export const doneJob = () =>
+  analysisJob({
+    status: 'done',
+    provider: 'local',
+    result: {
+      dish: 'chicken rice bowl', meal_type: 'dinner', servings: 1, unmatched: 1,
+      totals: n(507.5, 51.9, 56, 6, 0.8),
+      items: [
+        { name: 'grilled chicken', grams: 150, confidence: 0.9, nutrients: null, ingredient: { ...ING.chicken, score: 1 } },
+        { name: 'cooked rice', grams: 200, confidence: 0.8, nutrients: null, ingredient: { ...ING.rice, score: 1 } },
+        { name: 'mystery sauce', grams: 30, confidence: 0.2, ingredient: null, nutrients: null },
+      ],
+    },
+  })

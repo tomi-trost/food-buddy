@@ -1,21 +1,31 @@
 import { useMutation } from '@tanstack/react-query'
-import { Link, useNavigate } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 import { api } from '../api/client'
+import { guessMealType } from '../lib/dates'
+import { Icon } from '../ui/Icon'
+
+const TYPES = ['breakfast', 'lunch', 'dinner']
 
 export function SnapPage() {
   const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const type = TYPES.includes(params.get('type') ?? '') ? params.get('type')! : guessMealType()
   const upload = useMutation({
     mutationFn: api.uploadPhoto,
-    onSuccess: (job) => navigate(`/analysis/${job.id}`),
+    onSuccess: (job) => navigate(`/analysis/${job.id}?type=${type}`, { replace: true }),
   })
 
   return (
-    <>
-      <Link to="/" className="sub">← Back</Link>
-      <h1>Snap your meal</h1>
-      <p className="sub">Take a photo from above with the whole plate in view.</p>
-      <label className="btn primary">
-        {upload.isPending ? 'Uploading…' : 'Take or choose a photo'}
+    <div className="camera">
+      <button onClick={() => navigate(-1)} aria-label="Close" style={{ alignSelf: 'flex-start', color: '#fff', minHeight: 44 }}>
+        <Icon name="close" size={26} />
+      </button>
+      <div style={{ textAlign: 'center' }}>
+        <div className="plate"><Icon name="camera" size={64} /></div>
+        <p style={{ opacity: 0.75 }}>Photo from above, whole plate in view</p>
+        {upload.isError && <p role="alert" style={{ color: '#ffb4a8' }}>{upload.error.message}</p>}
+      </div>
+      <label className="shutter" aria-label={upload.isPending ? 'Uploading' : 'Take photo'}>
         <input
           className="visually-hidden"
           type="file"
@@ -27,8 +37,8 @@ export function SnapPage() {
             if (file) upload.mutate(file)
           }}
         />
+        {upload.isPending && <span className="pulse" style={{ color: '#fff' }}>…</span>}
       </label>
-      {upload.isError && <p className="error" role="alert">{upload.error.message}</p>}
-    </>
+    </div>
   )
 }

@@ -123,3 +123,9 @@ svg text { fill: var(--ink2); font-size: 11px; }
 @keyframes pulse { 50% { opacity: 0.45; } }
 @media (prefers-reduced-motion: reduce) { .pulse, .shimmer { animation: none; } }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Snap camera screen (mock .camera) */
+.camera { position: fixed; inset: 0; background: #15110d; z-index: 15; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: calc(30px + env(safe-area-inset-top)) 20px calc(40px + env(safe-area-inset-bottom)); }
+.plate { width: 240px; height: 240px; border-radius: 50%; border: 2px dashed rgba(255, 255, 255, 0.5); display: grid; place-items: center; margin: 0 auto; }
+.shutter { width: 72px; height: 72px; border-radius: 50%; border: 4px solid #fff; background: rgba(255, 255, 255, 0.2); display: grid; place-items: center; cursor: pointer; }
+.chip.warn { background: color-mix(in srgb, var(--warn) 18%, var(--surface2)); color: var(--ink); }

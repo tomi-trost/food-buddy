@@ -4,12 +4,6 @@ from app.nutrition.matching import match_ingredient, normalize
 from app.nutrition.seed import seed_mock
 
 
-@pytest.fixture
-async def seeded(session):
-    await seed_mock(session)
-    return session
-
-
 def test_normalize():
     assert normalize("  Cooked   RICE ") == "cooked rice"
 

@@ -3,20 +3,10 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-
-class NutrientsOut(BaseModel):
-    kcal: float
-    protein: float
-    carbs: float
-    fat: float
-    fiber: float
-    sugar: float
+from app.nutrition.schemas import IngredientOut, NutrientsOut
 
 
-class MatchedIngredient(BaseModel):
-    id: int
-    name: str
-    per100: NutrientsOut
+class MatchedIngredient(IngredientOut):
     score: float
 
 

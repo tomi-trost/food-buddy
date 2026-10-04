@@ -6,9 +6,10 @@ from pathlib import Path
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.analysis.models import AnalysisJob
-from app.analysis.schemas import AnalysisItem, AnalysisResult, MatchedIngredient, NutrientsOut
+from app.analysis.schemas import AnalysisItem, AnalysisResult, MatchedIngredient
 from app.nutrition.macros import total
 from app.nutrition.matching import match_ingredient
+from app.nutrition.schemas import IngredientOut, NutrientsOut
 from app.vision.providers import AllProvidersFailed, VisionChain
 from app.vision.schemas import MealAnalysis
 
@@ -38,10 +39,7 @@ async def ground(session: AsyncSession, analysis: MealAnalysis) -> AnalysisResul
                 grams=detected.grams,
                 confidence=detected.confidence,
                 ingredient=MatchedIngredient(
-                    id=match.ingredient.id,
-                    name=match.ingredient.name,
-                    per100=NutrientsOut(**per100.rounded()),
-                    score=round(match.score, 2),
+                    **IngredientOut.of(match.ingredient).model_dump(), score=round(match.score, 2)
                 ),
                 nutrients=NutrientsOut(**nutrients.rounded()),
             )

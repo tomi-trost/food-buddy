@@ -52,7 +52,10 @@ async def clean_tables():
     yield
     async with engine.begin() as conn:
         await conn.execute(
-            text("TRUNCATE analysis_job, app_user, household, ingredient RESTART IDENTITY CASCADE")
+            text(
+                "TRUNCATE analysis_job, app_user, household, ingredient, meal, food_log, "
+                "inventory_item, ran_out RESTART IDENTITY CASCADE"
+            )
         )
 
 
@@ -60,6 +63,23 @@ async def clean_tables():
 async def session():
     async with SessionLocal() as s:
         yield s
+
+
+@pytest.fixture
+async def seeded(session):
+    from app.nutrition.seed import seed_mock
+
+    await seed_mock(session)
+    return session
+
+
+async def ingredient_ids(session, *names: str) -> list[int]:
+    from sqlalchemy import select
+
+    from app.nutrition.models import Ingredient
+
+    rows = dict((await session.execute(select(Ingredient.name, Ingredient.id))).all())
+    return [rows[n] for n in names]
 
 
 @pytest.fixture

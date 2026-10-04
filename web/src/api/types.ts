@@ -9,12 +9,55 @@ export type Nutrients = {
   sugar: number
 }
 
+export type Ingredient = {
+  id: number
+  name: string
+  emoji: string
+  category: string
+  location: 'fridge' | 'pantry'
+  price_per_100g: number
+  per100: Nutrients
+}
+
+export type MealType = 'breakfast' | 'lunch' | 'dinner'
+
 export type AnalysisItem = {
   name: string
   grams: number
   confidence: number
-  ingredient: { id: number; name: string; per100: Nutrients; score: number } | null
+  ingredient: (Ingredient & { score: number }) | null
   nutrients: Nutrients | null
+}
+
+export type Meal = {
+  id: number
+  name: string
+  emoji: string
+  photo_url: string | null
+  types: MealType[]
+  tags: string[]
+  prep_minutes: number
+  portions: number
+  cost: number
+  cost_estimated: boolean
+  steps: string[]
+  steps_source: 'template' | 'model'
+  ingredients: { ingredient: Ingredient; grams: number }[]
+  per_portion: Nutrients
+  created_at: string
+}
+
+export type MealCreate = {
+  name: string
+  meal_type: MealType
+  eaten_on: string
+  prep_minutes: number
+  portions: number
+  servings_eaten: number
+  cost: number | null
+  items: { ingredient_id: number; grams: number }[]
+  used_up: number[]
+  analysis_id: number | null
 }
 
 export type AnalysisResult = {
