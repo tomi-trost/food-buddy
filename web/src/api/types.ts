@@ -184,3 +184,30 @@ export type ShoppingItem = {
 export type Shopping = { plan_approved: boolean; items: ShoppingItem[]; in_stock: Ingredient[]; total: number }
 
 export type MealPatch = Partial<{ name: string; types: MealType[]; prep_friendly: boolean; prep_minutes: number; portions: number }>
+
+export type LogEntry = {
+  id: number
+  meal_type: MealType | 'snack'
+  name: string
+  emoji: string
+  kind: 'meal' | 'snack'
+  snack_kind: 'sweet' | 'savory' | 'drink' | null
+  is_reward: boolean
+  meal_id: number | null
+  nutrients: Nutrients
+}
+
+export type Day = { date: string; totals: Nutrients; entries: LogEntry[] }
+
+export type DayTotals = Nutrients & { date: string; treats: number; treat_sugar: number }
+
+export type MemberInsights = {
+  user_id: number
+  name: string
+  color: string
+  goals: Goals
+  meals_rated: number
+  days: DayTotals[]
+}
+
+export type Insights = { members: MemberInsights[] }

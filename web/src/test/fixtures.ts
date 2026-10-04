@@ -1,4 +1,4 @@
-import type { AnalysisJob, Ingredient, Me, Meal, MealCard, Nutrients, Plan, Shopping } from '../api/types'
+import type { AnalysisJob, Ingredient, Me, Meal, MealCard, MemberInsights, Nutrients, Plan, Shopping } from '../api/types'
 
 export const me = (over: Partial<Me> = {}): Me => ({
   id: 1,
@@ -112,5 +112,16 @@ export const shopping = (over: Partial<Shopping> = {}): Shopping => ({
     { ingredient: ING.chicken, need: 1200, have: 400, buy: 800, ran_out: false, checked: true },
     { ingredient: ING.rice, need: 600, have: 0, buy: 600, ran_out: false, checked: false },
   ],
+  ...over,
+})
+
+const WEEK_TO_OCT_4 = ['2026-09-28', '2026-09-29', '2026-09-30', '2026-10-01', '2026-10-02', '2026-10-03', '2026-10-04']
+
+export const memberInsights = (over: Partial<MemberInsights> = {}): MemberInsights => ({
+  user_id: 1, name: 'Tomi', color: '#b9532f', goals: { kcal: 2200, protein: 110, fiber: 30, sugar: 50 }, meals_rated: 3,
+  days: Array.from({ length: 7 }, (_, i) => ({
+    date: WEEK_TO_OCT_4[i],
+    kcal: 2000 + i * 50, protein: 120, carbs: 230, fat: 70, fiber: i % 2 ? 32 : 24, sugar: 30, treats: 0, treat_sugar: 0,
+  })),
   ...over,
 })

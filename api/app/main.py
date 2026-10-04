@@ -8,6 +8,7 @@ from app.auth.deps import Session
 from app.auth.router import router as auth_router
 from app.inventory.router import router as inventory_router
 from app.jobs import jobs_app
+from app.logs.router import router as logs_router
 from app.meals.router import router as meals_router
 from app.nutrition.router import router as nutrition_router
 from app.plan.router import router as plan_router
@@ -40,4 +41,5 @@ api.include_router(nutrition_router)
 api.include_router(inventory_router)
 api.include_router(plan_router)
 api.include_router(shopping_router)
+api.include_router(logs_router)
 app.include_router(api)

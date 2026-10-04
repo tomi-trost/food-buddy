@@ -7,10 +7,10 @@ import { applyTheme } from './lib/theme'
 import { AnalysisPage } from './pages/AnalysisPage'
 import { HomePage } from './pages/HomePage'
 import { IngredientsPage } from './pages/IngredientsPage'
+import { InsightsPage } from './pages/InsightsPage'
 import { LoginPage } from './pages/LoginPage'
 import { MealPage } from './pages/MealPage'
 import { MealsPage } from './pages/MealsPage'
-import { Placeholder } from './pages/Placeholder'
 import { PlanPage } from './pages/PlanPage'
 import { SnapPage } from './pages/SnapPage'
 
@@ -45,7 +45,7 @@ export function App() {
         <Route path="meals/:id" element={<MealPage />} />
         <Route path="plan" element={<PlanPage />} />
         <Route path="ingredients" element={<IngredientsPage />} />
-        <Route path="insights" element={<Placeholder title="Insights" section="S6" />} />
+        <Route path="insights" element={<InsightsPage />} />
       </Route>
       <Route element={<RequireAuth><BareLayout /></RequireAuth>}>
         <Route path="snap" element={<SnapPage />} />

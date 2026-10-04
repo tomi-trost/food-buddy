@@ -66,9 +66,9 @@ Shared conventions for all sections:
 - [x] Shopping list: needs minus stock, rounded, grouped by category, ran-out items, check-off, est. total, "finished shopping" → inventory
 
 ### S6 — Home & Insights
-- [ ] Home: kcal ring + macro bars (animated), today by meal type with "+", snacks card, planned today / plan CTA, rate-this-meal, use soon
-- [ ] Insights Overview: calories vs goal (day/week), macro split donut, fiber goal days, avg cost / cook time, top rated
-- [ ] Versus: per-category winners, score, weekly challenge (fiber / protein / on target)
+- [x] Home: kcal ring + macro bars (animated), today by meal type with "+", planned today / plan CTA, rate-this-meal, use soon (snacks card comes with S7)
+- [x] Insights Overview: calories vs goal (day/week), macro split donut, fiber goal days, avg cost / cook time, top rated
+- [x] Versus: per-category winners, score, weekly challenge (fiber / protein / on target)
 
 ### S7 — Snacks & croissant rewards
 - [ ] Log a snack: pick from list, photo (vision model, snack schema), nutrition-label scan (vision model → per-100 g values, editable); kind sweet/savory/drink

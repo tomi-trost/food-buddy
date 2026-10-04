@@ -12,11 +12,13 @@
   :root:not([data-theme='light']) {
     --bg: #171513; --surface: #211e1b; --surface2: #2c2824; --ink: #f1ece4; --ink2: #a39b90;
     --line: #34302b; --line2: #4a443d; --accent: #d0704b; color-scheme: dark;
+    --c: #b0922a; /* carbs: darker step validated for the dark chart band (dataviz check) */
   }
 }
 :root[data-theme='dark'] {
   --bg: #171513; --surface: #211e1b; --surface2: #2c2824; --ink: #f1ece4; --ink2: #a39b90;
   --line: #34302b; --line2: #4a443d; --accent: #d0704b; color-scheme: dark;
+  --c: #b0922a;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }

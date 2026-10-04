@@ -1,5 +1,5 @@
 import type {
-  AnalysisJob, CookIn, HouseholdPatch, Ingredient, Me, Meal, MealCard, MealCreate, MealPatch, MealType, MePatch, Plan, PlanMode, Rating, RegisterBody, Shopping, StockItem, WizardCell,
+  AnalysisJob, CookIn, Day, Insights, HouseholdPatch, Ingredient, Me, Meal, MealCard, MealCreate, MealPatch, MealType, MePatch, Plan, PlanMode, Rating, RegisterBody, Shopping, StockItem, WizardCell,
 } from './types'
 
 const TOKEN_KEY = 'fb.token'
@@ -100,6 +100,8 @@ export const api = {
   cookable: () => json<MealCard[]>('/inventory/cookable'),
   patchMeal: (id: number, patch: MealPatch) =>
     json<Meal>(`/meals/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),
+  day: (date: string) => json<Day>(`/day?date=${date}`),
+  insights: (end: string, days = 7) => json<Insights>(`/insights?end=${end}&days=${days}`),
   plan: () => json<Plan | null>('/plan'),
   makePlan: (weekStart: string, wizard: WizardCell[][]) =>
     json<Plan>('/plan', { method: 'POST', body: JSON.stringify({ week_start: weekStart, wizard }) }),
