@@ -1,0 +1,665 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Food Buddy</title>
+<style>
+:root{
+  --bg:#f6f3ee; --surface:#fff; --surface2:#eeeae3; --ink:#1f1b17; --ink2:#7b746b; --line:#e3ded5; --line2:#c9c2b6;
+  --accent:#b9532f; --accent-ink:#fff; --good:#5f8a5a; --warn:#b98a2e; --bad:#b3473e; --star:#c3922b;
+  --k:#c0683c; --p:#b4534a; --c:#c79a3b; --f:#8a6bb0; --fi:#6b9a5b; --sg:#b9638a; --r:8px; --r2:6px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#171513; --surface:#211e1b; --surface2:#2c2824; --ink:#f1ece4; --ink2:#a39b90; --line:#34302b; --line2:#4a443d;
+  --accent:#d0704b;}}
+:root[data-theme="dark"]{
+  --bg:#171513; --surface:#211e1b; --surface2:#2c2824; --ink:#f1ece4; --ink2:#a39b90; --line:#34302b; --line2:#4a443d;
+  --accent:#d0704b;}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{background:#d6d1c8;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center}
+@media (prefers-color-scheme:dark){body{background:#0c0b0a}}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
+.ic{flex:none;vertical-align:middle}.ic.fill{fill:currentColor}
+.phone{position:relative;width:390px;height:min(844px,100vh);background:var(--bg);overflow:hidden;border-radius:30px;
+  box-shadow:0 20px 60px rgba(0,0,0,.3);display:flex;flex-direction:column}
+@media (max-width:500px){body{background:var(--bg)}.phone{width:100vw;height:100vh;height:100dvh;border-radius:0;box-shadow:none}}
+.screen{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 16px 110px}
+.top{display:flex;align-items:center;justify-content:space-between;padding:18px 0 10px}
+h1{font-size:24px;margin:0;letter-spacing:-.4px;font-weight:650} h2{font-size:12px;margin:22px 0 8px;color:var(--ink2);text-transform:uppercase;letter-spacing:.8px;font-weight:600} h3{margin:0;font-size:15px;font-weight:600}
+.sub{color:var(--ink2);font-size:13px}
+.row{display:flex;align-items:center;gap:10px}.sp{flex:1;min-width:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:12px}
+.chip{display:inline-flex;align-items:center;gap:5px;background:var(--surface2);border-radius:var(--r2);padding:6px 10px;font-size:13px;min-height:32px}
+.chip.on{background:var(--ink);color:var(--bg)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;background:var(--accent);color:var(--accent-ink);border-radius:var(--r);padding:13px 18px;font-weight:600;width:100%;min-height:48px}
+.btn.ghost{background:var(--surface2);color:var(--ink)} .btn.sm{width:auto;padding:8px 14px;min-height:40px;font-size:14px}
+.icon{width:44px;height:44px;border-radius:var(--r);background:var(--surface);border:1px solid var(--line);display:grid;place-items:center}
+.avatar{width:40px;height:40px;border-radius:var(--r);display:grid;place-items:center;font-weight:650;color:#fff;font-size:14px;flex:none}
+.tabbar{position:absolute;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);
+  display:grid;grid-template-columns:1fr 1fr 72px 1fr 1fr;padding:6px 6px 18px;align-items:end;z-index:5}
+.tab{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;color:var(--ink2);min-height:48px;justify-content:center}
+.tab.on{color:var(--accent);font-weight:600}
+.fab{width:56px;height:56px;border-radius:14px;background:var(--accent);color:#fff;margin:-26px auto 6px;display:grid;place-items:center;box-shadow:0 4px 14px rgba(0,0,0,.2)}
+.photo{border-radius:var(--r);display:grid;place-items:center;font-size:52px;aspect-ratio:4/3;width:100%}
+.mealgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.mealcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;text-align:left}
+.mealcard .photo{border-radius:0;font-size:40px}.mealcard .b{padding:10px 12px 12px}
+.badge{background:rgba(0,0,0,.5);color:#fff;border-radius:var(--r2);font-size:12px;padding:3px 7px;display:inline-flex;align-items:center;gap:3px}
+.stepper{display:flex;align-items:center;gap:8px}
+.stepper button{width:40px;height:40px;border-radius:var(--r);background:var(--surface2);font-size:20px}
+.stepper b{min-width:54px;text-align:center}
+.macro{display:grid;grid-template-columns:repeat(var(--n,3),1fr);gap:6px}.macro>div{background:var(--surface2);border-radius:var(--r);padding:8px 2px;text-align:center}
+.macro b{display:block;font-size:15px}.macro small{color:var(--ink2);font-size:10.5px}
+.macro>div .ic{display:block;margin:0 auto 4px}
+.mt{background:color-mix(in srgb,var(--mc) 13%,var(--surface2)) !important}.mt .ic{color:var(--mc)}
+.tabs{display:flex;border-bottom:1px solid var(--line);margin-bottom:14px}
+.tabs button{flex:1;padding:12px 4px;font-size:15px;color:var(--ink2);border-bottom:2px solid transparent;margin-bottom:-1px;min-height:46px}
+.tabs .on{color:var(--ink);font-weight:650;border-color:var(--accent)}
+.mini{display:inline-flex;background:var(--surface2);border-radius:6px;padding:2px}
+.mini button{padding:4px 10px;font-size:12px;border-radius:5px;min-height:28px;color:var(--ink2)}
+.mini .on{background:var(--surface);color:var(--ink);font-weight:600}
+.tseg{display:flex;gap:6px;margin-bottom:12px}
+.tseg button{flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center;gap:4px;min-height:34px;font-size:12px;padding:0 2px;border-radius:var(--r2);background:var(--surface2);color:var(--ink2)}
+.tseg .on{background:var(--ink);color:var(--bg);font-weight:600}
+.sortbtn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line2);border-radius:var(--r2);padding:6px 10px;font-size:13px;min-height:34px;background:var(--surface)}
+.sortbtn small{color:var(--ink2);font-size:12px}
+.bar{height:6px;border-radius:3px;background:var(--surface2);overflow:hidden}.bar i{display:block;height:100%;background:var(--accent)}
+.seg{display:flex;background:var(--surface2);border-radius:var(--r);padding:3px;margin-bottom:14px}
+.seg button{flex:1;padding:9px;border-radius:6px;font-size:14px;min-height:40px}.seg .on{background:var(--surface);font-weight:600}
+.list>*{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}.list>*:last-child{border:0}
+.sheetbg{position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:20;display:flex;align-items:flex-end}
+.sheet{background:var(--bg);width:100%;max-height:88%;overflow-y:auto;border-radius:16px 16px 0 0;padding:8px 18px 28px}
+.grab{width:36px;height:4px;border-radius:2px;background:var(--line2);margin:4px auto 12px}
+.full{position:absolute;inset:0;background:var(--bg);z-index:15;overflow-y:auto;padding:0 16px 30px}
+.camera{position:absolute;inset:0;background:#15110d;z-index:15;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:50px 20px 40px}
+.plate{width:240px;height:240px;border-radius:50%;border:2px dashed rgba(255,255,255,.5);display:grid;place-items:center;font-size:80px}
+.shutter{width:72px;height:72px;border-radius:50%;border:4px solid #fff;background:rgba(255,255,255,.2)}
+.shimmer{background:linear-gradient(90deg,var(--surface2),var(--surface),var(--surface2));background-size:200% 100%;animation:sh 1.2s infinite;border-radius:var(--r);height:18px;margin:10px 0}
+@keyframes sh{to{background-position:-200% 0}}
+.toast{position:absolute;left:16px;right:16px;bottom:100px;background:var(--ink);color:var(--bg);border-radius:var(--r);padding:12px 14px;z-index:30;display:flex;gap:10px;align-items:center}
+.starw{position:relative;display:inline-block;flex:none}
+.starw .sb,.starw .sf{position:absolute;left:0;top:0;bottom:0;overflow:hidden}
+.starw .sb{right:0;color:var(--line2)} .starw .sf{color:var(--star)}
+.starw .hz{position:absolute;top:0;bottom:0;width:50%}.hz.l{left:0}.hz.r{right:0}
+.dayc{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);margin-bottom:10px;overflow:hidden}
+.dayc>header{display:flex;justify-content:space-between;padding:8px 12px;background:var(--surface2);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.6px}
+.slot{display:flex;align-items:center;gap:10px;padding:9px 12px;border-top:1px solid var(--line);width:100%;text-align:left;min-height:52px}
+.slot .tl{width:30px;font-size:11px;color:var(--ink2);font-weight:600}
+.slot .th{width:36px;height:36px;border-radius:var(--r2);display:grid;place-items:center;font-size:18px;flex:none;background:var(--surface2);color:var(--ink2)}
+.wgrid{display:grid;grid-template-columns:36px repeat(3,1fr);gap:4px;align-items:center}
+.wgrid .hd{font-size:11px;color:var(--ink2);text-align:center;font-weight:600;text-transform:uppercase}
+.cell{height:34px;border-radius:var(--r2);background:var(--surface2);font-size:12.5px;font-weight:600;padding:0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cell.dis{opacity:.3;pointer-events:none}
+.swatch{width:36px;height:36px;border-radius:var(--r2);border:2px solid transparent}.swatch.on{border-color:var(--ink);outline:2px solid var(--bg);outline-offset:-4px}
+.cell.prep{background:var(--ink);color:var(--bg)} .cell.out{background:transparent;border:1px dashed var(--line2);color:var(--ink2)} .cell.skip{color:var(--ink2);opacity:.6}
+.exp-1{color:var(--bad)}.exp-2{color:var(--warn)}.exp-3{color:var(--good)}
+.chk{width:26px;height:26px;border-radius:var(--r2);border:1.5px solid var(--line2);display:grid;place-items:center;flex:none;color:#fff}
+.chk.on{background:var(--good);border-color:var(--good)}
+.done{text-decoration:line-through;color:var(--ink2)}
+svg text{fill:var(--ink2);font-size:11px}
+.vs{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.vs:last-child{border:0}.vs .v{font-weight:650;font-size:16px}.vs .win{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="phone" id="phone"></div>
+<script>
+/* ============ ICONS (unified line set) ============ */
+const P={
+ home:'<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/>',
+ meals:'<path d="M7 3v8M4 3v5a3 3 0 0 0 6 0V3M7 11v10"/><path d="M17 3c-2 2-3 5-3 8h6V3zM17 11v10"/>',
+ plan:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+ basket:'<path d="M3 10h18l-2 10H5z"/><path d="M8 10l3-6M16 10l-3-6"/>',
+ gift:'<path d="M20 12v9H4v-9M2 7h20v5H2zM12 22V7M12 7H8a2.5 2.5 0 1 1 0-5c2.5 0 4 5 4 5zM12 7h4a2.5 2.5 0 1 0 0-5c-2.5 0-4 5-4 5z"/>',
+ fridge:'<rect x="6" y="2" width="12" height="20" rx="2"/><path d="M6 10h12M9 5v2M9 13v3"/>',
+ insights:'<path d="M21 12A9 9 0 1 1 12 3v9z"/><path d="M15.5 3.6A9 9 0 0 1 20.4 8.5H15.5z"/>',
+ sunrise:'<path d="M3 19h18M7 19a5 5 0 0 1 10 0M12 7v3M5.6 10.6l1.6 1.6M18.4 10.6l-1.6 1.6"/>',
+ sun:'<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/>',
+ moon:'<path d="M20 14A8 8 0 1 1 10 4a6.5 6.5 0 0 0 10 10z"/>',
+ grid:'<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/>',
+ sort:'<path d="M4 7h16M7 12h10M10 17h4"/>',
+ camera:'<path d="M4 8h3l2-3h6l2 3h3v12H4z"/><circle cx="12" cy="13" r="3.5"/>',
+ plus:'<path d="M12 5v14M5 12h14"/>', back:'<path d="M15 5l-7 7 7 7"/>', chev:'<path d="M9 5l7 7-7 7"/>',
+ close:'<path d="M6 6l12 12M18 6L6 18"/>', check:'<path d="M5 12l5 5 10-10"/>',
+ star:'<path d="M12 3l2.7 5.8 6.3.7-4.7 4.3 1.3 6.2L12 17l-5.6 3 1.3-6.2L3 9.5l6.3-.7z"/>',
+ clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+ cost:'<path d="M17 6a7 7 0 1 0 0 12M5 10h9M5 14h9"/>',
+ users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-4 3-6 6.5-6s6.5 2 6.5 6M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2.5.6 3.5 2.6 3.5 6"/>',
+ swap:'<path d="M7 4L3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/>',
+ cart:'<circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l3 12h11l2-8H6"/>',
+ settings:'<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',
+ trophy:'<path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H4v2a3 3 0 0 0 4 3M16 6h4v2a3 3 0 0 1-4 3M12 13v4M8 21h8M10 17h4"/>',
+ flame:'<path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 2 2 2 0-3-1-5 1-8z"/>',
+ box:'<rect x="3" y="8" width="18" height="12" rx="2"/><path d="M3 12h18M9 8V5h6v3"/>',
+ pin:'<path d="M12 21s7-6 7-12a7 7 0 0 0-14 0c0 6 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/>',
+ dumbbell:'<path d="M6 8v8M3 10v4M18 8v8M21 10v4M6 12h12"/>',
+ wheat:'<path d="M12 21V8"/><path d="M12 8c-3 0-4-2-4-4 3 0 4 2 4 4zM12 8c3 0 4-2 4-4-3 0-4 2-4 4zM12 14c-3 0-4-2-4-4 3 0 4 2 4 4zM12 14c3 0 4-2 4-4-3 0-4 2-4 4zM12 20c-3 0-4-2-4-4 3 0 4 2 4 4zM12 20c3 0 4-2 4-4-3 0-4 2-4 4z"/>',
+ drop:'<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>',
+ leaf:'<path d="M5 19c0-8 5-14 15-14 0 10-6 15-14 15M5 19l9-9"/>',
+ cube:'<path d="M12 3l8 4v10l-8 4-8-4V7zM12 12l8-5M12 12v9M12 12L4 7"/>',
+ minus:'<path d="M5 12h14"/>', alert:'<path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17h0"/>',
+};
+const ic=(n,s=20,c='')=>`<svg class="ic ${c}" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]}</svg>`;
+
+/* ============ DATA ============ */
+const ING = { // per 100g: kcal,p,c,f,fiber, price €, cat (emoji = quick visual reference only)
+  chicken:{n:'Chicken breast',e:'🍗',k:165,p:31,c:0,f:3.6,fi:0,$:.9,cat:'Meat',exp:5},
+  rice:{n:'Rice (cooked)',e:'🍚',k:130,p:2.7,c:28,f:.3,fi:.4,$:.2,cat:'Pantry',exp:60},
+  broccoli:{n:'Broccoli',e:'🥦',k:34,p:2.8,c:7,f:.4,fi:2.6,$:.35,cat:'Produce',exp:6},
+  soy:{n:'Soy sauce',e:'🫙',k:60,p:8,c:5,f:0,fi:.8,$:.5,cat:'Pantry',exp:200},
+  oil:{n:'Olive oil',e:'🫒',k:884,p:0,c:0,f:100,fi:0,$:.8,cat:'Pantry',exp:300},
+  salmon:{n:'Salmon',e:'🐟',k:208,p:20,c:0,f:13,fi:0,$:2.2,cat:'Meat',exp:3},
+  potato:{n:'Potatoes',e:'🥔',k:77,p:2,c:17,f:.1,fi:2.2,$:.12,cat:'Produce',exp:20},
+  pasta:{n:'Spaghetti',e:'🍝',k:158,p:5.8,c:31,f:.9,fi:1.8,$:.2,cat:'Pantry',exp:200},
+  tomato:{n:'Tomatoes',e:'🍅',k:18,p:.9,c:3.9,f:.2,fi:1.2,$:.3,cat:'Produce',exp:7},
+  mince:{n:'Beef mince',e:'🥩',k:250,p:26,c:0,f:15,fi:0,$:1.1,cat:'Meat',exp:3},
+  cheese:{n:'Parmesan',e:'🧀',k:350,p:25,c:1,f:28,fi:0,$:1.4,cat:'Dairy',exp:30},
+  egg:{n:'Eggs',e:'🥚',k:143,p:13,c:1,f:10,fi:0,$:.5,cat:'Dairy',exp:14},
+  avocado:{n:'Avocado',e:'🥑',k:160,p:2,c:9,f:15,fi:6.7,$:.8,cat:'Produce',exp:4},
+  bread:{n:'Sourdough',e:'🍞',k:265,p:9,c:49,f:3.2,fi:2.7,$:.3,cat:'Pantry',exp:5},
+  chickpeas:{n:'Chickpeas',e:'🫘',k:164,p:9,c:27,f:2.6,fi:7.6,$:.25,cat:'Pantry',exp:200},
+  spinach:{n:'Spinach',e:'🥬',k:23,p:2.9,c:3.6,f:.4,fi:2.2,$:.4,cat:'Produce',exp:4},
+  cream:{n:'Cream',e:'🥛',k:195,p:2,c:3,f:20,fi:0,$:.5,cat:'Dairy',exp:10},
+  lentils:{n:'Lentils',e:'🫘',k:116,p:9,c:20,f:.4,fi:7.9,$:.2,cat:'Pantry',exp:200},
+  onion:{n:'Onions',e:'🧅',k:40,p:1.1,c:9,f:.1,fi:1.7,$:.1,cat:'Produce',exp:30},
+  oats:{n:'Rolled oats',e:'🌾',k:389,p:17,c:66,f:7,fi:10.6,$:.1,cat:'Pantry',exp:200},
+  milk:{n:'Milk',e:'🥛',k:42,p:3.4,c:5,f:1,fi:0,$:.1,cat:'Dairy',exp:7},
+  cantomato:{n:'Canned tomatoes',e:'🥫',k:21,p:1.2,c:4,f:.1,fi:1.5,$:.15,cat:'Pantry',exp:400},
+  banana:{n:'Banana',e:'🍌',k:89,p:1.1,c:23,f:.3,fi:2.6,$:.2,cat:'Produce',exp:5},
+};
+const SUG={tomato:2.6,onion:4.2,banana:12,milk:5,bread:3,broccoli:1.7,cream:3,chickpeas:3,spinach:.4,potato:.8,pasta:1.1,egg:.4,avocado:.7,lentils:1.8,oats:1,soy:.5};
+Object.keys(ING).forEach(i=>ING[i].s=SUG[i]||0);
+const R=(t,a,e,f='right')=>({taste:t,again:a,effort:e,fill:f}); // taste 0.5–5; again/effort: 5 yes, 3 maybe, 1 no; fill: hungry|right|heavy
+const MAC={k:{n:'kcal',ic:'flame',c:'var(--k)'},p:{n:'protein',ic:'dumbbell',c:'var(--p)'},c:{n:'carbs',ic:'wheat',c:'var(--c)'},f:{n:'fat',ic:'drop',c:'var(--f)'},fi:{n:'fiber',ic:'leaf',c:'var(--fi)'},s:{n:'sugar',ic:'cube',c:'var(--sg)'}};
+const SW=[ // snacks. kind: sweet | savory | drink (sweet + drink count as "treats" for the streak/rewards)
+ {n:'Chocolate bar',e:'🍫',kind:'sweet',k:230,p:3,c:26,f:13,fi:1.5,sg:24},{n:'Cookie',e:'🍪',kind:'sweet',k:140,p:2,c:19,f:6,fi:.5,sg:10},
+ {n:'Ice cream',e:'🍦',kind:'sweet',k:210,p:3,c:24,f:11,fi:.5,sg:22},{n:'Candy',e:'🍬',kind:'sweet',k:60,p:0,c:15,f:0,fi:0,sg:15},
+ {n:'Cake slice',e:'🍰',kind:'sweet',k:350,p:4,c:45,f:17,fi:1,sg:30},{n:'Protein bar',e:'🍫',kind:'sweet',k:200,p:20,c:20,f:7,fi:5,sg:8},
+ {n:'Soda',e:'🥤',kind:'drink',k:140,p:0,c:35,f:0,fi:0,sg:35},
+ {n:'Chips',e:'🥔',kind:'savory',k:210,p:2,c:22,f:13,fi:2,sg:1},{n:'Handful of nuts',e:'🥜',kind:'savory',k:170,p:6,c:6,f:15,fi:2,sg:1},{n:'Popcorn',e:'🍿',kind:'savory',k:110,p:3,c:22,f:1.5,fi:4,sg:.5}];
+const KIND={sweet:'Sweet',savory:'Savory',drink:'Drink'}, isTreat=e=>!e.reward&&(e.kind==='sweet'||e.kind==='drink');
+// mock detections for the snack photo / label-scan flow (per piece, or per 100 g from a label)
+const DETECT={photo:{name:'Chocolate chip cookie',e:'🍪',kind:'sweet',per:'piece',qty:1,k:140,p:2,c:19,f:6,fi:.5,sg:10},
+  label:{name:'Oat & nut bar',e:'🍫',kind:'sweet',per:100,qty:45,k:450,p:7,c:58,f:20,fi:5,sg:26}};
+const ACCENTS={terracotta:{n:'Terracotta',l:'#b9532f',d:'#d0704b'},olive:{n:'Olive',l:'#5f7a3c',d:'#8aa85e'},teal:{n:'Teal',l:'#2f7a78',d:'#4fb0ac'},
+  indigo:{n:'Indigo',l:'#4a5aa8',d:'#8392e0'},plum:{n:'Plum',l:'#8a4a78',d:'#c077aa'},mustard:{n:'Mustard',l:'#a8761a',d:'#d9a640'},charcoal:{n:'Charcoal',l:'#2b2b2b',d:'#e6e1d8',di:'#1f1b17'}};
+const TYPES=['breakfast','lunch','dinner'], TL={breakfast:'Breakfast',lunch:'Lunch',dinner:'Dinner'}, TS={breakfast:'Bfast',lunch:'Lunch',dinner:'Dinner'};
+const meals=[
+ {id:1,name:'Chicken stir-fry',e:'🍗',g:['#d8c3a5','#b39270'],ago:1,time:25,portions:2,types:['dinner','lunch'],tags:['quick','high-protein'],
+  ings:{chicken:300,rice:300,broccoli:200,soy:30,oil:10},rt:{you:R(5,5,5),her:R(4.5,5,5)},cooked:6},
+ {id:2,name:'Salmon & potatoes',e:'🐟',g:['#c5d0cc','#8fa39d'],ago:3,time:35,portions:2,types:['dinner'],tags:['omega-3'],
+  ings:{salmon:300,potato:500,spinach:150,oil:10},rt:{you:R(5,5,3),her:R(4.5,3,3)},cooked:3},
+ {id:3,name:'Spaghetti bolognese',e:'🍝',g:['#d8b8a8','#a8735f'],ago:5,time:45,portions:3,types:['dinner'],tags:['comfort'],
+  ings:{pasta:250,mince:300,tomato:400,onion:100,cheese:40},rt:{you:R(3.5,5,3,'heavy'),her:R(5,5,3)},cooked:4},
+ {id:4,name:'Chickpea spinach curry',e:'🍛',g:['#e0d0a8','#b79c55'],ago:8,time:30,portions:4,types:['lunch','dinner'],tags:['veggie','high-fiber','prep-friendly'],
+  ings:{chickpeas:400,spinach:200,tomato:300,onion:100,rice:300,cream:60},rt:{you:R(3,3,5),her:R(4,5,5)},cooked:2},
+ {id:5,name:'Avocado egg toast',e:'🥑',g:['#cfd6b8','#9aa876'],ago:0,time:10,portions:2,types:['breakfast'],tags:['quick'],
+  ings:{bread:160,egg:200,avocado:150},rt:{you:R(4,5,5),her:null},cooked:9},
+ {id:6,name:'Lentil soup',e:'🍲',g:['#d6bfa8','#a58461'],ago:11,time:50,portions:4,types:['lunch','dinner'],tags:['budget','high-fiber','prep-friendly'],
+  ings:{lentils:250,onion:100,tomato:300,potato:200},rt:{you:R(3,3,3,'hungry'),her:R(2.5,1,3,'hungry')},cooked:1},
+ {id:7,name:'Overnight oats',e:'🌾',g:['#ddd2bd','#b8a888'],ago:6,time:5,portions:2,types:['breakfast'],tags:['quick','high-fiber','prep-friendly'],
+  ings:{oats:100,milk:300,banana:120},rt:{you:R(3.5,3,5,'hungry'),her:R(4.5,5,5)},cooked:5},
+ {id:8,name:'Chicken rice bowl',e:'🍚',g:['#dccdb4','#b09b78'],ago:2,time:20,portions:2,types:['lunch'],tags:['high-protein','prep-friendly'],
+  ings:{chicken:200,rice:300,avocado:100,tomato:150},rt:{you:R(4,5,5),her:R(4,5,5)},cooked:3},
+];
+const S={ // app state
+  user:'you', goals:{kcal:2200,fiber:30,protein:110,sugar:50}, accent:'terracotta',
+  meals, nextId:9,
+  fridge:{chicken:{g:400,d:3},rice:{g:500,d:60},broccoli:{g:150,d:2},egg:{g:300,d:10},spinach:{g:100,d:1},
+          onion:{g:300,d:25},cheese:{g:100,d:20},soy:{g:200,d:200},oil:{g:500,d:300},
+          pasta:{g:500,d:300},lentils:{g:300,d:300},chickpeas:{g:400,d:300},cantomato:{g:800,d:400}}, // stock: fridge + pantry
+  stockLoc:'fridge', reward:{per:2,cap:3}, rewards:{you:{used:0},her:{used:0}},
+  eaten:[
+    {u:'you',type:'breakfast',name:'Avocado egg toast',e:'🥑',k:410,p:17,c:34,f:24,fi:9,s:3},
+    {u:'her',type:'breakfast',name:'Avocado egg toast',e:'🥑',k:410,p:17,c:34,f:24,fi:9,s:3},
+    {u:'her',type:'lunch',name:'Chicken rice bowl',e:'🍚',k:620,p:42,c:70,f:16,fi:7,s:6}],
+  sweets:[{u:'you',name:'Cookie',e:'🍪',kind:'sweet',sg:10,k:140,p:2,c:19,f:6,fi:.5}], // snack log
+  snack:null,
+  pastSw:{you:[{n:2,sg:40},{n:3,sg:62},{n:1,sg:15},{n:0,sg:0},{n:4,sg:78},{n:2,sg:36}],her:[{n:1,sg:20},{n:0,sg:0},{n:2,sg:30},{n:1,sg:12},{n:2,sg:35},{n:0,sg:0}]},
+  past:{ // previous 6 days: kcal, protein, carbs, fat, fiber
+    you:[{k:2080,p:140,c:230,f:70,fi:31},{k:2310,p:120,c:290,f:85,fi:24},{k:1950,p:135,c:210,f:68,fi:33},
+         {k:2150,p:150,c:220,f:72,fi:28},{k:2400,p:110,c:300,f:90,fi:22},{k:2050,p:145,c:225,f:66,fi:35}],
+    her:[{k:1900,p:105,c:210,f:60,fi:34},{k:2050,p:98,c:240,f:70,fi:31},{k:1850,p:110,c:200,f:62,fi:29},
+         {k:2000,p:95,c:230,f:66,fi:36},{k:2150,p:100,c:250,f:72,fi:27},{k:1950,p:108,c:215,f:64,fi:33}]},
+  plan:{status:'none',days:[],approved:{you:false,her:false}},
+  // wizard: per day [breakfast,lunch,dinner] → index into OPTS
+  wiz:[[0,4,1],[0,4,1],[0,4,2],[0,4,1],[0,4,5],[1,1,3],[1,1,3]],
+  shop:{checked:{},runOut:{}},
+  ro:{}, cookType:'dinner', cookId:null,
+  snap:null, sheet:null, toast:null, mealTab:'recipe', mealsSeg:'all', mealType:'all', mealSort:'rating',
+  insTab:'overview', insRange:'week', insWho:'you', planSeg:'menu', challenge:'fiber', draftRate:null,
+};
+const OPTS=[{m:'cook',min:15},{m:'cook',min:30},{m:'cook',min:45},{m:'cook',min:60},{m:'prep'},{m:'out'},{m:'skip'}];
+const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+/* ============ HELPERS ============ */
+const $=id=>document.getElementById(id);
+const r1=n=>Math.round(n*10)/10, r0=Math.round;
+function macros(ings){const t={k:0,p:0,c:0,f:0,fi:0,$:0};
+  t.s=0;for(const id in ings){const i=ING[id],x=ings[id]/100;t.k+=i.k*x;t.p+=i.p*x;t.c+=i.c*x;t.f+=i.f*x;t.fi+=i.fi*x;t.s+=i.s*x;t.$+=i.$*x}return t}
+const score1=r=>r?(r.taste+r.again+r.effort)/3:null;
+function score(m){const v=['you','her'].map(u=>score1(m.rt[u])).filter(x=>x!==null);return v.length?v.reduce((a,b)=>a+b)/v.length:null}
+const cost=m=>m.cost??macros(m.ings).$;
+const WHO={you:{n:'You',c:'#b9532f',l:'T'},her:{n:'Partner',c:'#5d8582',l:'P'}};
+const photo=(m,cls='')=>`<div class="photo ${cls}" style="background:linear-gradient(135deg,${m.g[0]},${m.g[1]})">${m.e}</div>`;
+const thumb=(m,s=44)=>`<div class="photo" style="width:${s}px;height:${s}px;aspect-ratio:1;font-size:${s*.5}px;flex:none;background:linear-gradient(135deg,${m.g[0]},${m.g[1]})">${m.e}</div>`;
+const money=n=>n.toFixed(2)+' €';
+const mealById=id=>S.meals.find(m=>m.id==id);
+function steps(m){const L=Object.keys(m.ings).map(i=>ING[i].n.toLowerCase());
+  return [`Prep: wash and chop ${L.slice(0,3).join(', ')}.`,`Heat a pan with oil; cook ${L[0]} until golden (~${Math.round(m.time*.3)} min).`,
+  `Add ${L.slice(1,4).join(', ')} and simmer/stir for ${Math.round(m.time*.4)} min.`,`Season, taste, adjust and serve in ${m.portions} portions.`]}
+function toast(msg,undo){S.toast={msg,undo};render();clearTimeout(toast.t);toast.t=setTimeout(()=>{S.toast=null;render()},3500)}
+const route=()=>location.hash.replace('#/','').split('/');
+const go=h=>{location.hash='#/'+h};
+const ago=n=>n===0?'Today':n===1?'Yesterday':n+' days ago';
+const stepper=(v,u,dec,inc)=>`<div class="stepper"><button data-act="${dec}" aria-label="decrease">−</button><b>${v}${u}</b><button data-act="${inc}" aria-label="increase">+</button></div>`;
+// half-star rating: act=null → read-only
+function starRow(n,act,size=32){return `<span style="display:inline-flex;gap:2px">${[1,2,3,4,5].map(i=>{const f=n>=i?100:n>=i-.5?50:0;
+  return `<span class="starw" style="width:${size}px;height:${size}px"><span class="sb">${ic('star',size)}</span><span class="sf" style="width:${f}%">${ic('star',size,'fill')}</span>
+  ${act?`<button class="hz l" data-act="${act}" data-a="${i-.5}" aria-label="${i-.5} stars"></button><button class="hz r" data-act="${act}" data-a="${i}" aria-label="${i} stars"></button>`:''}</span>`}).join('')}</span>`}
+const starNum=n=>`<span style="display:inline-flex;align-items:center;gap:3px">${ic('star',13,'fill')}${r1(n)}</span>`;
+const typeSeg=(cur,act)=>`<div class="seg">${TYPES.map(t=>`<button class="${cur===t?'on':''}" data-act="${act}" data-a="${t}">${TL[t]}</button>`).join('')}</div>`;
+const guessType=()=>{const h=new Date().getHours();return h<11?'breakfast':h<16?'lunch':'dinner'};
+
+/* ============ TOTALS ============ */
+function todayTotals(u){const t=S.eaten.filter(e=>e.u===u).reduce((t,e)=>({k:t.k+e.k,p:t.p+e.p,c:t.c+e.c,f:t.f+e.f,fi:t.fi+e.fi,s:t.s+(e.s||0)}),{k:0,p:0,c:0,f:0,fi:0,s:0});
+  S.sweets.filter(e=>e.u===u).forEach(e=>{t.k+=e.k;t.s+=e.sg;t.p+=e.p||0;t.c+=e.c||0;t.f+=e.f||0;t.fi+=e.fi||0});return t}
+const locOf=id=>ING[id].cat==='Pantry'?'pantry':'fridge';
+function reward(u){const free=S.pastSw[u].filter(d=>d.n===0).length,earned=Math.min(Math.floor(free/S.reward.per),S.reward.cap);
+  return{free,earned,avail:Math.max(earned-S.rewards[u].used,0),into:free%S.reward.per,need:S.reward.per}}
+const snacksToday=u=>S.sweets.filter(e=>e.u===u);
+const sweetsToday=u=>{const a=S.sweets.filter(e=>e.u===u&&isTreat(e));return{n:a.length,sg:a.reduce((x,e)=>x+e.sg,0)}};
+// metric tile with identity icon+colour
+const mtile=(key,v,unit='')=>`<div class="mt" style="--mc:${MAC[key].c}">${ic(MAC[key].ic,18)}<b>${r0(v)}${unit}</b><small>${MAC[key].n}</small></div>`;
+const dataFor=u=>[...S.past[u],todayTotals(u)];
+function ring(val,goal,size=112){const R=size/2-9,C=2*Math.PI*R,pct=Math.min(val/goal,1),da=`${C*pct} ${C}`;
+  return `<svg width="${size}" height="${size}"><circle cx="${size/2}" cy="${size/2}" r="${R}" fill="none" stroke="var(--surface2)" stroke-width="10"/>
+  <circle cx="${size/2}" cy="${size/2}" r="${R}" fill="none" stroke="var(--accent)" stroke-width="10" stroke-linecap="butt" style="stroke-dasharray:${da}" data-da="${da}" transform="rotate(-90 ${size/2} ${size/2})"/>
+  <text x="50%" y="48%" text-anchor="middle" style="font-size:22px;font-weight:650;fill:var(--ink)" data-cnt="${r0(val)}">${r0(val)}</text><text x="50%" y="64%" text-anchor="middle">/ ${goal} kcal</text></svg>`}
+
+/* ============ SCREENS ============ */
+function mealRow(m,sub,noTap){return `<button class="row" style="width:100%;text-align:left" ${noTap?'':`data-act="nav" data-a="meal/${m.id}"`}>${thumb(m,56)}
+  <div class="sp"><h3>${m.name}</h3><div class="sub">${sub}</div></div></button>`}
+
+function home(){const t=todayTotals(S.user),u=S.user;
+  const unrated=S.meals.filter(m=>!m.rt[u]).sort((a,b)=>a.ago-b.ago)[0];
+  const dIdx=(new Date().getDay()+6)%7, today=S.plan.status==='approved'?S.plan.days[dIdx]:null;
+  const soon=Object.entries(S.fridge).filter(([,v])=>v.d<=3);
+  const dateStr=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'short'});
+  return `<div class="top"><div><div class="sub">${dateStr}</div><h1>Hi, ${u==='you'?'Tomi':'Partner'}</h1></div>
+   <div class="row"><button class="icon" data-act="nav" data-a="insights" aria-label="Insights">${ic('insights')}</button>
+   <button class="avatar" style="background:${WHO[u].c}" data-act="sheet" data-a="settings" aria-label="Settings">${WHO[u].l}</button></div></div>
+  <button class="card row" style="width:100%;text-align:left" data-act="nav" data-a="insights">${ring(t.k,S.goals.kcal)}
+   <div class="sp">${[['p',t.p,S.goals.protein],['c',t.c,250],['f',t.f,75],['fi',t.fi,S.goals.fiber],['s',t.s,S.goals.sugar]].map(([k,v,g])=>
+   `<div style="display:grid;grid-template-columns:16px 1fr;column-gap:7px;row-gap:2px;margin:7px 0;align-items:center"><span></span><div class="row" style="align-items:baseline"><span style="font-size:13px">${MAC[k].n}</span><span class="sp"></span><span class="sub" style="font-size:10.5px">${r0(v)} / ${g} g</span></div><span style="color:${MAC[k].c};display:flex;line-height:0;align-self:center">${ic(MAC[k].ic,16)}</span><div class="bar"><i data-w="${Math.min(v/g*100,100)}" style="width:${Math.min(v/g*100,100)}%;background:${MAC[k].c}"></i></div></div>`).join('')}</div></button>
+  <h2>Today</h2><div class="card" style="padding:4px 14px"><div class="list">${TYPES.map(ty=>{const es=S.eaten.filter(e=>e.u===u&&e.type===ty);
+   return `<div style="align-items:flex-start"><span class="sub" style="width:64px;padding-top:2px;font-weight:600">${TL[ty]}</span><div class="sp">${
+     es.length?es.map(e=>`<div style="margin-bottom:4px">${e.e} ${e.name} <span class="sub">· ${r0(e.k)} kcal</span></div>`).join(''):`<span class="sub">Not logged</span>`}</div>
+     <button class="icon" style="width:36px;height:36px" data-act="snapStart" data-a="${ty}" aria-label="Log ${TL[ty]}">${ic('plus',18)}</button></div>`}).join('')}</div></div>
+  ${sweetsCard(u)}
+  ${today?`<h2>Planned today</h2><div class="card" style="padding:4px 14px"><div class="list">${TYPES.map(ty=>slotLine(today[ty],ty)).join('')}</div></div>`:
+   `<button class="card row" style="width:100%" data-act="nav" data-a="plan"><span class="sub">${ic('plan',26)}</span><div class="sp" style="text-align:left"><h3>${S.plan.status==='none'?'Plan next week':'Menu awaiting approval'}</h3><div class="sub">Breakfasts, lunches, dinners — from your best-rated meals</div></div>${ic('chev',18)}</button>`}
+  ${unrated?`<h2>Rate this meal</h2><div class="card">${mealRow(unrated,'waiting for your rating')}<button class="btn sm" style="margin-top:10px" data-act="rate" data-a="${unrated.id}">Rate now</button></div>`:''}
+  ${soon.length?`<h2>Use soon</h2><div class="card"><div class="chips">${soon.map(([id,v])=>`<span class="chip">${ING[id].e} ${ING[id].n} <span class="${v.d<=1?'exp-1':'exp-2'}">${v.d}d</span></span>`).join('')}</div></div>`:''}`}
+
+function sweetsCard(u){const sw=sweetsToday(u),sn=snacksToday(u),g=S.goals.sugar,rw=reward(u),pct=Math.min(sw.sg/g*100,100);
+  return `<h2>Snacks</h2><div class="card"><div class="row"><span style="color:var(--sg);display:flex">${ic('cube',26)}</span><div class="sp"><h3>${sn.length} snack${sn.length===1?'':'s'} today · ${sw.sg} g treat sugar</h3><div class="sub">${sw.sg>g?'Over your '+g+' g goal':'Treat sugar goal '+g+' g'}</div></div>
+   <button class="btn sm ghost" data-act="sheet" data-a="sweet">${ic('plus',16)} Log</button></div><div class="bar" style="margin-top:10px"><i data-w="${pct}" style="width:${pct}%;background:${sw.sg>g?'var(--bad)':'var(--sg)'}"></i></div>
+   <div class="row" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)"><span style="display:flex;color:var(--accent)">${ic('gift',20)}</span><div class="sp"><b style="font-size:14px">Croissant pass</b><div class="sub">${rw.avail?rw.avail+' available — you earned it':rw.into+' / '+rw.need+' treat-free days to the next one'}</div></div>${rw.avail?`<button class="btn sm" data-act="useReward">Use pass</button>`:''}</div></div>`}
+function slotLine(s,ty){const m=s.mealId&&mealById(s.mealId);
+  const lab=s.mode==='out'?'Eating out':s.mode==='skip'?'Nothing planned':m?m.name:'Pick a meal';
+  const sub=s.mode==='prep'?'Meal prep':s.mode==='cook'&&m?m.time+' min to cook':'';
+  return `<div><span class="sub" style="width:64px;font-weight:600">${TL[ty]}</span><div class="sp">${lab}${sub?`<div class="sub">${sub}</div>`:''}</div></div>`}
+
+function mealsView(){
+  let list=[...S.meals];
+  if(S.mealType!=='all')list=list.filter(m=>m.types.includes(S.mealType));
+  if(S.mealsSeg==='quick')list=list.filter(m=>m.time<=30);
+  if(S.mealsSeg==='top')list=list.filter(m=>(score(m)||0)>=4.3);
+  if(S.mealsSeg==='cheap')list=list.filter(m=>cost(m)/m.portions<=4);
+  list.sort((a,b)=>S.mealSort==='rating'?(score(b)||0)-(score(a)||0):S.mealSort==='cooked'?b.cooked-a.cooked:a.ago-b.ago);
+  return `<div class="top"><h1>Meals</h1><button class="sortbtn" data-act="sort">${ic('sort',16)}<small>Sort</small><b>${{rating:'Top rated',recent:'Most recent',cooked:'Most cooked'}[S.mealSort]}</b></button></div>
+  <div class="tseg">${[['all','All','grid'],['breakfast','Breakfast','sunrise'],['lunch','Lunch','sun'],['dinner','Dinner','moon']].map(([k,l,i])=>`<button class="${S.mealType===k?'on':''}" data-act="mtype" data-a="${k}">${ic(i,14)}${l}</button>`).join('')}</div>
+  <div class="chips" style="margin-bottom:14px">${[['all','Any'],['top','Top rated'],['quick','≤ 30 min'],['cheap','≤ 4 € / portion']].map(([k,l])=>`<button class="chip ${S.mealsSeg===k?'on':''}" data-act="seg" data-a="${k}">${l}</button>`).join('')}</div>
+  <div class="mealgrid">${list.map(m=>{const s=score(m);return `<button class="mealcard" data-act="nav" data-a="meal/${m.id}">
+   <div style="position:relative">${photo(m)}<span class="badge" style="position:absolute;top:8px;right:8px">${s?ic('star',12,'fill')+' '+r1(s):'unrated'}</span>
+   <span class="badge" style="position:absolute;top:8px;left:8px">${m.types.map(t=>TS[t]).join(' / ')}</span></div>
+   <div class="b"><h3>${m.name}</h3><div class="sub">${m.time} min · ${money(cost(m)/m.portions)}/portion</div><div class="sub">Cooked ${m.cooked}×</div></div></button>`}).join('')}</div>
+  ${list.length?'':'<p class="sub">No meals match this filter.</p>'}`}
+
+function mealDetail(id){const m=mealById(id);if(!m)return '';const t=macros(m.ings);
+  return `<div class="top"><button class="icon" data-act="back" aria-label="Back">${ic('back')}</button><span class="sub">${ago(m.ago)}</span><button class="btn sm ghost" data-act="sheet" data-a="addplan:${m.id}">${ic('plan',16)} Add to plan</button></div>
+  ${photo(m)}<h1 style="margin:12px 0 8px">${m.name}</h1>
+  <div class="chips"><span class="chip">${m.types.map(t=>TL[t]).join(' / ')}</span><span class="chip">${ic('clock',14)} ${m.time} min</span><span class="chip">${money(cost(m))} total · ${money(cost(m)/m.portions)} / portion</span><span class="chip">${ic('users',14)} ${m.portions} portions</span>${score(m)?`<span class="chip">${starNum(score(m))}</span>`:''}</div>
+  <div class="macro" style="margin:14px 0 0;--n:3"><div><b>${m.cooked}×</b><small>cooked</small></div><div><b>${ago(m.ago)}</b><small>last cooked</small></div><div><b>${score(m)?r1(score(m)):'–'}</b><small>avg rating</small></div></div>
+  <div class="seg" style="margin-top:14px">${[['recipe','Recipe'],['nutrition','Nutrition'],['ratings','Ratings']].map(([k,l])=>`<button class="${S.mealTab===k?'on':''}" data-act="mtab" data-a="${k}">${l}</button>`).join('')}</div>
+  ${S.mealTab==='recipe'?`<div class="card"><h3>Ingredients <span class="sub">(auto-generated)</span></h3><div class="list">${Object.entries(m.ings).map(([i,g])=>`<div><span>${ING[i].e}</span><span class="sp">${ING[i].n}</span><span class="sub">${g} g</span></div>`).join('')}</div></div>
+   <div class="card"><h3>Steps</h3><ol style="padding-left:20px;line-height:1.5">${steps(m).map(s=>`<li>${s}</li>`).join('')}</ol></div>`:''}
+  ${S.mealTab==='nutrition'?`<div class="card"><div class="sub" style="margin-bottom:8px">Per portion</div><div class="macro" style="--n:3">${['k','p','c','f','fi','s'].map(k=>mtile(k,t[k]/m.portions,k==='k'?'':' g')).join('')}</div></div>${fillCard(m)}`:''}
+  ${S.mealTab==='ratings'?['you','her'].map(u=>{const r=m.rt[u];return `<div class="card"><div class="row"><span class="avatar" style="background:${WHO[u].c};width:34px;height:34px">${WHO[u].l}</span><h3 class="sp">${WHO[u].n}</h3>${S.user===u?`<button class="btn sm ghost" data-act="rate" data-a="${m.id}">${r?'Edit':'Rate'}</button>`:''}</div>
+   ${r?`<div style="margin:10px 0 4px" class="row">${starRow(r.taste,null,18)}<span class="sub">${r.taste}</span></div><div class="sub">Make again: ${lab(r.again)} · Worth the effort: ${lab(r.effort)} · Filling: ${FILL[r.fill||'right']}</div>`:`<div class="sub" style="margin-top:8px">${S.user===u?'Not rated yet':'Waiting for rating…'}</div>`}</div>`}).join(''):''}
+  <button class="btn" data-act="sheet" data-a="cooked:${m.id}">${ic('flame',18)} I cooked this again</button>`}
+const lab=v=>v>=5?'yes':v>=3?'maybe':'no';
+const FILL={hungry:'left us hungry',right:'just right',heavy:'too heavy'};
+function fillCard(m){const v=['you','her'].map(u=>m.rt[u]&&m.rt[u].fill).filter(Boolean);if(!v.length)return '';
+  const h=v.filter(x=>x==='hungry').length,y=v.filter(x=>x==='heavy').length;
+  const tip=h>y?'Left us hungry — try +50 g rice/pasta or +100 g lentils/chickpeas for fiber.':y>h?'A bit heavy — try −50 g carbs or swap part of them for veg.':'Portion feels right.';
+  return `<div class="card"><h3>How filling</h3><div class="sub" style="margin:4px 0">${v.map(x=>FILL[x]).join(' · ')}</div><div class="row" style="gap:6px;margin-top:6px">${ic('leaf',16)}<span>${tip}</span></div></div>`}
+
+/* ---- Plan ---- */
+function eligible(ty,min,exclude=[]){return S.meals.filter(m=>m.types.includes(ty)&&m.time<=min&&!exclude.includes(m.id)).sort((a,b)=>(score(b)||3)-(score(a)||3))}
+const prepOptions=ty=>S.meals.filter(m=>m.types.includes(ty)&&m.tags.includes('prep-friendly')).sort((a,b)=>(score(b)||3)-(score(a)||3));
+function generate(){const used=[];
+  S.plan.days=S.wiz.map(row=>{const d={};TYPES.forEach((ty,ti)=>{const o=OPTS[row[ti]];
+    if(o.m==='cook'){let c=eligible(ty,o.min,used);if(!c.length)c=eligible(ty,o.min);const m=c[0];if(m)used.push(m.id);d[ty]={mode:'cook',min:o.min,mealId:m?m.id:null}}
+    else if(o.m==='prep'){const m=prepOptions(ty)[0];d[ty]={mode:'prep',mealId:m?m.id:null}}
+    else d[ty]={mode:o.m,mealId:null}});return d});
+  S.plan.status='draft';S.plan.approved={you:false,her:false}}
+const slots=()=>S.plan.days.flatMap(d=>TYPES.map(t=>d[t]));
+function batches(){const n={};slots().forEach(s=>{if(s.mealId)n[s.mealId]=(n[s.mealId]||0)+2}); // a slot feeds two people = 2 portions
+  const b={};for(const id in n)b[id]=Math.ceil(n[id]/mealById(id).portions);return b}
+function shopList(){const need={},B=batches();for(const id in B){const m=mealById(id);for(const i in m.ings)need[i]=(need[i]||0)+m.ings[i]*B[id]}
+  return Object.keys(need).map(i=>{const have=S.fridge[i]?.g||0;return{id:i,need:need[i],have,buy:Math.ceil(Math.max(need[i]-have,0)/50)*50}})}
+function shopItems(){const items=S.plan.status==='approved'?shopList().filter(x=>x.buy>0):[];
+  Object.keys(S.shop.runOut).forEach(id=>{const ex=items.find(x=>x.id===id);if(ex)ex.ran=true;else items.push({id,need:0,have:0,buy:250,ran:true})});return items}
+
+function slotRow(d,i,ty){const s=d[ty],m=s.mealId&&mealById(s.mealId);
+  const th=s.mode==='out'?`<div class="th">${ic('pin',18)}</div>`:s.mode==='skip'?`<div class="th">${ic('minus',18)}</div>`:m?thumb(m,36):`<div class="th">${ic('plus',18)}</div>`;
+  const title=s.mode==='out'?'Eating out':s.mode==='skip'?'Nothing planned':m?m.name:'Pick a meal';
+  const sub=s.mode==='cook'&&m?`${ic('flame',12)} Cook · ${m.time} of ${s.min} min${score(m)?' · ':''}${score(m)?starNum(score(m)):''}`:s.mode==='prep'?`${ic('box',12)} Meal prep · no cooking${m&&score(m)?' · ':''}${m&&score(m)?starNum(score(m)):''}`:'';
+  return `<button class="slot" data-act="sheet" data-a="swap:${i}:${ty}"><span class="tl">${TS[ty]}</span>${th}<div class="sp"><h3 style="${s.mode==='out'||s.mode==='skip'?'color:var(--ink2);font-weight:500':''}">${title}</h3>${sub?`<div class="sub" style="display:flex;align-items:center;gap:4px">${sub}</div>`:''}</div>${ic('chev',16)}</button>`}
+
+function planView(){const P=S.plan;
+  const head=`<div class="top"><h1>Plan</h1></div><div class="seg"><button class="${S.planSeg==='menu'?'on':''}" data-act="pseg" data-a="menu">Menu</button><button class="${S.planSeg==='shop'?'on':''}" data-act="pseg" data-a="shop">Shopping list${Object.keys(S.shop.runOut).length?' •':''}</button></div>`;
+  if(S.planSeg==='shop')return head+shopView();
+  if(P.status==='none')return head+`<div class="card" style="text-align:center;padding:30px 20px"><div class="sub" style="margin-bottom:8px">${ic('plan',36)}</div><h3>No menu for next week</h3><p class="sub">Set what each meal looks like — cook, meal prep or eating out — and we'll pick your best-rated meals.</p><button class="btn" data-act="sheet" data-a="wizard">Plan next week</button></div>`;
+  const all=slots(),cnt=m=>all.filter(s=>s.mode===m).length,B=batches();
+  const totalCost=Object.keys(B).reduce((a,id)=>a+cost(mealById(id))*B[id],0);
+  const prepM=[...new Set(all.filter(s=>s.mode==='prep'&&s.mealId).map(s=>s.mealId))];
+  return head+`<div class="card row" style="gap:0;text-align:center;padding:16px 8px">${[['Cook',cnt('cook'),'flame'],['Prep',cnt('prep'),'box'],['Out',cnt('out'),'pin'],['Skip',cnt('skip'),'minus']].map(([l,n,i])=>`<div class="sp"><div class="sub" style="margin-bottom:10px">${ic(i,18)}</div><b style="font-size:18px">${n}</b><div class="sub" style="margin-top:2px">${l}</div></div>`).join('')}<div class="sp"><div class="sub" style="margin-bottom:10px">${ic('cost',18)}</div><b style="font-size:18px">${totalCost.toFixed(2)}</b><div class="sub" style="margin-top:2px">groceries</div></div></div>
+  ${prepM.length?`<div class="card sub" style="display:flex;gap:8px">${ic('box',18)}<span>Batch cook: ${prepM.map(id=>`<b style="color:var(--ink)">${mealById(id).name}</b> ×${B[id]}`).join(', ')}</span></div>`:''}
+  ${P.days.map((d,i)=>`<div class="dayc"><header><span>${DAYS[i]}</span><span style="font-weight:500;text-transform:none;letter-spacing:0">${r0(TYPES.reduce((a,t)=>a+(d[t].mealId?macros(mealById(d[t].mealId).ings).k/mealById(d[t].mealId).portions:0),0))} kcal planned</span></header>${TYPES.map(t=>slotRow(d,i,t)).join('')}</div>`).join('')}
+  <div class="card"><div class="row"><span class="avatar" style="background:${WHO.you.c};width:32px;height:32px">T</span><span class="sp">${P.approved.you?'Approved':'Not yet'}</span>
+  <span class="avatar" style="background:${WHO.her.c};width:32px;height:32px">P</span><span class="sp">${P.approved.her?'Approved':'Pending'}</span></div></div>
+  ${P.status==='approved'?`<button class="btn ghost" data-act="sheet" data-a="wizard">Re-plan</button>`:`<button class="btn" data-act="approve">Approve as ${WHO[S.user].n}</button><button class="btn ghost" style="margin-top:8px" data-act="sheet" data-a="wizard">Change time budget</button>`}`}
+
+function shopView(){const items=shopItems(),done=Object.values(S.shop.checked).filter(Boolean).length;
+  if(!items.length&&S.plan.status!=='approved')return `<div class="card sub" style="text-align:center;padding:26px">The shopping list appears once you both approve the weekly menu — or when you mark an ingredient as used up while cooking.</div>`;
+  const ran=items.filter(x=>x.ran),rest=items.filter(x=>!x.ran),have=S.plan.status==='approved'?shopList().filter(x=>x.buy===0):[];
+  const groups={};rest.forEach(x=>(groups[ING[x.id].cat]??=[]).push(x));
+  const total=items.reduce((a,x)=>a+ING[x.id].$*x.buy/100,0);
+  const line=x=>`<button style="width:100%;text-align:left" data-act="chk" data-a="${x.id}"><span class="chk ${S.shop.checked[x.id]?'on':''}">${S.shop.checked[x.id]?ic('check',16):''}</span><span class="sp ${S.shop.checked[x.id]?'done':''}">${ING[x.id].e} ${ING[x.id].n}${x.have?`<div class="sub">have ${x.have} g</div>`:''}</span><b>${x.buy} g</b></button>`;
+  return `<div class="row sub" style="margin-bottom:8px"><span class="sp">${items.length} items · est. ${money(total)}</span><span>${done} in cart</span></div>
+  ${ran.length?`<div class="card"><h3 class="row" style="gap:6px">${ic('alert',16)} Ran out while cooking</h3><div class="list">${ran.map(line).join('')}</div></div>`:''}
+  ${Object.keys(groups).map(c=>`<div class="card"><h3>${c}</h3><div class="list">${groups[c].map(line).join('')}</div></div>`).join('')}
+  ${have.length?`<div class="card"><h3>Already in stock</h3><div class="chips" style="margin-top:8px">${have.map(x=>`<span class="chip">${ING[x.id].e} ${ING[x.id].n}</span>`).join('')}</div></div>`:''}
+  <button class="btn" data-act="finishShop" ${done?'':'style="opacity:.5"'}>${ic('cart',18)} Finished shopping → add to ingredients</button>`}
+
+/* ---- Ingredients (fridge + pantry stock) ---- */
+function fridgeView(){const loc=S.stockLoc,all=Object.entries(S.fridge),cnt=l=>all.filter(([id])=>locOf(id)===l).length;
+  const items=all.filter(([id])=>locOf(id)===loc).sort((a,b)=>a[1].d-b[1].d);
+  const sug=S.meals.filter(m=>Object.keys(m.ings).every(i=>(S.fridge[i]?.g||0)>=m.ings[i]*.5)).slice(0,2);
+  const exp=d=>d>=60?r0(d/30)+' months left':d<=1?'expires today/tomorrow':d+' days left';
+  return `<div class="top"><h1>Ingredients</h1><button class="icon" data-act="sheet" data-a="addFridge" aria-label="Add ingredient">${ic('plus')}</button></div>
+  <div class="tabs">${[['fridge','Fridge'],['pantry','Pantry']].map(([k,l])=>`<button class="${loc===k?'on':''}" data-act="sloc" data-a="${k}">${l} <span class="sub">${cnt(k)}</span></button>`).join('')}</div>
+  ${loc==='fridge'&&sug.length?`<div class="card"><h3>Cook with what you have</h3><div class="list">${sug.map(m=>`<div>${mealRow(m,'ingredients mostly in stock')}</div>`).join('')}</div></div>`:''}
+  <div class="card">${items.length?`<div class="list">${items.map(([id,v])=>`<div><span style="font-size:24px">${ING[id].e}</span><div class="sp"><h3>${ING[id].n}</h3><div class="sub"><span class="${v.d<=1?'exp-1':v.d<=3?'exp-2':'exp-3'}">${exp(v.d)}</span> · ${ING[id].cat}</div></div>
+   <div class="stepper"><button data-act="fq" data-a="${id}:-50" aria-label="less">−</button><b>${v.g}g</b><button data-act="fq" data-a="${id}:50" aria-label="more">+</button></div></div>`).join('')}</div>`:`<span class="sub">Nothing here yet.</span>`}</div>`}
+
+/* ---- Insights ---- */
+const avgOf=(d,k)=>d.reduce((a,x)=>a+x[k],0)/d.length;
+function insights(){
+  const head=`<div class="top"><button class="icon" data-act="back" aria-label="Back">${ic('back')}</button><h1>Insights</h1><span style="width:44px"></span></div>
+  <div class="tabs">${[['overview','Overview'],['versus','Versus'],['sweets','Snacks']].map(([k,l])=>`<button class="${S.insTab===k?'on':''}" data-act="itab" data-a="${k}">${l}</button>`).join('')}</div>`;
+  return head+(S.insTab==='versus'?versus():S.insTab==='sweets'?sweetsView():overview())}
+
+function sweetsView(){const G=S.goals.sugar,D=u=>[...S.pastSw[u],sweetsToday(u)],w=D(S.insWho),W=330,H=130,bw=W/7-8,mx=Math.max(G*1.5,...w.map(d=>d.sg)),dl=['S','M','T','W','T','F','S'],gd=new Date().getDay();
+  const bars=w.map((d,i)=>`<rect x="${i*(W/7)+4}" y="${H-d.sg/mx*H}" width="${bw}" height="${Math.max(d.sg/mx*H,1)}" rx="2" fill="${d.sg>G?'var(--bad)':'var(--sg)'}" opacity="${i===6?1:.7}"/>`).join('');
+  const gy=H-G/mx*H,free=u=>D(u).filter(d=>d.n===0).length,over=u=>D(u).filter(d=>d.sg>G).length,tot=u=>D(u).reduce((a,d)=>a+d.n,0);
+  const today=S.sweets.filter(e=>e.u===S.insWho);
+  return `<div style="margin-bottom:12px"><div class="mini">${[['you','You'],['her','Partner']].map(([k,l])=>`<button class="${S.insWho===k?'on':''}" data-act="iwho" data-a="${k}">${l}</button>`).join('')}</div></div>
+  <div class="card"><h3 class="row" style="gap:6px"><span style="color:var(--sg);display:flex">${ic('cube',18)}</span>Sugar from treats <span class="sub">goal ${G} g / day</span></h3>
+   <svg viewBox="0 0 ${W} ${H+18}" width="100%" style="margin-top:8px">${bars}<line x1="0" x2="${W}" y1="${gy}" y2="${gy}" stroke="var(--ink2)" stroke-dasharray="4 4"/>${w.map((_,i)=>`<text x="${i*(W/7)+4+bw/2}" y="${H+14}" text-anchor="middle">${dl[(gd-(6-i)+14)%7]}</text>`).join('')}</svg></div>
+  <div class="macro" style="--n:3"><div><b>${free(S.insWho)}</b><small>treat-free days</small></div><div><b>${tot(S.insWho)}</b><small>treats this week</small></div><div><b>${over(S.insWho)}</b><small>days over goal</small></div></div>
+  <h2>Croissant rewards</h2><div class="card"><div class="sub" style="margin-bottom:10px">Every ${S.reward.per} treat-free days earns a croissant from a shop (max ${S.reward.cap} a week).</div>
+   ${['you','her'].map(u=>{const r=reward(u);return `<div class="row" style="margin:8px 0"><span class="avatar" style="background:${WHO[u].c};width:30px;height:30px;font-size:12px">${WHO[u].l}</span>
+   <div class="row sp" style="gap:5px">${Array.from({length:r.need},(_,i)=>`<span class="chk ${i<r.into?'on':''}">${i<r.into?ic('check',16):''}</span>`).join('')}</div>
+   <span class="sub" style="display:flex;align-items:center;gap:5px;color:${r.avail?'var(--accent)':''}">${ic('gift',16)} ${r.avail} ready · ${S.rewards[u].used} used</span></div>`}).join('')}</div>
+  <h2>Today</h2><div class="card">${today.length?`<div class="list">${today.map(e=>`<div><span style="font-size:22px">${e.e}</span><span class="sp">${e.name}</span><span class="sub">${e.reward?'reward':KIND[e.kind||'sweet']+' · '+r0(e.sg)+' g sugar'}</span></div>`).join('')}</div>`:'<span class="sub">Nothing yet — nice.</span>'}</div>
+  <h2>Who resists better?</h2><div class="card"><div class="vs"><div class="v ${free('you')>=free('her')?'win':''}">${free('you')}</div><div class="sub" style="text-align:center">treat-free days</div><div class="v ${free('her')>=free('you')?'win':''}" style="text-align:right">${free('her')}</div></div>
+   <div class="vs"><div class="v ${tot('you')<=tot('her')?'win':''}">${tot('you')}</div><div class="sub" style="text-align:center">sweets (fewer wins)</div><div class="v ${tot('her')<=tot('you')?'win':''}" style="text-align:right">${tot('her')}</div></div></div>`}
+
+function overview(){const n=S.insRange==='day'?1:7,gk=S.goals.kcal,win=dataFor(S.insWho).slice(-n),avg=k=>avgOf(win,k);
+  const W=330,H=140,bw=W/win.length-8,mx=Math.max(gk*1.2,...win.map(d=>d.k));
+  const bars=win.map((d,i)=>`<rect x="${i*(W/win.length)+4}" y="${H-d.k/mx*H}" width="${bw}" height="${d.k/mx*H}" rx="2" fill="${i===win.length-1?'var(--accent)':'var(--line2)'}"/>`).join('');
+  const gy=H-gk/mx*H,pk=avg('p')*4,ck=avg('c')*4,fk=avg('f')*9,tt=pk+ck+fk;
+  const segs=[[pk,'var(--p)','Protein'],[ck,'var(--c)','Carbs'],[fk,'var(--f)','Fat']];let off=0;const Rr=46,C=2*Math.PI*Rr;
+  const donut=segs.map(([v,c])=>{const l=v/tt*C,s=`<circle cx="60" cy="60" r="${Rr}" fill="none" stroke="${c}" stroke-width="18" stroke-dasharray="${l} ${C}" stroke-dashoffset="${-off}" transform="rotate(-90 60 60)"/>`;off+=l;return s}).join('');
+  const hits=win.filter(d=>d.fi>=S.goals.fiber).length, dl=['S','M','T','W','T','F','S'], gd=new Date().getDay();
+  const rated=[...S.meals].sort((a,b)=>(score(b)||0)-(score(a)||0)).slice(0,3);
+  return `<div class="row" style="margin-bottom:12px"><div class="mini">${[['you','You'],['her','Partner']].map(([k,l])=>`<button class="${S.insWho===k?'on':''}" data-act="iwho" data-a="${k}">${l}</button>`).join('')}</div><span class="sp"></span><div class="mini">${['day','week'].map(k=>`<button class="${S.insRange===k?'on':''}" data-act="irange" data-a="${k}">${k[0].toUpperCase()+k.slice(1)}</button>`).join('')}</div></div>
+  <div class="card"><h3>Calories <span class="sub">avg ${r0(avg('k'))} · goal ${gk}</span></h3>
+   <svg viewBox="0 0 ${W} ${H+18}" width="100%" style="margin-top:8px">${bars}<line x1="0" x2="${W}" y1="${gy}" y2="${gy}" stroke="var(--ink2)" stroke-dasharray="4 4"/>
+   ${win.map((_,i)=>`<text x="${i*(W/win.length)+4+bw/2}" y="${H+14}" text-anchor="middle">${win.length===1?'Today':dl[(gd-(win.length-1-i)+14)%7]}</text>`).join('')}</svg></div>
+  <div class="card row"><svg width="120" height="120" viewBox="0 0 120 120">${donut}</svg><div class="sp">${segs.map(([v,c,nm])=>`<div class="row" style="margin:6px 0"><i style="width:10px;height:10px;border-radius:2px;background:${c}"></i><span class="sp">${nm}</span><b>${r0(v/tt*100)}%</b></div>`).join('')}</div></div>
+  <div class="card"><h3>Fiber goal (${S.goals.fiber} g)</h3><div class="row" style="margin:10px 0">${win.map(d=>`<span class="chk ${d.fi>=S.goals.fiber?'on':''}">${d.fi>=S.goals.fiber?ic('check',16):''}</span>`).join('')}</div><div class="sub">${hits} of ${win.length} days hit · avg ${r0(avg('fi'))} g</div></div>
+  <div class="macro"><div><b>${money(S.meals.reduce((a,m)=>a+cost(m)/m.portions,0)/S.meals.length)}</b><small>avg / portion</small></div><div><b>${r0(S.meals.reduce((a,m)=>a+m.time,0)/S.meals.length)} min</b><small>avg cook time</small></div><div><b>${S.meals.length}</b><small>meals logged</small></div></div>
+  <h2>Top rated</h2><div class="card list">${rated.map(m=>`<div>${mealRow(m,starNum(score(m)||0))}</div>`).join('')}</div>`}
+
+function versus(){const D={you:dataFor('you'),her:dataFor('her')},G=S.goals;
+  const M=[
+   {l:'Fiber goal days',f:u=>D[u].filter(d=>d.fi>=G.fiber).length,fmt:v=>v+' / 7',hi:true},
+   {l:'Avg fiber',f:u=>avgOf(D[u],'fi'),fmt:v=>r0(v)+' g',hi:true},
+   {l:'Avg protein',f:u=>avgOf(D[u],'p'),fmt:v=>r0(v)+' g',hi:true},
+   {l:'Calorie accuracy',f:u=>Math.abs(avgOf(D[u],'k')-G.kcal),fmt:v=>'±'+r0(v)+' kcal',hi:false},
+   {l:'Meals rated',f:u=>S.meals.filter(m=>m.rt[u]).length,fmt:v=>v,hi:true}];
+  const pts={you:0,her:0};
+  const rows=M.map(m=>{const a=m.f('you'),b=m.f('her'),w=a===b?null:(m.hi?a>b:a<b)?'you':'her';if(w)pts[w]++;
+    return `<div class="vs"><div class="v ${w==='you'?'win':''}">${w==='you'?ic('trophy',14)+' ':''}${m.fmt(m.f('you'))}</div><div class="sub" style="text-align:center">${m.l}</div><div class="v ${w==='her'?'win':''}" style="text-align:right">${m.fmt(m.f('her'))}${w==='her'?' '+ic('trophy',14):''}</div></div>`}).join('');
+  const CH={fiber:{n:'Fiber race',d:`Hit ${G.fiber} g fiber on 5 days`,ok:d=>d.fi>=G.fiber},protein:{n:'Protein push',d:`Hit ${G.protein} g protein on 5 days`,ok:d=>d.p>=G.protein},
+    kcal:{n:'On target',d:`Land within ±150 kcal of goal on 5 days`,ok:d=>Math.abs(d.k-G.kcal)<=150}}[S.challenge];
+  const prog=u=>D[u].filter(CH.ok).length;
+  return `<div class="card" style="text-align:center"><div class="sub">This week</div><div class="row" style="justify-content:center;gap:22px;margin-top:6px">
+   <div><span class="avatar" style="background:${WHO.you.c};margin:auto">T</span><div style="font-size:30px;font-weight:650">${pts.you}</div></div><div class="sub">vs</div>
+   <div><span class="avatar" style="background:${WHO.her.c};margin:auto">P</span><div style="font-size:30px;font-weight:650">${pts.her}</div></div></div>
+   <div class="sub" style="margin-top:4px">${pts.you===pts.her?'All square':(pts.you>pts.her?'You lead':'Partner leads')} · ${M.length} categories</div></div>
+  <div class="card">${rows}</div>
+  <h2>Weekly challenge</h2>
+  <div class="chips" style="margin-bottom:10px">${[['fiber','Fiber race'],['protein','Protein push'],['kcal','On target']].map(([k,l])=>`<button class="chip ${S.challenge===k?'on':''}" data-act="chall" data-a="${k}">${l}</button>`).join('')}</div>
+  <div class="card"><h3>${CH.n}</h3><div class="sub" style="margin-bottom:10px">${CH.d}</div>${['you','her'].map(u=>`<div class="row" style="margin:8px 0"><span class="avatar" style="background:${WHO[u].c};width:28px;height:28px;font-size:12px">${WHO[u].l}</span><div class="bar sp"><i style="width:${Math.min(prog(u)/5*100,100)}%;background:${WHO[u].c}"></i></div><b>${prog(u)}/5</b></div>`).join('')}</div>`}
+
+/* ---- Snap flow ---- */
+function runOutBlock(ings){return `<div class="card"><h3>Used up an ingredient?</h3><div class="sub" style="margin:2px 0 10px">Tap anything you finished — it leaves your ingredients and goes on your shopping list.</div>
+  <div class="chips">${Object.keys(ings).map(i=>`<button class="chip ${S.ro[i]?'on':''}" data-act="ro" data-a="${i}">${ING[i].e} ${ING[i].n}${S.ro[i]?' · used up':''}</button>`).join('')}</div></div>`}
+
+function snapView(){const s=S.snap;if(!s)return '';
+  if(s.step==='camera')return `<div class="camera"><button data-act="snapClose" style="align-self:flex-start;color:#fff;min-height:44px" aria-label="Close">${ic('close',26)}</button>
+   <div><div class="plate">🍛</div><p style="text-align:center;opacity:.7">Place your plate in the frame</p></div><button class="shutter" data-act="shutter" aria-label="Take photo"></button></div>`;
+  if(s.step==='analyzing')return `<div class="full"><div class="top"><span></span><span class="sub">Analyzing…</span><span></span></div><div class="photo" style="background:linear-gradient(135deg,#e0d0a8,#b79c55)">🍛</div>
+   <div class="shimmer" style="width:60%;height:26px"></div><div class="shimmer"></div><div class="shimmer" style="width:80%"></div><div class="shimmer"></div></div>`;
+  const t=macros(s.ings),sv=s.servings/s.portions;
+  if(s.step==='verdict')return `<div class="full"><div class="top"><button class="icon" data-act="snapClose" aria-label="Close">${ic('close')}</button><span class="sub">Step 1 of 2</span><span style="width:44px"></span></div>
+   <div class="photo" style="background:linear-gradient(135deg,#e0d0a8,#b79c55);aspect-ratio:16/9">🍛</div>
+   <h1 style="margin:12px 0 2px">${s.name}</h1><div class="sub">We think this is the dish — tap an ingredient to correct it.</div>
+   <div class="macro" style="margin:14px 0;--n:3">${['k','p','c','f','fi','s'].map(k=>mtile(k,t[k]*sv,k==='k'?'':' g')).join('')}</div>
+   <div class="chips">${Object.entries(s.ings).map(([i,g])=>`<button class="chip" data-act="sheet" data-a="edit:${i}">${ING[i].e} ${ING[i].n} · ${g}g</button>`).join('')}<button class="chip on" data-act="sheet" data-a="addIng">${ic('plus',14)} add</button></div>
+   <div class="card row" style="margin-top:16px"><div class="sp"><h3>Portions you ate</h3><div class="sub">of ${s.portions} made</div></div>${stepper(s.servings,'','svDec','svInc')}</div>
+   <button class="btn" data-act="snapNext">Looks right</button></div>`;
+  const pp=s.cost/s.portions;
+  return `<div class="full"><div class="top"><button class="icon" data-act="snapBack" aria-label="Back">${ic('back')}</button><span class="sub">Step 2 of 2</span><span style="width:44px"></span></div><h1 style="margin-bottom:12px">Meal details</h1>
+   ${typeSeg(s.type,'stype')}
+   <div class="card"><div class="row"><div class="sp"><h3>Prep time</h3></div>${stepper(s.time,' min','tDec','tInc')}</div></div>
+   <div class="card"><div class="row"><div class="sp"><h3>Ingredient cost</h3><div class="sub">auto-estimated</div></div>${stepper(s.cost,' €','cDec','cInc')}</div>
+   <div class="row" style="margin-top:10px"><div class="sp"><h3>Portions made</h3></div>${stepper(s.portions,'','pDec','pInc')}</div>
+   <div class="chip" style="margin-top:12px">= ${money(pp)} per portion</div></div>
+   ${runOutBlock(s.ings)}
+   <div class="card"><h3>Auto recipe</h3><ol style="padding-left:20px;line-height:1.5;font-size:14px">${steps({ings:s.ings,time:s.time,portions:s.portions}).map(x=>`<li>${x}</li>`).join('')}</ol></div>
+   <button class="btn" data-act="post">Post meal</button></div>`}
+
+/* ---- Snack photo / label flow ---- */
+function snackView(){const k=S.snack;if(!k)return '';const lbl=k.mode==='label';
+  if(k.step==='camera')return `<div class="camera"><button data-act="snackClose" style="align-self:flex-start;color:#fff;min-height:44px" aria-label="Close">${ic('close',26)}</button>
+   <div style="text-align:center">${lbl?`<div style="width:250px;border:2px dashed rgba(255,255,255,.5);border-radius:6px;padding:14px 16px;font-size:12px;text-align:left"><b>Nutrition facts</b>${['Energy','Fat','Carbohydrate','– of which sugars','Fibre','Protein'].map(x=>`<div style="display:flex;justify-content:space-between;border-top:1px solid rgba(255,255,255,.25);padding:5px 0"><span>${x}</span><span>— —</span></div>`).join('')}</div>`:`<div class="plate">🍪</div>`}
+   <p style="opacity:.7">${lbl?'Frame the nutrition table on the back of the pack':'Frame the snack'}</p></div><button class="shutter" data-act="snackShot" aria-label="Take photo"></button></div>`;
+  if(k.step==='analyzing')return `<div class="full"><div class="top"><span></span><span class="sub">${lbl?'Reading label…':'Identifying snack…'}</span><span></span></div><div class="shimmer" style="height:120px"></div><div class="shimmer" style="width:60%;height:26px"></div><div class="shimmer"></div><div class="shimmer" style="width:80%"></div></div>`;
+  const it=k.item,x=it.per==='piece'?it.qty:it.qty/100,unit=it.per==='piece'?(it.qty===1?' piece':' pieces'):' g';
+  return `<div class="full"><div class="top"><button class="icon" data-act="snackClose" aria-label="Close">${ic('close')}</button><span class="sub">${lbl?'Read from label':'Detected from photo'}</span><span style="width:44px"></span></div>
+   <div class="row" style="gap:12px;margin-bottom:12px"><div class="photo" style="width:72px;aspect-ratio:1;font-size:36px;background:var(--surface2)">${it.e}</div><div class="sp"><h1 style="font-size:20px">${it.name}</h1><div class="sub">${lbl?'Per 100 g: '+it.k+' kcal · '+it.sg+' g sugar — double-check the values':'We think this is the snack — change the type if wrong'}</div></div></div>
+   <div class="seg">${Object.entries(KIND).map(([key,l])=>`<button class="${it.kind===key?'on':''}" data-act="skKind" data-a="${key}">${l}</button>`).join('')}</div>
+   <div class="macro" style="--n:3">${['k','p','c','f','fi','s'].map(key=>mtile(key,(key==='s'?it.sg:it[key])*x,key==='k'?'':' g')).join('')}</div>
+   <div class="card row" style="margin-top:14px"><div class="sp"><h3>Amount</h3><div class="sub">${lbl?'portion you ate':'how many'}</div></div>${stepper(it.qty,unit,'skDec','skInc')}</div>
+   ${it.kind!=='savory'?`<div class="sub row" style="gap:6px;margin-bottom:12px">${ic('gift',16)} Counts as a treat for your streak</div>`:''}
+   <button class="btn" data-act="skLog">Log snack</button></div>`}
+
+/* ---- Sheets ---- */
+function sheetView(){const sh=S.sheet;if(!sh)return '';const [k,a,b]=sh.split(':');let body='';
+  if(k==='settings')body=`<h1>Settings</h1><div class="card"><div class="row"><span class="sp">Profile</span><button class="chip" data-act="who">${WHO[S.user].n} ${ic('swap',14)}</button></div>
+   <div class="row" style="margin-top:12px"><span class="sp">Daily kcal goal</span>${stepper(S.goals.kcal,'','gDec','gInc')}</div>
+   <div class="row" style="margin-top:12px"><span class="sp">Fiber goal</span>${stepper(S.goals.fiber,' g','fDec','fInc')}</div>
+   <div class="row" style="margin-top:12px"><span class="sp">Sugar goal</span>${stepper(S.goals.sugar,' g','sgDec','sgInc')}</div>
+   <div class="row" style="margin-top:12px"><span class="sp">Treat-free days per croissant</span>${stepper(S.reward.per,'','rpDec','rpInc')}</div>
+   <div class="row" style="margin-top:12px"><span class="sp">Max croissants / week</span>${stepper(S.reward.cap,'','rcDec','rcInc')}</div>
+   <div class="row" style="margin-top:12px"><span class="sp">Dark mode</span><button class="chip" data-act="theme">Toggle</button></div></div>
+   <div class="card"><h3>Accent colour</h3><div class="sub" style="margin:2px 0 10px">Tap to preview live</div><div class="chips">${Object.entries(ACCENTS).map(([k,a])=>`<button class="swatch ${S.accent===k?'on':''}" style="background:${a.l}" data-act="accent" data-a="${k}" aria-label="${a.n}"></button>`).join('')}</div><div class="sub" style="margin-top:8px">${ACCENTS[S.accent].n}</div></div>`;
+  if(k==='sweet')body=`<h1>Log a snack</h1><div class="sub" style="margin-bottom:12px">Sweets and sugary drinks count as treats for your streak and croissant rewards. Savory snacks only add to your macros.</div>
+   <div class="row" style="gap:8px"><button class="btn ghost" data-act="snackStart" data-a="photo">${ic('camera',18)} Photo only</button><button class="btn ghost" data-act="snackStart" data-a="label">${ic('plan',18)} Scan label</button></div>
+   <h2>Or pick one</h2><div class="list">${SW.map((x,i)=>`<button style="width:100%;text-align:left" data-act="sweetAdd" data-a="${i}"><span style="font-size:24px">${x.e}</span><span class="sp">${x.n}<div class="sub">${KIND[x.kind]}</div></span><span class="sub">${x.sg} g sugar · ${x.k} kcal</span></button>`).join('')}</div>`;
+  if(k==='addplan'){const m=mealById(a);body=`<h1>Add to plan</h1><div class="sub" style="margin-bottom:10px">Pick the slot for ${m.name}. Greyed slots don't match its meal type (${m.types.map(t=>TL[t]).join(' / ')}).</div>
+   ${S.plan.status==='none'?'<button class="btn" data-act="sheet" data-a="wizard">Plan next week first</button>':`<div class="wgrid"><span></span>${TYPES.map(t=>`<span class="hd">${TS[t]}</span>`).join('')}${S.plan.days.map((d,i)=>`<b class="sub">${DAYS[i]}</b>${TYPES.map(t=>{const sl=d[t],cm=sl.mealId&&mealById(sl.mealId);
+     return `<button class="cell ${m.types.includes(t)?'':'dis'}" style="${sl.mealId==m.id?'outline:2px solid var(--accent)':''}" data-act="putMeal" data-a="${i}:${t}:${m.id}">${sl.mode==='out'?'Out':sl.mode==='skip'?'–':cm?cm.e+' '+cm.name.split(' ')[0]:'+'}</button>`}).join('')}`).join('')}</div>`}`}
+  if(k==='wizard')body=`<h1 style="font-size:20px">Plan next week</h1><p class="sub" style="margin:4px 0 10px;font-size:12px">Tap a cell to cycle: cook time → Prep (batch) → Out → – (skip)</p>
+   <div class="wgrid"><span></span>${TYPES.map(t=>`<span class="hd">${TS[t]}</span>`).join('')}${S.wiz.map((row,i)=>`<b class="sub">${DAYS[i]}</b>${row.map((oi,ti)=>{const o=OPTS[oi];
+     return `<button class="cell ${o.m}" data-act="wz" data-a="${i}:${ti}">${o.m==='cook'?o.min+(o.min===60?'m+':'m'):o.m==='prep'?'Prep':o.m==='out'?'Out':'–'}</button>`}).join('')}`).join('')}</div>
+   <button class="btn" style="margin-top:12px" data-act="gen">Generate menu</button>`;
+  if(k==='swap'){const d=S.plan.days[a][b],list=d.mode==='prep'?prepOptions(b):d.mode==='cook'?eligible(b,d.min):[];
+    body=`<h1>${DAYS[a]} · ${TL[b]}</h1><div class="seg">${[['cook','Cook'],['prep','Meal prep'],['out','Out'],['skip','Skip']].map(([m,l])=>`<button class="${d.mode===m?'on':''}" data-act="setMode" data-a="${a}:${b}:${m}">${l}</button>`).join('')}</div>
+    ${list.length?`<div class="list">${list.map(m=>`<button style="width:100%;text-align:left" data-act="setMeal" data-a="${a}:${b}:${m.id}">${mealRow(m,m.time+' min'+(score(m)?' · rated '+r1(score(m)):' · new'),true)}</button>`).join('')}</div>`:
+     (d.mode==='cook'||d.mode==='prep')?'<p class="sub">Nothing fits this slot.</p>':`<p class="sub">${d.mode==='out'?'Eating out — no groceries needed.':'Nothing planned.'}</p>`}`}
+  if(k==='rate'){const r=S.draftRate;body=`<h1>Rate ${mealById(a).name}</h1><div class="sub">Rating as ${WHO[S.user].n}</div>
+   <h2>Taste</h2><div class="row">${starRow(r.taste,'rt',40)}<b>${r.taste}</b></div><div class="sub" style="margin-top:4px">Tap the left half of a star for a half point</div>
+   <h2>Make it again?</h2><div class="chips">${[[5,'Yes'],[3,'Maybe'],[1,'No']].map(([v,l])=>`<button class="chip ${r.again===v?'on':''}" data-act="ra" data-a="${v}">${l}</button>`).join('')}</div>
+   <h2>Worth the effort?</h2><div class="chips">${[[5,'Totally'],[3,'Meh'],[1,'Not really']].map(([v,l])=>`<button class="chip ${r.effort===v?'on':''}" data-act="re" data-a="${v}">${l}</button>`).join('')}</div>
+   <h2>How filling was it?</h2><div class="chips">${[['hungry','Left us hungry'],['right','Just right'],['heavy','Too heavy']].map(([v,l])=>`<button class="chip ${r.fill===v?'on':''}" data-act="rf" data-a="${v}">${l}</button>`).join('')}</div>
+   <div class="sub" style="margin-top:6px">Helps us tune carbs and fiber in the recipe.</div>
+   <button class="btn" style="margin-top:20px" data-act="saveRate" data-a="${a}">Save rating</button>`}
+  if(k==='edit'){const g=S.snap.ings[a];body=`<h1>${ING[a].e} ${ING[a].n}</h1><div class="card row"><span class="sp">Amount</span>${stepper(g,'g','gmDec:'+a,'gmInc:'+a)}</div><button class="btn" data-act="rmIng" data-a="${a}" style="background:var(--bad)">Remove ingredient</button><button class="btn ghost" style="margin-top:8px" data-act="closeSheet">Done</button>`}
+  if(k==='addIng')body=`<h1>Add ingredient</h1><div class="list">${Object.keys(ING).filter(i=>!S.snap.ings[i]).map(i=>`<button style="width:100%;text-align:left" data-act="addIng" data-a="${i}"><span style="font-size:22px">${ING[i].e}</span><span class="sp">${ING[i].n}</span><span class="sub">${ING[i].k} kcal/100g</span></button>`).join('')}</div>`;
+  if(k==='zero')body=`<h1>${ING[a].e} Remove ${ING[a].n}?</h1><p class="sub">Have you used it up? It will be removed from your ingredients.</p>
+   <button class="btn" data-act="zeroUsed" data-a="${a}">Yes, used it up — add to shopping list</button>
+   <button class="btn ghost" style="margin-top:8px" data-act="zeroRemove" data-a="${a}">Just remove (e.g. thrown away)</button>
+   <button class="btn ghost" style="margin-top:8px" data-act="closeSheet">Keep it</button>`;
+  if(k==='addFridge')body=`<h1>Add ingredient</h1><div class="list">${Object.keys(ING).map(i=>`<button style="width:100%;text-align:left" data-act="addF" data-a="${i}"><span style="font-size:22px">${ING[i].e}</span><span class="sp">${ING[i].n}</span><span class="sub">${locOf(i)} · +250 g</span></button>`).join('')}</div>`;
+  if(k==='cooked'){const m=mealById(a);body=`<h1>Log this cook</h1><p class="sub">Logs one portion as eaten today and deducts ingredients from your stock.</p>${typeSeg(S.cookType,'ctype')}${runOutBlock(m.ings)}<button class="btn" data-act="cookedDo" data-a="${a}">Confirm</button>`}
+  return `<div class="sheetbg" data-act="closeSheet" data-bg="1"><div class="sheet"><div class="grab"></div>${body}</div></div>`}
+
+/* ============ RENDER ============ */
+try{const a=localStorage.getItem('fb-accent');if(a&&ACCENTS[a])S.accent=a}catch(e){}
+function applyAccent(){const d=document.documentElement,a=ACCENTS[S.accent],dark=(d.dataset.theme||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'))==='dark';
+  d.style.setProperty('--accent',dark?a.d:a.l);d.style.setProperty('--accent-ink',dark?(a.di||'#fff'):'#fff')}
+function render(){applyAccent();const [r,a]=route();const tab=['home','meals','plan','ingredients'].includes(r)?r:(r==='meal'?'meals':r==='insights'?'':'home');
+  let v;switch(r){case'meals':v=mealsView();break;case'meal':v=mealDetail(a);break;case'plan':v=planView();break;case'ingredients':v=fridgeView();break;case'insights':v=insights();break;default:v=home()}
+  const sc=document.querySelector('.screen'),top=sc?sc.scrollTop:0,ss=document.querySelector('.sheet'),st=ss?ss.scrollTop:0;
+  const T=(k,l,i=k)=>`<button class="tab ${tab===k?'on':''}" data-act="nav" data-a="${k}">${ic(i,22)}${l}</button>`;
+  $('phone').innerHTML=`<div class="screen">${v}</div>
+   <nav class="tabbar">${T('home','Home')}${T('meals','Meals')}<button class="fab" data-act="snapStart" aria-label="Snap meal">${ic('camera',26)}</button>${T('plan','Plan')}${T('ingredients','Ingredients','basket')}</nav>
+   ${snapView()}${snackView()}${sheetView()}${S.toast?`<div class="toast"><span class="sp">${S.toast.msg}</span>${S.toast.undo?'<button data-act="undo"><b>Undo</b></button>':''}</div>`:''}`;
+  const n=document.querySelector('.screen');if(n)n.scrollTop=top;const n2=document.querySelector('.sheet');if(n2)n2.scrollTop=st;
+  if(S.anim){S.anim=false;animateIn()}}
+
+function animateIn(){ // fill progress rings/bars from empty when entering Home
+  if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+  const bars=[...document.querySelectorAll('[data-w]')],rings=[...document.querySelectorAll('[data-da]')],cnt=[...document.querySelectorAll('[data-cnt]')];
+  bars.forEach(b=>{b.style.transition='none';b.style.width='0%'});rings.forEach(r=>{r.style.transition='none';r.style.strokeDasharray='0 1000'});cnt.forEach(c=>c.textContent='0');
+  void document.body.offsetWidth;
+  setTimeout(()=>{
+    bars.forEach((b,i)=>{b.style.transition=`width .9s cubic-bezier(.2,.8,.2,1) ${i*70}ms`;b.style.width=b.dataset.w+'%'});
+    rings.forEach(r=>{r.style.transition='stroke-dasharray 1s cubic-bezier(.2,.8,.2,1)';r.style.strokeDasharray=r.dataset.da});
+    cnt.forEach(c=>{const to=+c.dataset.cnt,t0=performance.now(),step=t=>{const p=Math.min((t-t0)/1000,1);c.textContent=r0(to*(1-Math.pow(1-p,3)));if(p<1)setTimeout(()=>step(performance.now()),16)};step(performance.now())})},30)}
+
+/* ============ ACTIONS ============ */
+const clearPlanApproval=()=>{S.plan.approved={you:false,her:false};S.plan.status='draft'};
+function consume(ings,sv,{u,type,name,e}){ // log eaten + deduct fridge + handle used-up ingredients
+  const t=macros(ings);S.eaten.push({u,type,name,e,k:t.k*sv,p:t.p*sv,c:t.c*sv,f:t.f*sv,fi:t.fi*sv,s:t.s*sv});
+  for(const i in ings){if(S.fridge[i]){S.fridge[i].g=Math.max(0,S.fridge[i].g-ings[i]);if(!S.fridge[i].g)delete S.fridge[i]}}
+  for(const i in S.ro){delete S.fridge[i];S.shop.runOut[i]=true} S.ro={}}
+const A={
+  nav:a=>{S.snap=null;S.sheet=null;go(a);document.querySelector('.screen').scrollTop=0},
+  back:()=>history.length>1?history.back():go('home'),
+  seg:a=>S.mealsSeg=a, mtype:a=>S.mealType=a, sort:()=>S.mealSort={rating:'recent',recent:'cooked',cooked:'rating'}[S.mealSort],
+  rf:a=>S.draftRate.fill=a, accent:a=>{S.accent=a;try{localStorage.setItem('fb-accent',a)}catch(e){}},
+  sgDec:()=>S.goals.sugar=Math.max(10,S.goals.sugar-5), sgInc:()=>S.goals.sugar+=5,
+  sweetAdd:a=>{const x=SW[a];S.sweets.push({u:S.user,name:x.n,e:x.e,kind:x.kind,sg:x.sg,k:x.k,p:x.p,c:x.c,f:x.f,fi:x.fi});S.sheet=null;toast(x.n+' logged'+(isTreat(x)?' · '+sweetsToday(S.user).sg+' g treat sugar today':''))},
+  snackStart:a=>{S.sheet=null;S.snack={mode:a,step:'camera'}},
+  snackClose:()=>S.snack=null,
+  snackShot:()=>{const m=S.snack.mode;S.snack={mode:m,step:'analyzing'};setTimeout(()=>{if(S.snack&&S.snack.step==='analyzing'){S.snack={mode:m,step:'result',item:{...DETECT[m]}};render()}},1500)},
+  skInc:()=>{const it=S.snack.item;it.qty+=it.per==='piece'?.5:5}, skDec:()=>{const it=S.snack.item,st=it.per==='piece'?.5:5;it.qty=Math.max(st,it.qty-st)},
+  skKind:a=>S.snack.item.kind=a,
+  skLog:()=>{const it=S.snack.item,x=it.per==='piece'?it.qty:it.qty/100;
+    S.sweets.push({u:S.user,name:it.name,e:it.e,kind:it.kind,src:S.snack.mode,sg:it.sg*x,k:it.k*x,p:it.p*x,c:it.c*x,f:it.f*x,fi:it.fi*x});S.snack=null;toast('Snack logged')},
+  putMeal:a=>{const[i,t,id]=a.split(':'),m=mealById(id),sl=S.plan.days[i][t];if(!m.types.includes(t))return;if(sl.mode!=='cook'){sl.mode='cook';sl.min=90}sl.mealId=m.id;clearPlanApproval();S.sheet=null;toast(`Added to ${DAYS[i]} ${TL[t].toLowerCase()}`)},
+  mtab:a=>S.mealTab=a, pseg:a=>S.planSeg=a, irange:a=>S.insRange=a, iwho:a=>S.insWho=a, itab:a=>S.insTab=a, chall:a=>S.challenge=a,
+  who:()=>S.user=S.user==='you'?'her':'you',
+  theme:()=>{const d=document.documentElement;const dark=(d.dataset.theme||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'))==='dark';d.dataset.theme=dark?'light':'dark'},
+  gDec:()=>S.goals.kcal-=50,gInc:()=>S.goals.kcal+=50,fDec:()=>S.goals.fiber-=2,fInc:()=>S.goals.fiber+=2,
+  sheet:a=>{if(a&&a.startsWith('cooked')){S.ro={};S.cookType=mealById(a.split(':')[1]).types[0]}S.sheet=a}, closeSheet:()=>S.sheet=null,
+  ro:a=>{S.ro[a]?delete S.ro[a]:S.ro[a]=true},
+  /* snap */
+  snapStart:a=>{S.ro={};S.snap={step:'camera',type:TYPES.includes(a)?a:guessType()}},
+  snapClose:()=>S.snap=null,
+  shutter:()=>{const ty=S.snap.type;S.snap={step:'analyzing',type:ty};setTimeout(()=>{if(S.snap&&S.snap.step==='analyzing'){S.snap={step:'verdict',type:ty,name:'Chickpea spinach curry',ings:{chickpeas:350,spinach:150,tomato:250,onion:80,rice:300,cream:50},servings:1,portions:2,time:30,cost:0};S.snap.cost=Math.round(macros(S.snap.ings).$);render()}},1600)},
+  snapNext:()=>S.snap.step='post', snapBack:()=>S.snap.step='verdict', stype:a=>S.snap.type=a, ctype:a=>S.cookType=a,
+  svDec:()=>S.snap.servings=Math.max(.5,S.snap.servings-.5), svInc:()=>S.snap.servings+=.5,
+  tDec:()=>S.snap.time=Math.max(5,S.snap.time-5), tInc:()=>S.snap.time+=5,
+  cDec:()=>S.snap.cost=Math.max(1,S.snap.cost-1), cInc:()=>S.snap.cost+=1,
+  pDec:()=>S.snap.portions=Math.max(1,S.snap.portions-1), pInc:()=>S.snap.portions+=1,
+  rmIng:a=>{delete S.snap.ings[a];S.sheet=null}, addIng:a=>{S.snap.ings[a]=100;S.sheet='edit:'+a},
+  post:()=>{const s=S.snap,id=S.nextId++;
+    S.undoData=JSON.stringify({fridge:S.fridge,runOut:S.shop.runOut});
+    S.meals.unshift({id,name:s.name,e:'🍛',g:['#e0d0a8','#b79c55'],ago:0,time:s.time,portions:s.portions,types:[s.type],tags:['new'],ings:{...s.ings},cost:s.cost,cooked:1,rt:{you:null,her:null}});
+    consume(s.ings,s.servings/s.portions,{u:S.user,type:s.type,name:s.name,e:'🍛'});
+    S.snap=null;go('meal/'+id);toast('Posted. Ingredients and shopping list updated.',true);setTimeout(()=>{A.rate(id);render()},700)},
+  undo:()=>{const d=JSON.parse(S.undoData);S.fridge=d.fridge;S.shop.runOut=d.runOut;S.toast=null},
+  rate:a=>{S.draftRate={taste:4,again:3,effort:3,fill:'right',...(mealById(a).rt[S.user]||{})};S.sheet='rate:'+a},
+  rt:a=>S.draftRate.taste=+a, ra:a=>S.draftRate.again=+a, re:a=>S.draftRate.effort=+a,
+  saveRate:a=>{mealById(a).rt[S.user]={...S.draftRate};S.sheet=null;S.mealTab='ratings';toast('Rating saved'+(mealById(a).rt[S.user==='you'?'her':'you']?'':' — waiting for partner'))},
+  cookedDo:a=>{const m=mealById(a);m.cooked++;m.ago=0;consume(m.ings,1/m.portions,{u:S.user,type:S.cookType,name:m.name,e:m.e});S.sheet=null;toast('Logged · ingredients updated')},
+  /* plan */
+  wz:a=>{const[i,t]=a.split(':');S.wiz[i][t]=(S.wiz[i][t]+1)%OPTS.length}, gen:()=>{generate();S.sheet=null;S.planSeg='menu';go('plan')},
+  setMode:a=>{const[i,t,m]=a.split(':'),s=S.plan.days[i][t];s.mode=m;if(m==='cook'){s.min=s.min||90;s.mealId=(eligible(t,s.min)[0]||{}).id||null}
+    else if(m==='prep')s.mealId=(prepOptions(t)[0]||{}).id||null;else s.mealId=null;clearPlanApproval()},
+  setMeal:a=>{const[i,t,m]=a.split(':');S.plan.days[i][t].mealId=+m;clearPlanApproval();S.sheet=null},
+  approve:()=>{S.plan.approved[S.user]=true;
+    if(S.plan.approved.you&&S.plan.approved.her){S.plan.status='approved';S.planSeg='shop';toast('Menu approved — shopping list ready')}
+    else toast('Approved. Switch profile (avatar on Home) to approve as partner.')},
+  chk:a=>S.shop.checked[a]=!S.shop.checked[a],
+  finishShop:()=>{const items=shopItems().filter(x=>S.shop.checked[x.id]);if(!items.length)return;
+    items.forEach(x=>{const f=S.fridge[x.id]||(S.fridge[x.id]={g:0,d:ING[x.id].exp});f.g+=x.buy;f.d=Math.max(f.d,ING[x.id].exp);delete S.shop.runOut[x.id]});
+    S.shop.checked={};S.planSeg='menu';go('ingredients');toast(items.length+' items added to ingredients')},
+  /* fridge */
+  fq:a=>{const[i,d]=a.split(':'),ng=S.fridge[i].g+ +d;if(ng<=0){S.sheet='zero:'+i;return}S.fridge[i].g=ng},
+  zeroUsed:a=>{delete S.fridge[a];S.shop.runOut[a]=true;S.sheet=null;toast(ING[a].n+' removed · added to shopping list')},
+  zeroRemove:a=>{delete S.fridge[a];S.sheet=null;toast(ING[a].n+' removed')},
+  sloc:a=>S.stockLoc=a,
+  useReward:()=>{const u=S.user;if(!reward(u).avail)return;S.rewards[u].used++;S.sweets.push({u,name:'Croissant (reward)',e:'🥐',sg:6,k:230,reward:true});toast('Enjoy your croissant!')},
+  rpDec:()=>S.reward.per=Math.max(2,S.reward.per-1), rpInc:()=>S.reward.per=Math.min(3,S.reward.per+1),
+  rcDec:()=>S.reward.cap=Math.max(1,S.reward.cap-1), rcInc:()=>S.reward.cap=Math.min(5,S.reward.cap+1),
+  addF:a=>{const f=S.fridge[a]||(S.fridge[a]={g:0,d:ING[a].exp});f.g+=250;S.stockLoc=locOf(a);S.sheet=null},
+};
+A.gmDec=a=>{S.snap.ings[a]=Math.max(25,S.snap.ings[a]-25)}; A.gmInc=a=>{S.snap.ings[a]+=25};
+
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-act]');if(!el)return;
+  if(el.dataset.bg&&e.target!==el)return; // clicking inside sheet
+  let act=el.dataset.act,arg=el.dataset.a;
+  if(act.includes(':')){[act,arg]=act.split(':')}
+  if(A[act]){A[act](arg);render()}
+});
+window.addEventListener('hashchange',()=>{const r=route()[0];if(r===''||r==='home')S.anim=true;render()});
+S.anim=true;render();
+</script>
+</body>
+</html>
