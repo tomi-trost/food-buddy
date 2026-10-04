@@ -30,3 +30,9 @@ Status: idea · planned · done · dropped
 | 2026-10-04 | Open-source license: AGPL-3.0 vs MIT; when to make the repo public | open (parked) |
 | 2026-10-04 | Move Jetson backups onto a USB disk instead of the SD card | idea |
 | 2026-10-04 | A GPU machine later = just another URL in VISION_PROVIDERS | idea |
+| 2026-10-05 | Edit the snack name and per-100 g values after a label scan (model names are sometimes vague, e.g. "non-detectable") | idea |
+| 2026-10-05 | Undo after posting a meal (the mock's toast had Undo; the real app doesn't yet) | idea |
+| 2026-10-05 | Delete/edit food log entries (wrong portion, logged twice) | idea |
+| 2026-10-05 | Service worker serves the previous app version until reload; show an "update available" prompt | idea |
+| 2026-10-05 | Edit a meal's ingredients and steps after posting | idea |
+

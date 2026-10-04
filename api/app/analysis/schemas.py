@@ -4,6 +4,7 @@ from typing import Literal
 from pydantic import BaseModel
 
 from app.nutrition.schemas import IngredientOut, NutrientsOut
+from app.snacks.schemas import SnackResult
 
 
 class MatchedIngredient(IngredientOut):
@@ -29,10 +30,12 @@ class AnalysisResult(BaseModel):
 
 class AnalysisJobOut(BaseModel):
     id: int
+    kind: Literal["meal", "snack", "label"]
     status: Literal["queued", "running", "done", "failed"]
     photo_url: str
     provider: str | None
-    result: AnalysisResult | None
+    result: AnalysisResult | None  # meals
+    snack: SnackResult | None  # snack photos and labels
     error: str | None
     created_at: datetime
     finished_at: datetime | None

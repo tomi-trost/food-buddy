@@ -23,9 +23,11 @@ Photo in the PWA → FastAPI saves it → job queued in Postgres → worker asks
 
 Learned in M0 (feeds M2/M3): plain `qwen3-vl` tags are thinking models → use `-instruct`; the 2B model badly underestimates portions (50 g of spaghetti on a full plate); the 23-item seed list misses common items (peas, ground meat).
 
-## M1 — Mock parity (in progress, branch `feat/mock-parity`)
+## M1 — Mock parity (done 2026-10-05, branch `feat/mock-parity`)
 
 Decided 2026-10-04: build the whole app up to the mock first, deploy afterwards. Work goes in **sections**. Each section is a vertical slice (API + screens + tests), ends green, and gets one local commit. Nothing is pushed or merged without asking.
+
+Result: every screen of the mock works against the real API (S1–S7, one commit each). Verified in the Docker stack with Qwen3-VL 2B on the Mac (meal photo → verdict → post → model recipe; nutrition label → per-100 g values).
 
 Shared conventions for all sections:
 - "Today" is the phone's local date. The client sends `YYYY-MM-DD` and the server never guesses time zones.
@@ -71,9 +73,9 @@ Shared conventions for all sections:
 - [x] Versus: per-category winners, score, weekly challenge (fiber / protein / on target)
 
 ### S7 — Snacks & croissant rewards
-- [ ] Log a snack: pick from list, photo (vision model, snack schema), nutrition-label scan (vision model → per-100 g values, editable); kind sweet/savory/drink
-- [ ] Treat sugar vs goal, treat-free days, croissant passes (earn, cap, use)
-- [ ] Insights → Snacks tab: sugar chart, rewards, today, "who resists better"
+- [x] Log a snack: pick from list, photo (vision model, snack schema), nutrition-label scan (vision model reads values + the amount they refer to → normalised per 100 g); kind sweet/savory/drink; editable amount
+- [x] Treat sugar vs goal, treat-free days, croissant passes (earn, cap, use)
+- [x] Insights → Snacks tab: sugar chart, rewards, today, "who resists better"
 
 ## M2 — Running on Oracle (after M1; needs you for accounts)
 

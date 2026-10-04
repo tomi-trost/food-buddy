@@ -1,5 +1,5 @@
 import type {
-  AnalysisJob, CookIn, Day, Insights, HouseholdPatch, Ingredient, Me, Meal, MealCard, MealCreate, MealPatch, MealType, MePatch, Plan, PlanMode, Rating, RegisterBody, Shopping, StockItem, WizardCell,
+  AnalysisJob, CatalogItem, CookIn, Day, Insights, Reward, SnackIn, HouseholdPatch, Ingredient, Me, Meal, MealCard, MealCreate, MealPatch, MealType, MePatch, Plan, PlanMode, Rating, RegisterBody, Shopping, StockItem, WizardCell,
 } from './types'
 
 const TOKEN_KEY = 'fb.token'
@@ -76,9 +76,10 @@ export const api = {
   updateMe: (patch: MePatch) => json<Me>('/auth/me', { method: 'PATCH', body: JSON.stringify(patch) }),
   updateHousehold: (patch: HouseholdPatch) =>
     json<Me>('/household', { method: 'PATCH', body: JSON.stringify(patch) }),
-  uploadPhoto(file: File) {
+  uploadPhoto(file: File, kind: 'meal' | 'snack' | 'label' = 'meal') {
     const form = new FormData()
     form.append('photo', file)
+    form.append('kind', kind)
     return json<AnalysisJob>('/analyses', { method: 'POST', body: form })
   },
   analysis: (id: number | string) => json<AnalysisJob>(`/analyses/${id}`),
@@ -102,6 +103,11 @@ export const api = {
     json<Meal>(`/meals/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),
   day: (date: string) => json<Day>(`/day?date=${date}`),
   insights: (end: string, days = 7) => json<Insights>(`/insights?end=${end}&days=${days}`),
+  snackCatalog: () => json<CatalogItem[]>('/snacks/catalog'),
+  logSnack: (body: SnackIn) =>
+    json<{ id: number; name: string; kcal: number; sugar: number; treat: boolean }>('/snacks', { method: 'POST', body: JSON.stringify(body) }),
+  rewards: (today: string) => json<Reward[]>(`/rewards?today=${today}`),
+  useReward: (today: string) => json<Reward[]>('/rewards/use', { method: 'POST', body: JSON.stringify({ today }) }),
   plan: () => json<Plan | null>('/plan'),
   makePlan: (weekStart: string, wizard: WizardCell[][]) =>
     json<Plan>('/plan', { method: 'POST', body: JSON.stringify({ week_start: weekStart, wizard }) }),

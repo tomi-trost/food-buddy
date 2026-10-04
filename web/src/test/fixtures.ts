@@ -1,4 +1,4 @@
-import type { AnalysisJob, Ingredient, Me, Meal, MealCard, MemberInsights, Nutrients, Plan, Shopping } from '../api/types'
+import type { AnalysisJob, Ingredient, Me, Meal, MealCard, MemberInsights, Nutrients, Plan, Reward, Shopping } from '../api/types'
 
 export const me = (over: Partial<Me> = {}): Me => ({
   id: 1,
@@ -32,7 +32,7 @@ export const ING: Record<string, Ingredient> = {
 }
 
 export const analysisJob = (over: Partial<AnalysisJob> = {}): AnalysisJob => ({
-  id: 5, status: 'queued', photo_url: '/api/analyses/5/photo', provider: null, result: null,
+  id: 5, kind: 'meal', status: 'queued', photo_url: '/api/analyses/5/photo', provider: null, result: null, snack: null,
   error: null, created_at: '2026-10-04T12:00:00Z', finished_at: null, ...over,
 })
 
@@ -124,4 +124,8 @@ export const memberInsights = (over: Partial<MemberInsights> = {}): MemberInsigh
     kcal: 2000 + i * 50, protein: 120, carbs: 230, fat: 70, fiber: i % 2 ? 32 : 24, sugar: 30, treats: 0, treat_sugar: 0,
   })),
   ...over,
+})
+
+export const reward = (over: Partial<Reward> = {}): Reward => ({
+  user_id: 1, name: 'Tomi', color: '#b9532f', treat_free_days: 3, earned: 1, used: 0, available: 1, progress: 1, per: 2, ...over,
 })

@@ -3,7 +3,7 @@ import { Route } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { tokenStore } from '../api/client'
 import type { Day } from '../api/types'
-import { card, ING, me, memberInsights, plan } from '../test/fixtures'
+import { card, ING, me, memberInsights, plan, reward } from '../test/fixtures'
 import { jsonResponse, mockFetch, renderAt } from '../test/utils'
 import { HomePage } from './HomePage'
 import { InsightsPage } from './InsightsPage'
@@ -26,6 +26,7 @@ function api(over: Record<string, unknown> = {}) {
     if (path === '/api/auth/me') return jsonResponse(me())
     if (path === '/api/day') return jsonResponse(day)
     if (path === '/api/plan') return jsonResponse(null)
+    if (path === '/api/rewards') return jsonResponse([reward({ available: 0 }), reward({ user_id: 2, name: 'Partner', available: 0, used: 1 })])
     if (path === '/api/meals') return jsonResponse([card({ id: 7, name: 'Lentil soup', rated_by_me: false, last_cooked: '2026-10-03' }), card({ id: 8, name: 'Bowl', rated_by_me: true, score: 4.4 })])
     if (path === '/api/inventory') return jsonResponse([
       { ingredient: ING.chicken, grams: 300, expires_on: '2026-10-05', days_left: 1 },

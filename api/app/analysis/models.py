@@ -19,6 +19,7 @@ class AnalysisJob(TimestampMixin, Base):
     household_id: Mapped[int] = mapped_column(ForeignKey("household.id", ondelete="CASCADE"))
     user_id: Mapped[int] = mapped_column(ForeignKey("app_user.id", ondelete="CASCADE"))
     photo_path: Mapped[str] = mapped_column(String(255))
+    kind: Mapped[str] = mapped_column(String(5), default="meal")  # meal|snack|label
     status: Mapped[str] = mapped_column(String(10), default="queued")  # queued|running|done|failed
     provider: Mapped[str | None] = mapped_column(String(40))
     raw: Mapped[dict | None] = mapped_column(JSONB)

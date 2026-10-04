@@ -11,6 +11,7 @@ import { Avatar } from '../ui/Avatar'
 import { Icon } from '../ui/Icon'
 import { MAC } from '../ui/Macro'
 import { Photo } from '../ui/Photo'
+import { SnacksCard } from '../snacks/SnacksCard'
 import { SettingsSheet } from './SettingsSheet'
 
 const TYPES: MealType[] = ['breakfast', 'lunch', 'dinner']
@@ -85,6 +86,8 @@ export function HomePage() {
           })}
         </div>
       </div>
+
+      {me && <SnacksCard me={me} entries={day.data?.entries ?? []} />}
 
       {planned ? (
         <>

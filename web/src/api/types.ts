@@ -99,12 +99,24 @@ export type AnalysisResult = {
   unmatched: number
 }
 
+export type SnackKind = 'sweet' | 'savory' | 'drink'
+
+export type SnackResult = {
+  name: string
+  kind: SnackKind
+  per: 'piece' | '100g'
+  amount: number
+  per_unit: Nutrients
+}
+
 export type AnalysisJob = {
   id: number
+  kind: 'meal' | 'snack' | 'label'
   status: 'queued' | 'running' | 'done' | 'failed'
   photo_url: string
   provider: string | null
   result: AnalysisResult | null
+  snack: SnackResult | null
   error: string | null
   created_at: string
   finished_at: string | null
@@ -211,3 +223,28 @@ export type MemberInsights = {
 }
 
 export type Insights = { members: MemberInsights[] }
+
+export type CatalogItem = { key: string; name: string; emoji: string; kind: SnackKind; per_unit: Nutrients }
+
+export type SnackIn = {
+  eaten_on: string
+  name: string
+  emoji: string
+  kind: SnackKind
+  source: 'list' | 'photo' | 'label'
+  per: 'piece' | '100g'
+  amount: number
+  per_unit: Nutrients
+}
+
+export type Reward = {
+  user_id: number
+  name: string
+  color: string
+  treat_free_days: number
+  earned: number
+  used: number
+  available: number
+  progress: number
+  per: number
+}

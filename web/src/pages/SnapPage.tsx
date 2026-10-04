@@ -10,10 +10,13 @@ export function SnapPage() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const type = TYPES.includes(params.get('type') ?? '') ? params.get('type')! : guessMealType()
+  const kind = (['snack', 'label'] as const).find((k) => k === params.get('kind')) ?? 'meal'
   const upload = useMutation({
-    mutationFn: api.uploadPhoto,
-    onSuccess: (job) => navigate(`/analysis/${job.id}?type=${type}`, { replace: true }),
+    mutationFn: (file: File) => api.uploadPhoto(file, kind),
+    onSuccess: (job) =>
+      navigate(kind === 'meal' ? `/analysis/${job.id}?type=${type}` : `/snack/${job.id}`, { replace: true }),
   })
+  const hint = { meal: 'Photo from above, whole plate in view', snack: 'Frame the snack', label: 'Frame the nutrition table on the back of the pack' }[kind]
 
   return (
     <div className="camera">
@@ -22,7 +25,7 @@ export function SnapPage() {
       </button>
       <div style={{ textAlign: 'center' }}>
         <div className="plate"><Icon name="camera" size={64} /></div>
-        <p style={{ opacity: 0.75 }}>Photo from above, whole plate in view</p>
+        <p style={{ opacity: 0.75 }}>{hint}</p>
         {upload.isError && <p role="alert" style={{ color: '#ffb4a8' }}>{upload.error.message}</p>}
       </div>
       <label className="shutter" aria-label={upload.isPending ? 'Uploading' : 'Take photo'}>

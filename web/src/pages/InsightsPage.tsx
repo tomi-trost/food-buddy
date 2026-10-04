@@ -6,6 +6,7 @@ import { useMe } from '../api/hooks'
 import type { MealCard, MemberInsights } from '../api/types'
 import { todayISO } from '../lib/dates'
 import { avg, CHALLENGE_TARGET, CHALLENGES, type Challenge, challengeProgress, fiberHit, macroSplit, versus } from '../lib/insights'
+import { SnacksInsights } from '../snacks/SnacksInsights'
 import { Avatar } from '../ui/Avatar'
 import { BarChart, Donut } from '../ui/charts'
 import { Icon } from '../ui/Icon'
@@ -45,7 +46,7 @@ export function InsightsPage() {
         <Overview members={members} selected={selected} meId={me?.id} onWho={setWho} meals={meals.data ?? []} />
       )}
       {tab === 'versus' && members.length > 0 && <Versus members={members} meId={me?.id} />}
-      {tab === 'snacks' && <div className="card sub">Coming in S7.</div>}
+      {tab === 'snacks' && members.length > 0 && <SnacksInsights members={members} meId={me?.id} />}
     </>
   )
 }

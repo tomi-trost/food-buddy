@@ -12,6 +12,7 @@ import { LoginPage } from './pages/LoginPage'
 import { MealPage } from './pages/MealPage'
 import { MealsPage } from './pages/MealsPage'
 import { PlanPage } from './pages/PlanPage'
+import { SnackPage } from './pages/SnackPage'
 import { SnapPage } from './pages/SnapPage'
 
 function RequireAuth({ children }: { children: ReactNode }) {
@@ -50,6 +51,7 @@ export function App() {
       <Route element={<RequireAuth><BareLayout /></RequireAuth>}>
         <Route path="snap" element={<SnapPage />} />
         <Route path="analysis/:id" element={<AnalysisPage />} />
+        <Route path="snack/:id" element={<SnackPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

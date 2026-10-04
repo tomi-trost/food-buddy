@@ -3,11 +3,11 @@
 Phone-first app for two people (Tomi + partner): snap a plate photo → AI identifies the meal and macros (correctable) → auto recipe, prep time, price → both rate it → best-rated meals feed an auto-generated weekly menu (given available cooking time) → approved menu produces a shopping list → fridge inventory tracked from meals cooked and groceries bought → analytics (calories, fiber goal, macro split).
 
 ## Current phase
-**Implementation, M0 walking skeleton done** (see `docs/execution-plan.md`). The mock `index.html` stays as the UX reference (single file, vanilla JS + CSS; do not add build tooling to it). Real app: `web/` (React + Vite PWA) → `api/` (FastAPI) → Postgres + Procrastinate worker → vision model (Ollama, OpenAI-compatible) → nutrition grounding. Plan and rationale: `docs/design-plan.md`.
+**Implementation: M1 mock parity done** (see `docs/execution-plan.md`). The mock `index.html` stays as the UX reference (single file, vanilla JS + CSS; do not add build tooling to it). Real app: `web/` (React + Vite PWA) → `api/` (FastAPI) → Postgres + Procrastinate worker → vision model (Ollama, OpenAI-compatible) → nutrition grounding. Plan and rationale: `docs/design-plan.md`.
 
 ## Structure
-- `api/` — FastAPI app (`app/<feature>/` packages: auth, nutrition, vision, analysis), Alembic migrations, pytest suite in `api/tests/` (needs Postgres on :5433 → `make db`)
-- `web/` — React + Vite + TS PWA (`src/pages`, `src/api` client + types, `src/lib`), Vitest tests next to the code
+- `api/` — FastAPI app (`app/<feature>/` packages: auth, nutrition, vision, analysis, meals, ratings, inventory, plan, shopping, logs, snacks), Alembic migrations, pytest suite in `api/tests/` (needs Postgres on :5433 → `make db`)
+- `web/` — React + Vite + TS PWA (`src/pages` screens, `src/{snap,meals,plan,snacks}` feature parts, `src/ui` design system, `src/lib` pure logic, `src/api` client + types), Vitest tests next to the code
 - `deploy/` — `compose.yaml` (db, api, worker, caddy, ollama `ai`, cloudflared `tunnel`), `compose.dev.yaml`, `.env.example`
 - `Makefile` — `make db | api | worker | web | test | lint | stack`
 - `index.html` — the mock (state `S`, data `ING`/`meals`, screen functions, `A` action map, click delegation via `data-act`/`data-a`)
@@ -17,7 +17,7 @@ Phone-first app for two people (Tomi + partner): snap a plate photo → AI ident
 - `docs/design-plan.md` (stack, hosting, model research) · `docs/execution-plan.md` (milestones, checkboxes) · original mock plan: `docs/plan.md`
 
 ## Next session
-M0 is done. Next: M1, running on Oracle. It needs the user for the Oracle VM and the Cloudflare tunnel token. Then M2 (model benchmark) and M3 (USDA/Ciqual import). Parked questions: license, subdomain, confirming 0017. Vision models must be **instruct** tags (e.g. `qwen3-vl:4b-instruct`); the default `qwen3-vl:2b` thinks and returns empty content.
+M1 (mock parity) is done on `feat/mock-parity`. Next is M2, deployment to Oracle: needs the user for the Oracle VM and the Cloudflare tunnel token. Then M3 (model benchmark) and M4 (USDA/Ciqual import). Parked questions: license, subdomain, confirming 0017. Vision models must be **instruct** tags (e.g. `qwen3-vl:4b-instruct`); the plain `qwen3-vl:2b` thinks and returns empty content. After rebuilding the web image locally, clear the PWA service worker in the browser (it serves the old bundle until reload).
 
 ## Testing (required)
 - Every feature or bug fix ships with tests in the same change: backend in `api/tests/` (pytest), web in `web/src/**/*.test.ts(x)` (Vitest + Testing Library).

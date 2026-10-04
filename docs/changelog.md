@@ -51,3 +51,9 @@
 - `deploy/`: Docker images (api; web built into Caddy), compose stack with `ai` (Ollama) and `tunnel` (cloudflared) profiles; CI workflows (tests, arm64 images to GHCR).
 - Verified end to end in Docker with a real photo and Qwen3-VL 2B (Ollama on the Mac). Findings: the plain `qwen3-vl:2b` tag is a thinking model that returns empty JSON, so instruct tags are now the default; the worker didn't register all ORM tables (fixed, regression test); matching no longer accepts single shared words ("mystery sauce" ≠ "soy sauce"); portion estimates from the 2B model are far too low (→ M2 benchmark).
 
+## 2026-10-05 (M1 mock parity)
+- The real app now covers every mock screen, built in seven tested sections on `feat/mock-parity`: S1 shell/design system/settings, S2 snap → meal with editable verdict, S3 meals feed/detail/ratings/cook again, S4 fridge & pantry, S5 weekly plan/approvals/shopping list, S6 Home & Insights (overview, versus), S7 snacks, label scan and croissant passes.
+- 125 API tests (pytest, real Postgres) and 82 web tests (Vitest); every section checked in the Docker stack.
+- Findings that changed the code: ingredient search also suggests single-word matches for model phrases ("ground meat" → Beef mince); recipes are written by the model in the background (template first); label scans ask for the amount the printed values refer to (a per-200 g label was misread as per-100 g, and a %-daily-value figure as sugar, before this fix); dark-mode carbs colour darkened to pass the chart palette check; decorative thumbnails hidden from screen readers.
+- Not in the mock but needed by the planner: a meal edit sheet (meal types, prep-friendly).
+

@@ -10,8 +10,10 @@ from app.analysis.schemas import AnalysisItem, AnalysisResult, MatchedIngredient
 from app.nutrition.macros import total
 from app.nutrition.matching import match_ingredient
 from app.nutrition.schemas import IngredientOut, NutrientsOut
-from app.vision.providers import AllProvidersFailed, VisionChain
+from app.snacks.schemas import LabelAnswer, SnackPhotoAnswer, SnackResult
+from app.vision.providers import AllProvidersFailed, VisionChain, image_message
 from app.vision.schemas import MealAnalysis
+from app.vision.snack_prompts import LABEL_PROMPT, SNACK_PHOTO_PROMPT
 
 
 async def ground(session: AsyncSession, analysis: MealAnalysis) -> AnalysisResult:
@@ -66,15 +68,59 @@ async def run_analysis(
     job.status = "running"
     await session.commit()
 
+    jpeg = (photo_dir / job.photo_path).read_bytes()
     try:
-        provider, analysis = await chain.analyze_meal((photo_dir / job.photo_path).read_bytes())
+        if job.kind == "meal":
+            provider, analysis = await chain.analyze_meal(jpeg)
+            job.raw = analysis.model_dump()
+            job.result = (await ground(session, analysis)).model_dump()
+        else:
+            provider, snack = await analyze_snack(chain, job.kind, jpeg)
+            job.raw = snack.model_dump()
+            job.result = snack_result(snack).model_dump()
     except AllProvidersFailed as exc:
         job.status, job.error = "failed", str(exc)
     else:
         job.provider = provider
-        job.raw = analysis.model_dump()
-        job.result = (await ground(session, analysis)).model_dump()
         job.status = "done"
     job.finished_at = datetime.now(UTC)
     await session.commit()
     return job
+
+
+async def analyze_snack(chain: VisionChain, kind: str, jpeg: bytes):
+    if kind == "label":
+        messages = [
+            {"role": "system", "content": LABEL_PROMPT},
+            image_message("Read this label.", jpeg),
+        ]
+        return await chain.chat_json(messages, LabelAnswer)
+    messages = [
+        {"role": "system", "content": SNACK_PHOTO_PROMPT},
+        image_message("What snack is this?", jpeg),
+    ]
+    return await chain.chat_json(messages, SnackPhotoAnswer)
+
+
+DEFAULT_LABEL_PORTION_G = 45  # a typical bar/pack portion; the user adjusts it
+
+
+def snack_result(answer: SnackPhotoAnswer | LabelAnswer) -> SnackResult:
+    if isinstance(answer, LabelAnswer):
+        factor = 100 / answer.values_per_grams
+        per_100g = {k: round(v * factor, 1) for k, v in answer.values.model_dump().items()}
+        printed_serving = answer.values_per_grams != 100
+        return SnackResult(
+            name=answer.name,
+            kind=answer.kind,
+            per="100g",
+            amount=answer.values_per_grams if printed_serving else DEFAULT_LABEL_PORTION_G,
+            per_unit=per_100g,
+        )
+    return SnackResult(
+        name=answer.name,
+        kind=answer.kind,
+        per="piece",
+        amount=answer.pieces,
+        per_unit=answer.per_piece,
+    )

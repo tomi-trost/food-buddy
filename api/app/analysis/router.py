@@ -1,4 +1,6 @@
-from fastapi import APIRouter, HTTPException, UploadFile, status
+from typing import Literal
+
+from fastapi import APIRouter, Form, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
 
 from app.analysis.models import AnalysisJob
@@ -12,12 +14,15 @@ router = APIRouter(prefix="/analyses", tags=["analysis"])
 
 
 def to_out(job: AnalysisJob) -> AnalysisJobOut:
+    meal = job.kind == "meal"
     return AnalysisJobOut(
         id=job.id,
+        kind=job.kind,
         status=job.status,
         photo_url=f"/api/analyses/{job.id}/photo",
         provider=job.provider,
-        result=job.result,
+        result=job.result if meal else None,
+        snack=None if meal else job.result,
         error=job.error,
         created_at=job.created_at,
         finished_at=job.finished_at,
@@ -32,7 +37,12 @@ async def get_own_job(session: Session, user: CurrentUser, job_id: int) -> Analy
 
 
 @router.post("", status_code=status.HTTP_202_ACCEPTED)
-async def create_analysis(photo: UploadFile, user: CurrentUser, session: Session) -> AnalysisJobOut:
+async def create_analysis(
+    photo: UploadFile,
+    user: CurrentUser,
+    session: Session,
+    kind: Literal["meal", "snack", "label"] = Form(default="meal"),
+) -> AnalysisJobOut:
     settings = get_settings()
     max_bytes = settings.max_upload_mb * 1024 * 1024
     data = await photo.read(max_bytes + 1)
@@ -47,6 +57,7 @@ async def create_analysis(photo: UploadFile, user: CurrentUser, session: Session
         household_id=user.household_id,
         user_id=user.id,
         photo_path=save_photo(settings.photo_dir, user.household_id, jpeg),
+        kind=kind,
     )
     session.add(job)
     await session.commit()
