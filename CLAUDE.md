@@ -3,23 +3,21 @@
 Phone-first app for two people (Tomi + partner): snap a plate photo → AI identifies the meal and macros (correctable) → auto recipe, prep time, price → both rate it → best-rated meals feed an auto-generated weekly menu (given available cooking time) → approved menu produces a shopping list → fridge inventory tracked from meals cooked and groceries bought → analytics (calories, fiber goal, macro split).
 
 ## Current phase
-**Design mock.** `index.html` is a single-file clickable prototype (vanilla JS + CSS, fake data, hash routing, phone frame on desktop). Goal: iterate UX until it feels natural, then write an implementation plan and pick a real stack (must support web + native, e.g. Expo/React Native or Capacitor). Do not add build tooling to the mock.
+**Implementation, M0 walking skeleton done** (see `docs/execution-plan.md`). The mock `index.html` stays as the UX reference (single file, vanilla JS + CSS; do not add build tooling to it). Real app: `web/` (React + Vite PWA) → `api/` (FastAPI) → Postgres + Procrastinate worker → vision model (Ollama, OpenAI-compatible) → nutrition grounding. Plan and rationale: `docs/design-plan.md`.
 
 ## Structure
+- `api/` — FastAPI app (`app/<feature>/` packages: auth, nutrition, vision, analysis), Alembic migrations, pytest suite in `api/tests/` (needs Postgres on :5433 → `make db`)
+- `web/` — React + Vite + TS PWA (`src/pages`, `src/api` client + types, `src/lib`), Vitest tests next to the code
+- `deploy/` — `compose.yaml` (db, api, worker, caddy, ollama `ai`, cloudflared `tunnel`), `compose.dev.yaml`, `.env.example`
+- `Makefile` — `make db | api | worker | web | test | lint | stack`
 - `index.html` — the mock (state `S`, data `ING`/`meals`, screen functions, `A` action map, click delegation via `data-act`/`data-a`)
 - `docs/decisions/` — one file per decision (ADR-lite), numbered `NNNN-title.md`
 - `docs/ideas.md` — backlog of ideas / open questions
 - `docs/changelog.md` — dated log of what changed in the mock and why
-- Original plan: `docs/plan.md`
+- `docs/design-plan.md` (stack, hosting, model research) · `docs/execution-plan.md` (milestones, checkboxes) · original mock plan: `docs/plan.md`
 
 ## Next session
-Design plan is in `docs/design-plan.md` (zero cost + open source; React/Vite PWA + Capacitor; FastAPI + Postgres + worker; Docker Compose with Pi 5 app host, Jetson GPU inference, Oracle off-site standby, Cloudflare Tunnel; self-hosted Qwen3-VL + USDA/Ciqual/OFF grounding). Next: answer its open questions (§9: which Jetson, Pi specs, license), then phase 0 spikes. Confirm 0017/0018 afterwards.
-
-## Working agreements (keep logs current)
-- When the user makes a design/tech decision → add `docs/decisions/NNNN-title.md` (Context, Decision, Alternatives, Consequences) and link it in `docs/decisions/README.md`.
-- When the user floats an idea or open question → append to `docs/ideas.md` (status: idea / planned / done / dropped).
-- After each meaningful mock iteration → add a dated entry to `docs/changelog.md`.
-- Remote: `origin` = `git@github.com:tomi-trost/food-buddy.git`.
+M0 is done. Next: M1, running on Oracle. It needs the user for the Oracle VM and the Cloudflare tunnel token. Then M2 (model benchmark) and M3 (USDA/Ciqual import). Parked questions: license, subdomain, confirming 0017. Vision models must be **instruct** tags (e.g. `qwen3-vl:4b-instruct`); the default `qwen3-vl:2b` thinks and returns empty content.
 
 ## Testing (required)
 - Every feature or bug fix ships with tests in the same change: backend in `api/tests/` (pytest), web in `web/src/**/*.test.ts(x)` (Vitest + Testing Library).

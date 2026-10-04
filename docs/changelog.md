@@ -44,3 +44,10 @@
 - Decisions 0015 (FastAPI) and 0016 (Docker on both hosts) accepted; 0017 (Expo) and 0018 (self-hosted VLM + nutrition DB) proposed pending the phase-0 spike.
 - Plan v2 after answers: both iPhones and no fees → web-first PWA + Capacitor (0017 revised from Expo); Pi 5 app host + Jetson (if Orin Nano) GPU inference + Oracle off-site standby, exposed via Cloudflare Tunnel (0016); zero cost + open source (0019).
 - Plan v3: hardware is a Pi 3 B (1 GB) and an original Jetson Nano (GPU unusable for LLMs), both on SD → Oracle Always Free becomes primary with CPU inference; Jetson = home backup/standby; Pi 3 = optional monitor (0016 revised).
+
+## 2026-10-04 (M0 walking skeleton)
+- `api/`: FastAPI with household auth (create or join with invite code, argon2 + JWT), `Ingredient` table seeded from the mock, macro math, fuzzy ingredient matching (pg_trgm), vision provider chain over any OpenAI-compatible API, photo upload → Procrastinate job → worker → grounded result. 49 pytest tests against real Postgres.
+- `web/`: React + Vite PWA with the mock's tokens: login/register/join, snap upload, analysis page (polling, editable grams, live totals). 12 Vitest tests.
+- `deploy/`: Docker images (api; web built into Caddy), compose stack with `ai` (Ollama) and `tunnel` (cloudflared) profiles; CI workflows (tests, arm64 images to GHCR).
+- Verified end to end in Docker with a real photo and Qwen3-VL 2B (Ollama on the Mac). Findings: the plain `qwen3-vl:2b` tag is a thinking model that returns empty JSON, so instruct tags are now the default; the worker didn't register all ORM tables (fixed, regression test); matching no longer accepts single shared words ("mystery sauce" ≠ "soy sauce"); portion estimates from the 2B model are far too low (→ M2 benchmark).
+

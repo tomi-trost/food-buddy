@@ -1,0 +1,11 @@
+# Local development: only the database (and optionally Ollama) in Docker; api/worker/web run on the host.
+#   docker compose -f compose.yaml -f compose.dev.yaml up -d db
+name: food-buddy-dev
+
+services:
+  db:
+    ports:
+      - "127.0.0.1:5433:5432"
+  ollama:
+    ports:
+      - "127.0.0.1:11434:11434"

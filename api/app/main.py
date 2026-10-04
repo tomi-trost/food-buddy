@@ -1,0 +1,33 @@
+from contextlib import asynccontextmanager
+
+from fastapi import APIRouter, FastAPI
+from sqlalchemy import text
+
+from app.analysis.router import router as analysis_router
+from app.auth.deps import Session
+from app.auth.router import router as auth_router
+from app.jobs import jobs_app
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    async with jobs_app.open_async():
+        yield
+
+
+app = FastAPI(
+    title="Food Buddy API", lifespan=lifespan, docs_url="/api/docs", openapi_url="/api/openapi.json"
+)
+
+api = APIRouter(prefix="/api")
+
+
+@api.get("/health", tags=["meta"])
+async def health(session: Session) -> dict[str, str]:
+    await session.execute(text("SELECT 1"))
+    return {"status": "ok"}
+
+
+api.include_router(auth_router)
+api.include_router(analysis_router)
+app.include_router(api)

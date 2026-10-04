@@ -98,7 +98,7 @@ Photo-based estimates are weakest on **portion size**, not dish recognition. Cor
 
 | Model | Type | License | Size / fit | Notes |
 |---|---|---|---|---|
-| **Qwen3-VL Instruct 2B / 4B / 8B** | General VLM | Apache-2.0 | 2B ≈ 2 GB, 4B ≈ 3–4 GB, 8B ≈ 6 GB at Q4 | **Default pick.** Strong OCR (labels), JSON-schema output. On Oracle: 4B by default, 2B if too slow |
+| **Qwen3-VL Instruct 2B / 4B / 8B** | General VLM | Apache-2.0 | 2B ≈ 2 GB, 4B ≈ 3–4 GB, 8B ≈ 6 GB at Q4 | **Default pick.** Strong OCR (labels), JSON-schema output. On Oracle: 4B by default, 2B if too slow. ⚠ Use the `-instruct` tags: the plain tags are thinking models and returned empty JSON in our test |
 | **Qwen2.5-VL 3B / 7B** | General VLM | Apache-2.0 (3B: Qwen research license, check) | 3B ≈ 2.5 GB at Q4 | Fallback/benchmark alternative |
 | **Gemma 4** (vision) | General VLM | Gemma terms (open weights, custom license) | Small variants fit | Listed by Ollama as a top vision model in Sept 2026; include in benchmark |
 | **Ateeqq/food-analysis** | Qwen3-VL-2B + LoRA on MM-Food-100K | OpenRAIL (use restrictions) | 2B, 4-bit | Food-tuned JSON; **no published accuracy**; outputs totals rather than an ingredient list |
@@ -141,7 +141,7 @@ The worker talks to an **OpenAI-compatible chat API** (Ollama, llama.cpp `server
 
 ```
 VISION_PROVIDERS=local                       # comma-separated, tried in order
-VISION_LOCAL_URL=http://ollama:11434/v1      model=qwen3-vl:4b (Oracle, CPU)
+VISION_LOCAL_URL=http://ollama:11434/v1      model=qwen3-vl:4b-instruct (Oracle, CPU)
 ```
 
 - **local** (primary): CPU Ollama next to the app on Oracle (2 Ampere cores, 12 GB). Expect **tens of seconds to a couple of minutes** per photo; the phase-0 benchmark will measure it. The UX is async: "Analyzing…" → push "Check your meal".
@@ -238,7 +238,7 @@ Files: `deploy/compose.yaml` (everything) + `deploy/compose.dev.yaml` (local dev
 ```
 food-buddy/
   index.html            # mock stays as the UX reference
-  web/                  # React + Vite PWA (+ capacitor/android)
+  web/                  # React + Vite PWA (Capacitor/android added in M4)
   api/                  # FastAPI + worker
   eval/                 # model benchmark scripts (our weighed-meal photos git-ignored)
   deploy/
