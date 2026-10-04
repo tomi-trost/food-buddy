@@ -37,4 +37,4 @@
 - Sweets became Snacks (0014): kinds Sweet/Savory/Drink, macros tracked, treats feed the streak and croissant rewards.
 - Log a snack by photo (auto-detect) or by scanning the nutrition label on the pack, or pick from a list.
 - Home progress ring and bars animate from empty (with kcal count-up) every time you navigate to Home; skipped when the OS asks for reduced motion.
-- "Photo of snack" button renamed "Photo only". First commit pushed; next session: tech stack, deployment and serving decisions.
+- "Photo of snack" button renamed "Photo". First commit pushed; next session: tech stack, deployment and serving decisions.
