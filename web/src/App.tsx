@@ -6,6 +6,7 @@ import { AppLayout, BareLayout } from './layout/AppLayout'
 import { applyTheme } from './lib/theme'
 import { AnalysisPage } from './pages/AnalysisPage'
 import { HomePage } from './pages/HomePage'
+import { IngredientsPage } from './pages/IngredientsPage'
 import { LoginPage } from './pages/LoginPage'
 import { MealPage } from './pages/MealPage'
 import { MealsPage } from './pages/MealsPage'
@@ -42,7 +43,7 @@ export function App() {
         <Route path="meals" element={<MealsPage />} />
         <Route path="meals/:id" element={<MealPage />} />
         <Route path="plan" element={<Placeholder title="Plan" section="S5" />} />
-        <Route path="ingredients" element={<Placeholder title="Ingredients" section="S4" />} />
+        <Route path="ingredients" element={<IngredientsPage />} />
         <Route path="insights" element={<Placeholder title="Insights" section="S6" />} />
       </Route>
       <Route element={<RequireAuth><BareLayout /></RequireAuth>}>

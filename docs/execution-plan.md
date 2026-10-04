@@ -54,9 +54,9 @@ Shared conventions for all sections:
 - [x] "I cooked this again": meal type, used-up ingredients → cook log, food log, stock
 
 ### S4 — Ingredients (fridge & pantry)
-- [ ] Inventory API: list by location, add (+default amount), ±50 g, expiry from shelf days
-- [ ] Minus to zero → "used it up" (→ shopping list) / "just remove" / keep
-- [ ] "Cook with what you have" suggestions; "Use soon" data for Home
+- [x] Inventory API: list by location, add (+default amount), ±50 g, expiry from shelf days
+- [x] Minus to zero → "used it up" (→ shopping list) / "just remove" / keep
+- [x] "Cook with what you have" suggestions; "Use soon" data for Home
 
 ### S5 — Plan & shopping
 - [ ] Wizard grid (7 days × breakfast/lunch/dinner; cook 15/30/45/60+, prep, out, skip) and deterministic generator from ratings + time + variety

@@ -1,5 +1,5 @@
 import type {
-  AnalysisJob, CookIn, HouseholdPatch, Ingredient, Me, Meal, MealCard, MealCreate, MePatch, Rating, RegisterBody,
+  AnalysisJob, CookIn, HouseholdPatch, Ingredient, Me, Meal, MealCard, MealCreate, MePatch, Rating, RegisterBody, StockItem,
 } from './types'
 
 const TOKEN_KEY = 'fb.token'
@@ -89,6 +89,15 @@ export const api = {
   meals: () => json<MealCard[]>('/meals'),
   rateMeal: (id: number, rating: Rating) =>
     json<Meal>(`/meals/${id}/rating`, { method: 'PUT', body: JSON.stringify(rating) }),
+  inventory: (today: string) => json<StockItem[]>(`/inventory?today=${today}`),
+  addStock: (ingredientId: number, today: string, grams?: number) =>
+    json<StockItem>('/inventory', { method: 'POST', body: JSON.stringify({ ingredient_id: ingredientId, today, grams }) }),
+  changeStock: (ingredientId: number, delta: number, today: string) =>
+    json<StockItem>(`/inventory/${ingredientId}?today=${today}`, { method: 'PATCH', body: JSON.stringify({ delta }) }),
+  removeStock: async (ingredientId: number, usedUp: boolean) => {
+    await request(`/inventory/${ingredientId}?used_up=${usedUp}`, { method: 'DELETE' })
+  },
+  cookable: () => json<MealCard[]>('/inventory/cookable'),
   cookMeal: (id: number, body: CookIn) =>
     json<Meal>(`/meals/${id}/cook`, { method: 'POST', body: JSON.stringify(body) }),
   /** Photos need the auth header, so they're fetched as blobs instead of plain <img src>. */

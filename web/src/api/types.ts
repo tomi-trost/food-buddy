@@ -147,3 +147,5 @@ export type RegisterBody = {
   household_name?: string
   invite_code?: string
 }
+
+export type StockItem = { ingredient: Ingredient; grams: number; expires_on: string; days_left: number }

@@ -6,6 +6,7 @@ from sqlalchemy import text
 from app.analysis.router import router as analysis_router
 from app.auth.deps import Session
 from app.auth.router import router as auth_router
+from app.inventory.router import router as inventory_router
 from app.jobs import jobs_app
 from app.meals.router import router as meals_router
 from app.nutrition.router import router as nutrition_router
@@ -34,4 +35,5 @@ api.include_router(auth_router)
 api.include_router(analysis_router)
 api.include_router(meals_router)
 api.include_router(nutrition_router)
+api.include_router(inventory_router)
 app.include_router(api)
