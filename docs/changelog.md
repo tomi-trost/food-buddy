@@ -43,3 +43,4 @@
 - Design plan for the real app (`docs/design-plan.md`): Expo client, FastAPI + Postgres + worker, one Docker Compose stack for Oracle Always Free and the Raspberry Pi, open food-analysis model research and pipeline, phased roadmap.
 - Decisions 0015 (FastAPI) and 0016 (Docker on both hosts) accepted; 0017 (Expo) and 0018 (self-hosted VLM + nutrition DB) proposed pending the phase-0 spike.
 - Plan v2 after answers: both iPhones and no fees → web-first PWA + Capacitor (0017 revised from Expo); Pi 5 app host + Jetson (if Orin Nano) GPU inference + Oracle off-site standby, exposed via Cloudflare Tunnel (0016); zero cost + open source (0019).
+- Plan v3: hardware is a Pi 3 B (1 GB) and an original Jetson Nano (GPU unusable for LLMs), both on SD → Oracle Always Free becomes primary with CPU inference; Jetson = home backup/standby; Pi 3 = optional monitor (0016 revised).

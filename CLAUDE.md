@@ -21,6 +21,12 @@ Design plan is in `docs/design-plan.md` (zero cost + open source; React/Vite PWA
 - After each meaningful mock iteration → add a dated entry to `docs/changelog.md`.
 - Remote: `origin` = `git@github.com:tomi-trost/food-buddy.git`.
 
+## Testing (required)
+- Every feature or bug fix ships with tests in the same change: backend in `api/tests/` (pytest), web in `web/src/**/*.test.ts(x)` (Vitest + Testing Library).
+- Cover the behaviour, not just the happy path: validation errors, auth/permission checks, and edge cases (empty lists, zero grams, missing provider, etc.).
+- External services (vision model, Open Food Facts, push) are faked in tests (e.g. `httpx.MockTransport`); tests never call the network.
+- Run the full suite before saying a feature is done and report the result; don't commit with failing tests. A bug fix starts with a test that reproduces it.
+
 ## Git rules
 - Commit only when the user asks.
 - **Always ask before any merge or push to the remote** (including creating/merging PRs). Never push or merge on your own, and an earlier approval doesn't cover later pushes/merges.

@@ -1,8 +1,8 @@
 # Food Buddy — Design plan (mock → real app)
 
-Date: 2026-10-04 · Status: draft v2 (revised after answers on phones, hardware, domain, costs)
+Date: 2026-10-04 · Status: draft v3 (hardware known: Pi 3 B, original Jetson Nano → Oracle primary)
 
-This plan turns the clickable mock (`index.html`) into a real app. It covers the tech stack, how the app is served (Docker on our home hardware and/or Oracle Always Free), and research on open-source food-analysis models. Choices are recorded in `docs/decisions/0015`–`0019`.
+This plan turns the clickable mock (`index.html`) into a real app. It covers the tech stack, how the app is served (Docker on Oracle Always Free, with our home hardware as backup), and research on open-source food-analysis models. Choices are recorded in `docs/decisions/0015`–`0019`.
 
 ---
 
@@ -14,11 +14,11 @@ This plan turns the clickable mock (`index.html`) into a real app. It covers the
 | **Zero cost**: no Apple Developer fee, no paid APIs, not distributing yet (0019) | No App Store/TestFlight; self-hosted model; free tiers only where nothing can bill us |
 | **Open source** (0019) | Public repo, open license, dependencies with compatible licenses (§7) |
 | API in **FastAPI** (0015) | Python backend; the AI pipeline lives in Python too |
-| Served with **Docker** on hardware we own or free (0016) | One `docker compose` stack: Raspberry Pi, Jetson, Oracle (§5) |
-| Domain on **Cloudflare** | Cloudflare Tunnel exposes the home server with HTTPS, no open ports (§5) |
+| Served with **Docker** on free or owned hardware (0016) | One `docker compose` stack: Oracle primary, Jetson backup (§5) |
+| Domain on **Cloudflare** | Cloudflare Tunnel gives HTTPS with no open ports (§5) |
 | Two users, one household | Simple auth, small data |
 
-Useful fact: **every target is ARM64** (Raspberry Pi 5, Jetson, Oracle Ampere A1), and GitHub gives **free arm64 CI runners to public repos**. We build one `linux/arm64` image set.
+Useful fact: **every target is ARM64** (Oracle Ampere A1, Jetson Nano, Pi 3 with a 64-bit OS), and GitHub gives **free arm64 CI runners to public repos**. We build one `linux/arm64` image set.
 
 ---
 
@@ -98,8 +98,8 @@ Photo-based estimates are weakest on **portion size**, not dish recognition. Cor
 
 | Model | Type | License | Size / fit | Notes |
 |---|---|---|---|---|
-| **Qwen3-VL Instruct 2B / 4B / 8B** | General VLM | Apache-2.0 | 2B ≈ 2 GB, 4B ≈ 3–4 GB, 8B ≈ 6 GB at Q4 | **Default pick.** Strong OCR (labels), JSON-schema output. ⚠ Open Ollama issue: Qwen3-VL ran on CPU instead of GPU on Jetson Orin Nano (JetPack 6.2.1). Workaround: llama.cpp server from `jetson-containers`, or the next model |
-| **Qwen2.5-VL 3B / 7B** | General VLM | Apache-2.0 (3B: Qwen research license, check) | 3B fits Jetson GPU | Confirmed working on Orin Nano GPU via Ollama; fallback |
+| **Qwen3-VL Instruct 2B / 4B / 8B** | General VLM | Apache-2.0 | 2B ≈ 2 GB, 4B ≈ 3–4 GB, 8B ≈ 6 GB at Q4 | **Default pick.** Strong OCR (labels), JSON-schema output. On Oracle: 4B by default, 2B if too slow |
+| **Qwen2.5-VL 3B / 7B** | General VLM | Apache-2.0 (3B: Qwen research license, check) | 3B ≈ 2.5 GB at Q4 | Fallback/benchmark alternative |
 | **Gemma 4** (vision) | General VLM | Gemma terms (open weights, custom license) | Small variants fit | Listed by Ollama as a top vision model in Sept 2026; include in benchmark |
 | **Ateeqq/food-analysis** | Qwen3-VL-2B + LoRA on MM-Food-100K | OpenRAIL (use restrictions) | 2B, 4-bit | Food-tuned JSON; **no published accuracy**; outputs totals rather than an ingredient list |
 | **Food-R1** (2026) | Food VLM, SFT + GRPO reasoning | Weights released; license to check | To check | Calorie reasoning; candidate if size/license fit |
@@ -140,99 +140,96 @@ Scoring + constraints over our own meals: combined rating, fullness feedback, "c
 The worker talks to an **OpenAI-compatible chat API** (Ollama, llama.cpp `server` and vLLM all expose one), so switching is a config change:
 
 ```
-VISION_PROVIDERS=jetson,local       # tried in order
-VISION_JETSON_URL=http://jetson.lan:11434/v1   model=qwen3-vl:4b (or qwen2.5vl:3b)
-VISION_LOCAL_URL=http://ollama:11434/v1        model=qwen3-vl:2b   # CPU fallback on the app host
+VISION_PROVIDERS=local                       # comma-separated, tried in order
+VISION_LOCAL_URL=http://ollama:11434/v1      model=qwen3-vl:4b (Oracle, CPU)
 ```
 
-- **jetson** (primary, if it's an Orin Nano): GPU inference at home, expected **seconds** per photo instead of minutes.
-- **local** (fallback): CPU Ollama on the app host. Slow (tens of seconds to minutes), but keeps working when the Jetson is off.
+- **local** (primary): CPU Ollama next to the app on Oracle (2 Ampere cores, 12 GB). Expect **tens of seconds to a couple of minutes** per photo; the phase-0 benchmark will measure it. The UX is async: "Analyzing…" → push "Check your meal".
+- More providers (a GPU machine later, a bigger model) are just another URL in the list.
 - If no provider answers, the job waits in the queue and the user can enter the meal by hand.
-- **No paid or closed APIs** (0019). The interface would allow one, but none is planned.
+- **No paid or closed APIs** (0019).
 
 ### 4.7 Evaluation (before committing to a model)
 
-`eval/` runs every provider over a **Nutrition5k** subset (~100 dishes) plus **our own** ~30–50 weighed home meals (photos kept out of git). Metrics: ingredient precision/recall, kcal/macro % error after grounding, JSON validity, latency and RAM on Jetson / Pi / Oracle.
+`eval/` runs every provider over a **Nutrition5k** subset (~100 dishes) plus **our own** ~30–50 weighed home meals (photos kept out of git). Metrics: ingredient precision/recall, kcal/macro % error after grounding, JSON validity, latency and RAM on Oracle.
 
 ---
 
-## 5. Serving: one Docker stack, home first (0016)
+## 5. Serving: one Docker stack, Oracle primary, home backup (0016)
 
-### 5.1 Jetson: which one is it?
+### 5.1 Our hardware
 
-| | Original **Jetson Nano** (4 GB, 2019) | **Jetson Orin Nano** (8 GB, incl. "Super") |
-|---|---|---|
-| Software | JetPack 4.6 max: Ubuntu 18.04, CUDA 10.2; end of life | JetPack 6: Ubuntu 22.04, current CUDA; `jetson-containers` images |
-| LLM GPU support | **None in practice**: Ollama/llama.cpp need gcc-11, CUDA 10.2 stops at gcc-8. CPU-only (or experimental Vulkan forks) | Ollama and llama.cpp with CUDA; small VLMs on the GPU |
-| Role for us | Not worth it for AI. At most a small helper (e.g. Uptime Kuma); the Pi 5 CPU is faster | **AI node** (and could host the whole stack) |
+| | Raspberry Pi 3 Model B | Jetson Nano (original, 4 GB) | Oracle Always Free (A1) |
+|---|---|---|---|
+| CPU | 4× Cortex-A53 @ 1.2 GHz | 4× Cortex-A57 @ 1.43 GHz | 2 Ampere OCPU (far faster per core) |
+| RAM | **1 GB** | 4 GB (shared with GPU) | **12 GB** |
+| GPU for AI | — | Maxwell, CUDA 10.2: **not usable** by Ollama/llama.cpp (they need gcc-11; CUDA 10.2 stops at gcc-8) | — |
+| OS | Raspberry Pi OS (64-bit possible) | JetPack 4.6: Ubuntu 18.04, end of life | Ubuntu 22.04/24.04 arm64 |
+| Storage | SD card | SD card | up to 200 GB block volume |
+| Can run the app stack? | No (1 GB is too little for Postgres + API + worker) | Yes, without the model (or a 2B model on CPU, very slow) | **Yes, including the model** |
 
-→ Open question: check the board (`cat /etc/nv_tegra_release`, or the label: "Orin" or not).
+Conclusion: **Oracle is by far the strongest machine**, the Jetson is second, and the Pi 3 is only good for small helpers. SD cards wear out under database writes, so neither home box should hold the primary database.
 
 ### 5.2 Topology
 
 ```mermaid
 flowchart LR
-  iphone[iPhone PWA] -->|HTTPS food.your-domain| cf[Cloudflare Tunnel]
+  iphone[iPhone PWA] -->|HTTPS food.our-domain| cf[Cloudflare Tunnel]
   android[Android PWA / APK] --> cf
-  subgraph home[Home network]
-    subgraph pi[Raspberry Pi 5 — app host]
-      cloudflared --> caddy[Caddy: static PWA + /api proxy]
-      caddy --> api[FastAPI]
-      api --> db[(Postgres)]
-      worker[Procrastinate worker] --> db
-      api --> photos[(photos)]
-      worker --> photos
-      ollamaCPU[Ollama CPU fallback, profile ai-cpu]
-    end
-    subgraph jet[Jetson Orin Nano — AI node]
-      ollamaGPU[Ollama / llama.cpp on GPU]
-    end
-    worker -->|LAN| ollamaGPU
-    worker -.fallback.-> ollamaCPU
+  subgraph oracle[Oracle Always Free A1 — primary]
+    cloudflared --> caddy[Caddy: static PWA + /api proxy]
+    caddy --> api[FastAPI]
+    api --> db[(Postgres)]
+    worker[Procrastinate worker] --> db
+    worker --> ollama[Ollama CPU: Qwen3-VL]
+    api --> photos[(photos)]
+    worker --> photos
   end
   cf --> cloudflared
-  pi -->|restic nightly, encrypted| oracle[(Oracle Always Free: off-site backup + standby)]
+  subgraph home[Home]
+    jetson[Jetson Nano: backup target + cold standby]
+    pi[Pi 3: Uptime Kuma monitor, optional]
+  end
+  jetson -->|restic pull nightly, encrypted| oracle
+  pi -.pings.-> cf
 ```
 
-**Recommended layout (if it's an Orin Nano):**
-- **Pi 5 = app host**: Caddy, FastAPI, worker, Postgres, `cloudflared`. Always on, low power, runs from an SSD.
-- **Jetson Orin Nano = AI node**: only the inference container (GPU), so the whole 8 GB is for the model. It can be switched off without breaking the app.
-- **Oracle Always Free = off-site backup + cold standby**: receives encrypted nightly backups and can run the same compose stack if home is down (CPU inference only). 2 OCPU / 12 GB after the June 2026 cut.
-- **Alternative "all on Jetson":** run everything on the Orin Nano and keep the Pi as backup. It works (compose is the same) but leaves less memory for the model. Pick it if the Pi turns out weak or busy.
-- **If it's the original Nano:** Pi 5 runs everything with CPU inference (Qwen3-VL-2B); Oracle is backup/standby. Async UX covers the slower analysis.
+- **Oracle = primary**: Caddy, FastAPI, worker, Postgres, Ollama (Qwen3-VL-4B or 2B on CPU), `cloudflared`.
+- **Jetson Nano = home backup + cold standby**: pulls encrypted nightly backups (Postgres dump + photos). If Oracle disappears, it can run the same compose stack without the model (manual meal entry, or a 2B model on CPU, slowly) until we find a new primary. Best with a USB stick/disk for the backup repo instead of the SD card.
+- **Pi 3 = optional monitor**: Uptime Kuma pings `food.<domain>` and alerts us when it's down. Nothing else fits in 1 GB.
+- **Oracle risks and mitigations:** Always Free terms changed without notice in 2026. Oracle can also reclaim *idle* Always Free instances (very low CPU, network and memory use over 7 days). Keeping the model resident (`OLLAMA_KEEP_ALIVE=-1`, several GB of RAM) keeps memory use above the idle threshold. Home backups + identical compose files mean losing the VM costs hours, not data.
 
 ### 5.3 Exposure via our Cloudflare domain
 
-- **Cloudflare Tunnel** (free): `cloudflared` on the Pi opens an outbound tunnel. `food.<our-domain>` gets HTTPS from Cloudflare, and the router needs no open ports. The same hostname can point at Oracle's tunnel if we fail over.
+- **Cloudflare Tunnel** (free) on Oracle too: `cloudflared` opens an outbound tunnel, `food.<our-domain>` gets HTTPS from Cloudflare, and the VM needs **no open ingress ports** (only SSH, ideally via Tailscale). Failover = run the tunnel on the standby host instead.
 - Free-plan request bodies are limited to 100 MB, far above a resized photo.
-- Optional extra lock: Cloudflare Access (Zero Trust, free for small teams) in front of the web app. The app's own login is enough for v1.
-- Caddy inside serves plain HTTP to `cloudflared`, so there's no certificate handling on our side.
+- Optional: Cloudflare Access in front of the web app; the app's own login is enough for v1.
+- Caddy serves plain HTTP to `cloudflared`, so we don't handle certificates.
 
 ### 5.4 Compose files
 
-| Service | Image | Where |
+| Service | Image | Notes |
 |---|---|---|
-| `cloudflared` | cloudflare/cloudflared | app host |
-| `caddy` | caddy:2 + built PWA | app host |
-| `api` / `worker` | `ghcr.io/tomi-trost/food-buddy-api` (one image, two commands) | app host |
-| `db` | postgres:16 | app host |
-| `ollama-cpu` | ollama/ollama (profile `ai-cpu`) | app host, optional |
-| `inference` | `dustynv/ollama` or llama.cpp from `jetson-containers`, `runtime: nvidia` | Jetson |
+| `cloudflared` | cloudflare/cloudflared | profile `tunnel` (off in local dev) |
+| `caddy` | caddy:2 + built PWA | serves `/` and proxies `/api` |
+| `api` / `worker` | `ghcr.io/tomi-trost/food-buddy-api` (one image, two commands) | |
+| `db` | postgres:16 | volume `pgdata` |
+| `ollama` | ollama/ollama | profile `ai`; volume `models` |
 
-Files: `compose.yaml` (app) + `compose.jetson.yaml` (inference) + `compose.oracle.yaml` (standby overrides). Per-host differences live in `.env`.
+Files: `deploy/compose.yaml` (everything) + `deploy/compose.dev.yaml` (local dev: ports, live reload). Per-host differences live in `.env` (model tag, tunnel token, memory limits). The Jetson standby runs `compose.yaml` without the `ai` profile.
 
-### 5.5 CI/CD (free because the repo is public)
+### 5.5 CI/CD (free because the repo will be public)
 
-- GitHub Actions on **free `ubuntu-24.04-arm` runners**: pytest, TypeScript typecheck, build arm64 images natively (no QEMU) → **GHCR** (free for public images).
+- GitHub Actions: pytest (with a Postgres service), web typecheck + Vitest; arm64 images built natively on free **`ubuntu-24.04-arm`** runners (public repos only; until then QEMU on x86 runners) → **GHCR**.
 - PWA build is baked into the Caddy image.
-- Deploy: manual workflow over Tailscale/SSH, or `docker compose pull && up -d` on the Pi by hand at first; Alembic migrations on API start.
-- Android APK: `npx cap build android` locally (or a CI job), sideloaded. No store.
+- Deploy: `docker compose pull && docker compose up -d` on Oracle by hand at first, then a manual Actions workflow over SSH. Alembic migrations run on API start.
+- Android APK: `npx cap build android` locally, sideloaded. No store.
 
 ### 5.6 Backups and ops
 
-- Nightly `pg_dump` + photos → **restic, encrypted** → Oracle (and/or an external disk). Restore drill once per phase.
-- Container healthchecks; Uptime Kuma (optional) on Oracle pings the home URL, so we get alerts when home is down.
-- Secrets only in `.env` on hosts (`.env.example` in the repo). This matters because the repo is public.
+- Nightly `pg_dump` + photos → **restic, encrypted**, pulled by the Jetson (repo on a USB disk if possible). Restore drill once per phase.
+- Container healthchecks; Uptime Kuma on the Pi 3 (optional).
+- Secrets only in `.env` on hosts (`.env.example` in the repo). This matters because the repo will be public.
 
 ---
 
@@ -245,7 +242,7 @@ food-buddy/
   api/                  # FastAPI + worker
   eval/                 # model benchmark scripts (our weighed-meal photos git-ignored)
   deploy/
-    compose.yaml  compose.jetson.yaml  compose.oracle.yaml
+    compose.yaml  compose.dev.yaml
     Caddyfile  .env.example  backup/
   docs/
   LICENSE
@@ -267,8 +264,8 @@ food-buddy/
 
 | Phase | Scope | Done when |
 |---|---|---|
-| **0. Spikes** (≈1 week) | (a) identify the Jetson; model benchmark on Jetson (GPU) + Pi (CPU); (b) PWA hello-world with camera upload + Web Push on both iPhones, Capacitor APK on an Android device; (c) compose skeleton on the Pi behind Cloudflare Tunnel at `food.<domain>` | Model + topology confirmed with numbers; 0017/0018 accepted |
-| 1. Foundations | Monorepo, auth + household, schema + Alembic, nutrition DB import, CI → GHCR, backups to Oracle | Both of us log in from the home-screen app |
+| **0. Spikes** (≈1 week) | (a) model benchmark on Oracle (CPU); (b) PWA hello-world with camera upload + Web Push on both iPhones, Capacitor APK on an Android device; (c) compose skeleton on Oracle behind Cloudflare Tunnel at `food.<domain>`; Jetson pulls a backup | Model + topology confirmed with numbers; 0017/0018 accepted |
+| 1. Foundations | Monorepo, auth + household, schema + Alembic, nutrition DB import, CI → GHCR, backups to the Jetson | Both of us log in from the home-screen app |
 | 2. Snap loop | Upload → analysis job → verdict with editable chips + live macros → post meal → recipe in background → push "ready" | Real photo becomes a saved meal |
 | 3. Meals & ratings | Feed, filters/sort, detail, 3-axis rating + fullness, partner reveal | Both rate a meal; combined score shows |
 | 4. Ingredients & shopping | Fridge/pantry, used-up flow, shopping list, finish shopping → inventory | Inventory follows cooking and shopping |
@@ -280,18 +277,17 @@ food-buddy/
 
 ## 9. Open questions
 
-1. **Jetson model:** original Nano (4 GB) or Orin Nano (8 GB)? Decides the topology in §5.2.
-2. **Raspberry Pi:** model, RAM, SSD?
-3. **License:** AGPL-3.0 (proposed) or MIT? When to make the repo public?
-4. Subdomain name (e.g. `food.<domain>`).
-5. Confirm the client switch: PWA + Capacitor instead of Expo (0017).
+Parked for later (2026-10-04):
+1. **License:** AGPL-3.0 (proposed) or MIT? When to make the repo public?
+2. Subdomain name (e.g. `food.<domain>`).
+3. Confirm the client switch: PWA + Capacitor instead of Expo (0017); used as the working assumption meanwhile.
 
 ## Resolved (2026-10-04)
 
 - Phones: both iPhones; Android supported too → PWA first, APK for Android.
 - Costs: nothing paid (no Apple fee, no paid APIs); no store distribution for now.
 - Domain: registered with Cloudflare → Cloudflare Tunnel.
-- Faster inference: Jetson instead of a Mac.
+- Hardware: Raspberry Pi 3 Model B (1 GB) and original Jetson Nano (4 GB), both on SD cards → Oracle primary, Jetson backup, Pi 3 monitor.
 - Open source: yes.
 
 ## Sources
