@@ -1,4 +1,4 @@
-import type { AnalysisJob, Ingredient, Me, Meal, MealCard, Nutrients } from '../api/types'
+import type { AnalysisJob, Ingredient, Me, Meal, MealCard, Nutrients, Plan, Shopping } from '../api/types'
 
 export const me = (over: Partial<Me> = {}): Me => ({
   id: 1,
@@ -69,4 +69,48 @@ export const card = (over: Partial<MealCard> = {}): MealCard => ({
   id: 1, name: 'Meal', emoji: '🍽️', photo_url: null, types: ['dinner'], tags: [], prep_minutes: 30,
   portions: 2, cost: 6, rated_by_me: false, kcal_per_portion: 500, created_at: '2026-10-01T12:00:00Z',
   score: null, cooked_count: 1, last_cooked: '2026-10-01', ...over,
+})
+
+const slotCard = (id: number, name: string, emoji: string, over: Partial<MealCard> = {}) =>
+  card({ id, name, emoji, ...over })
+
+export const plan = (over: Partial<Plan> = {}): Plan => {
+  const toast = slotCard(1, 'Avocado egg toast', '🥑', { types: ['breakfast'], prep_minutes: 10, score: 4.5 })
+  const bowl = slotCard(2, 'Chicken rice bowl', '🍚', { types: ['lunch'], prep_minutes: 20, score: 4 })
+  const stirfry = slotCard(3, 'Chicken stir-fry', '🍗', { types: ['dinner'], prep_minutes: 25, score: 4.8 })
+  return {
+    id: 1, week_start: '2026-10-05', status: 'draft',
+    wizard: Array.from({ length: 7 }, () => [
+      { mode: 'cook', minutes: 15 }, { mode: 'prep', minutes: null }, { mode: 'cook', minutes: 30 },
+    ]),
+    days: Array.from({ length: 7 }, (_, i) => ({
+      date: `2026-10-${String(5 + i).padStart(2, '0')}`,
+      kcal: 1500,
+      slots: [
+        { meal_type: 'breakfast', mode: 'cook', minutes: 15, meal: toast },
+        { meal_type: 'lunch', mode: 'prep', minutes: null, meal: bowl },
+        i === 4
+          ? { meal_type: 'dinner', mode: 'out', minutes: null, meal: null }
+          : { meal_type: 'dinner', mode: 'cook', minutes: 30, meal: stirfry },
+      ],
+    })),
+    approvals: [
+      { user_id: 1, name: 'Tomi', color: '#b9532f', approved: false },
+      { user_id: 2, name: 'Partner', color: '#5d8582', approved: true },
+    ],
+    summary: { cook: 13, prep: 7, out: 1, skip: 0, grocery_cost: 42.5, batch_cook: [{ meal_id: 2, name: 'Chicken rice bowl', times: 7 }] },
+    ...over,
+  }
+}
+
+export const shopping = (over: Partial<Shopping> = {}): Shopping => ({
+  plan_approved: true,
+  total: 4.1,
+  in_stock: [ING.oil],
+  items: [
+    { ingredient: ING.soy, need: 0, have: 0, buy: 250, ran_out: true, checked: false },
+    { ingredient: ING.chicken, need: 1200, have: 400, buy: 800, ran_out: false, checked: true },
+    { ingredient: ING.rice, need: 600, have: 0, buy: 600, ran_out: false, checked: false },
+  ],
+  ...over,
 })

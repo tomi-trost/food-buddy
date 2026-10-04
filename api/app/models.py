@@ -7,6 +7,7 @@ from app.inventory.models import InventoryItem, RanOut
 from app.logs.models import FoodLog
 from app.meals.models import CookLog, Meal, MealIngredient
 from app.nutrition.models import Ingredient
+from app.plan.models import PlanApproval, PlanSlot, PlanWeek, ShoppingCheck
 from app.ratings.models import Rating
 
 __all__ = [
@@ -19,7 +20,11 @@ __all__ = [
     "InventoryItem",
     "Meal",
     "MealIngredient",
+    "PlanApproval",
+    "PlanSlot",
+    "PlanWeek",
     "RanOut",
     "Rating",
+    "ShoppingCheck",
     "User",
 ]

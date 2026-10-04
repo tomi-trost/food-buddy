@@ -135,3 +135,17 @@ svg text { fill: var(--ink2); font-size: 11px; }
 .mealcard { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; text-align: left; text-decoration: none; color: inherit; }
 .mealcard .photo { border-radius: 0; font-size: 40px; }
 .mealcard .b { padding: 10px 12px 12px; }
+
+/* Plan (mock .dayc/.slot/.wgrid/.cell) */
+.dayc { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); margin-bottom: 10px; overflow: hidden; }
+.dayc > header { display: flex; justify-content: space-between; padding: 8px 12px; background: var(--surface2); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; }
+.slot { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-top: 1px solid var(--line); width: 100%; text-align: left; min-height: 52px; }
+.slot .tl { width: 40px; font-size: 11px; color: var(--ink2); font-weight: 600; }
+.slot .th { width: 36px; height: 36px; border-radius: var(--r2); display: grid; place-items: center; font-size: 18px; flex: none; background: var(--surface2); color: var(--ink2); }
+.wgrid { display: grid; grid-template-columns: 40px repeat(3, 1fr); gap: 4px; align-items: center; }
+.wgrid .hd { font-size: 11px; color: var(--ink2); text-align: center; font-weight: 600; text-transform: uppercase; }
+.cell { height: 34px; border-radius: var(--r2); background: var(--surface2); font-size: 12.5px; font-weight: 600; padding: 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cell:disabled { opacity: 0.3; }
+.cell.prep { background: var(--ink); color: var(--bg); }
+.cell.out { background: transparent; border: 1px dashed var(--line2); color: var(--ink2); }
+.cell.skip { color: var(--ink2); opacity: 0.6; }

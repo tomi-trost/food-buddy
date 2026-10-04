@@ -5,7 +5,9 @@ import { api } from '../api/client'
 import { useMe } from '../api/hooks'
 import { MEAL_TYPE_LABEL, todayISO } from '../lib/dates'
 import { ago, againLabel, FILL_LABEL, fillTip } from '../lib/meals'
+import { AddToPlanSheet } from '../meals/AddToPlanSheet'
 import { CookSheet } from '../meals/CookSheet'
+import { EditMealSheet } from '../meals/EditMealSheet'
 import { RateSheet } from '../meals/RateSheet'
 import { Avatar } from '../ui/Avatar'
 import { Icon } from '../ui/Icon'
@@ -25,6 +27,8 @@ export function MealPage() {
   const [tab, setTab] = useState<Tab>('recipe')
   const [rating, setRating] = useState(false)
   const [cooking, setCooking] = useState(false)
+  const [planning, setPlanning] = useState(false)
+  const [editing, setEditing] = useState(false)
 
   // Right after posting (?rate=1) the rating sheet opens, like the mock.
   useEffect(() => {
@@ -41,8 +45,13 @@ export function MealPage() {
     <>
       <div className="top">
         <button className="icon" aria-label="Back" onClick={() => navigate(-1)}><Icon name="back" /></button>
-        {m && <span className="sub">{ago(m.last_cooked, today)}</span>}
-        <span style={{ width: 44 }} />
+        {m && <span className="sub sp" style={{ textAlign: 'center' }}>{ago(m.last_cooked, today)}</span>}
+        {m && (
+          <>
+            <button className="icon" aria-label="Edit meal" onClick={() => setEditing(true)}><Icon name="settings" /></button>
+            <button className="btn sm ghost" onClick={() => setPlanning(true)}><Icon name="plan" size={16} /> Add to plan</button>
+          </>
+        )}
       </div>
       {meal.isError && <p className="error" role="alert">{meal.error.message}</p>}
       {m && me && (
@@ -137,6 +146,8 @@ export function MealPage() {
           <button className="btn" onClick={() => setCooking(true)}><Icon name="flame" size={18} /> I cooked this again</button>
           <RateSheet meal={m} meId={me.id} open={rating} onClose={() => setRating(false)} />
           <CookSheet meal={m} open={cooking} onClose={() => setCooking(false)} />
+          <AddToPlanSheet meal={m} open={planning} onClose={() => setPlanning(false)} />
+          <EditMealSheet meal={m} open={editing} onClose={() => setEditing(false)} />
         </>
       )}
     </>

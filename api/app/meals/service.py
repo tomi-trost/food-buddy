@@ -18,6 +18,7 @@ from app.meals.schemas import (
     MealCreate,
     MealIngredientOut,
     MealOut,
+    MealPatch,
     RatingIn,
     RatingOut,
 )
@@ -254,6 +255,21 @@ async def post_meal(session: AsyncSession, user: User, body: MealCreate) -> Meal
         analysis.meal_id = meal.id
     await session.commit()
     return meal
+
+
+async def update_meal(session: AsyncSession, meal: Meal, body: MealPatch) -> None:
+    if body.name is not None:
+        meal.name = body.name.strip()
+    if body.types is not None:
+        meal.types = [t for t in ("breakfast", "lunch", "dinner") if t in body.types]
+    if body.prep_friendly is not None:
+        tags = [t for t in meal.tags if t != "prep-friendly"]
+        meal.tags = tags + ["prep-friendly"] if body.prep_friendly else tags
+    if body.prep_minutes is not None:
+        meal.prep_minutes = body.prep_minutes
+    if body.portions is not None:
+        meal.portions = body.portions
+    await session.commit()
 
 
 async def get_own_meal(session: AsyncSession, user: User, meal_id: int) -> Meal:

@@ -54,6 +54,14 @@ class CookIn(BaseModel):
     used_up: list[int] = Field(default_factory=list)
 
 
+class MealPatch(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    types: list[MealType] | None = Field(default=None, min_length=1)
+    prep_friendly: bool | None = None
+    prep_minutes: int | None = Field(default=None, ge=1, le=600)
+    portions: int | None = Field(default=None, ge=1, le=20)
+
+
 class RatingIn(BaseModel):
     taste: float = Field(ge=0.5, le=5)
     again: Literal[1, 3, 5]

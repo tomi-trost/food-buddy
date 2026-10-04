@@ -29,9 +29,14 @@ export function Photo({ url, emoji, seed = 0, alt, style, className = '' }: {
 }) {
   const src = useAuthedImage(url)
   if (src) return <img className={`photo ${className}`} src={src} alt={alt} style={style} />
+  const decorative = alt === ''  // thumbnails next to a visible name
   const [a, b] = GRADIENTS[Math.abs(seed) % GRADIENTS.length]
   return (
-    <div className={`photo ${className}`} role="img" aria-label={alt} style={{ background: `linear-gradient(135deg, ${a}, ${b})`, ...style }}>
+    <div
+      className={`photo ${className}`}
+      {...(decorative ? { 'aria-hidden': true } : { role: 'img', 'aria-label': alt })}
+      style={{ background: `linear-gradient(135deg, ${a}, ${b})`, ...style }}
+    >
       {emoji}
     </div>
   )

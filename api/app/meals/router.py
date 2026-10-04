@@ -3,7 +3,7 @@ from fastapi.responses import FileResponse
 
 from app.auth.deps import CurrentUser, Session
 from app.config import get_settings
-from app.meals.schemas import CookIn, MealCard, MealCreate, MealOut, RatingIn
+from app.meals.schemas import CookIn, MealCard, MealCreate, MealOut, MealPatch, RatingIn
 from app.meals.service import (
     cook_again,
     get_own_meal,
@@ -11,6 +11,7 @@ from app.meals.service import (
     meal_out,
     post_meal,
     save_rating,
+    update_meal,
 )
 from app.meals.tasks import generate_recipe
 
@@ -32,6 +33,13 @@ async def create_meal(body: MealCreate, user: CurrentUser, session: Session) -> 
 @router.get("/{meal_id}")
 async def get_meal(meal_id: int, user: CurrentUser, session: Session) -> MealOut:
     return await meal_out(session, user, await get_own_meal(session, user, meal_id))
+
+
+@router.patch("/{meal_id}")
+async def patch_meal(meal_id: int, body: MealPatch, user: CurrentUser, session: Session) -> MealOut:
+    meal = await get_own_meal(session, user, meal_id)
+    await update_meal(session, meal, body)
+    return await meal_out(session, user, meal)
 
 
 @router.put("/{meal_id}/rating")

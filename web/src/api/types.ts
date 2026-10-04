@@ -149,3 +149,38 @@ export type RegisterBody = {
 }
 
 export type StockItem = { ingredient: Ingredient; grams: number; expires_on: string; days_left: number }
+
+export type PlanMode = 'cook' | 'prep' | 'out' | 'skip'
+export type WizardCell = { mode: PlanMode; minutes: number | null }
+
+export type PlanSlot = { meal_type: MealType; mode: PlanMode; minutes: number | null; meal: MealCard | null }
+
+export type Plan = {
+  id: number
+  week_start: string
+  status: 'draft' | 'approved'
+  wizard: WizardCell[][]
+  days: { date: string; kcal: number; slots: PlanSlot[] }[]
+  approvals: { user_id: number; name: string; color: string; approved: boolean }[]
+  summary: {
+    cook: number
+    prep: number
+    out: number
+    skip: number
+    grocery_cost: number
+    batch_cook: { meal_id: number; name: string; times: number }[]
+  }
+}
+
+export type ShoppingItem = {
+  ingredient: Ingredient
+  need: number
+  have: number
+  buy: number
+  ran_out: boolean
+  checked: boolean
+}
+
+export type Shopping = { plan_approved: boolean; items: ShoppingItem[]; in_stock: Ingredient[]; total: number }
+
+export type MealPatch = Partial<{ name: string; types: MealType[]; prep_friendly: boolean; prep_minutes: number; portions: number }>

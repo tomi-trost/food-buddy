@@ -1,5 +1,5 @@
 import type {
-  AnalysisJob, CookIn, HouseholdPatch, Ingredient, Me, Meal, MealCard, MealCreate, MePatch, Rating, RegisterBody, StockItem,
+  AnalysisJob, CookIn, HouseholdPatch, Ingredient, Me, Meal, MealCard, MealCreate, MealPatch, MealType, MePatch, Plan, PlanMode, Rating, RegisterBody, Shopping, StockItem, WizardCell,
 } from './types'
 
 const TOKEN_KEY = 'fb.token'
@@ -98,6 +98,20 @@ export const api = {
     await request(`/inventory/${ingredientId}?used_up=${usedUp}`, { method: 'DELETE' })
   },
   cookable: () => json<MealCard[]>('/inventory/cookable'),
+  patchMeal: (id: number, patch: MealPatch) =>
+    json<Meal>(`/meals/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),
+  plan: () => json<Plan | null>('/plan'),
+  makePlan: (weekStart: string, wizard: WizardCell[][]) =>
+    json<Plan>('/plan', { method: 'POST', body: JSON.stringify({ week_start: weekStart, wizard }) }),
+  slotOptions: (day: number, type: MealType) => json<MealCard[]>(`/plan/slots/${day}/${type}/options`),
+  putSlot: (day: number, type: MealType, body: { mode: PlanMode; minutes?: number | null; meal_id?: number | null }) =>
+    json<Plan>(`/plan/slots/${day}/${type}`, { method: 'PUT', body: JSON.stringify(body) }),
+  approvePlan: () => json<Plan>('/plan/approve', { method: 'POST' }),
+  shopping: () => json<Shopping>('/shopping'),
+  checkItem: (ingredientId: number, checked: boolean) =>
+    json<Shopping>(`/shopping/check/${ingredientId}`, { method: 'PUT', body: JSON.stringify({ checked }) }),
+  finishShopping: (today: string) =>
+    json<{ added: number }>('/shopping/finish', { method: 'POST', body: JSON.stringify({ today }) }),
   cookMeal: (id: number, body: CookIn) =>
     json<Meal>(`/meals/${id}/cook`, { method: 'POST', body: JSON.stringify(body) }),
   /** Photos need the auth header, so they're fetched as blobs instead of plain <img src>. */

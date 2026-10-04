@@ -10,6 +10,8 @@ from app.inventory.router import router as inventory_router
 from app.jobs import jobs_app
 from app.meals.router import router as meals_router
 from app.nutrition.router import router as nutrition_router
+from app.plan.router import router as plan_router
+from app.shopping.router import router as shopping_router
 
 
 @asynccontextmanager
@@ -36,4 +38,6 @@ api.include_router(analysis_router)
 api.include_router(meals_router)
 api.include_router(nutrition_router)
 api.include_router(inventory_router)
+api.include_router(plan_router)
+api.include_router(shopping_router)
 app.include_router(api)

@@ -59,10 +59,11 @@ Shared conventions for all sections:
 - [x] "Cook with what you have" suggestions; "Use soon" data for Home
 
 ### S5 — Plan & shopping
-- [ ] Wizard grid (7 days × breakfast/lunch/dinner; cook 15/30/45/60+, prep, out, skip) and deterministic generator from ratings + time + variety
-- [ ] Week view: summary (cook/prep/out/skip, grocery cost), batch-cook note, kcal per day, slot sheet (mode + meal picker), add-to-plan from a meal
-- [ ] Approve together (both users; any change resets approval)
-- [ ] Shopping list: needs minus stock, rounded, grouped by category, ran-out items, check-off, est. total, "finished shopping" → inventory
+- [x] Wizard grid (7 days × breakfast/lunch/dinner; cook 15/30/45/60+, prep, out, skip; this/next week) and deterministic generator from ratings + time + variety
+- [x] Meal edit sheet: meal types and prep-friendly flag (planner inputs)
+- [x] Week view: summary (cook/prep/out/skip, grocery cost), batch-cook note, kcal per day, slot sheet (mode + meal picker), add-to-plan from a meal
+- [x] Approve together (both users; any change resets approval)
+- [x] Shopping list: needs minus stock, rounded, grouped by category, ran-out items, check-off, est. total, "finished shopping" → inventory
 
 ### S6 — Home & Insights
 - [ ] Home: kcal ring + macro bars (animated), today by meal type with "+", snacks card, planned today / plan CTA, rate-this-meal, use soon

@@ -11,6 +11,7 @@ import { LoginPage } from './pages/LoginPage'
 import { MealPage } from './pages/MealPage'
 import { MealsPage } from './pages/MealsPage'
 import { Placeholder } from './pages/Placeholder'
+import { PlanPage } from './pages/PlanPage'
 import { SnapPage } from './pages/SnapPage'
 
 function RequireAuth({ children }: { children: ReactNode }) {
@@ -42,7 +43,7 @@ export function App() {
         <Route index element={<HomePage />} />
         <Route path="meals" element={<MealsPage />} />
         <Route path="meals/:id" element={<MealPage />} />
-        <Route path="plan" element={<Placeholder title="Plan" section="S5" />} />
+        <Route path="plan" element={<PlanPage />} />
         <Route path="ingredients" element={<IngredientsPage />} />
         <Route path="insights" element={<Placeholder title="Insights" section="S6" />} />
       </Route>
