@@ -54,7 +54,7 @@ async def clean_tables():
         await conn.execute(
             text(
                 "TRUNCATE analysis_job, app_user, household, ingredient, meal, food_log, "
-                "inventory_item, ran_out RESTART IDENTITY CASCADE"
+                "inventory_item, ran_out, rating RESTART IDENTITY CASCADE"
             )
         )
 

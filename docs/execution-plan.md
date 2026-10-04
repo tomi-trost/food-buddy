@@ -48,10 +48,10 @@ Shared conventions for all sections:
 - [x] Snap can start with a meal type (`/snap?type=lunch`); the Home "+" buttons arrive with S6
 
 ### S3 — Meals & ratings
-- [ ] Feed: meal-type filter, Any/Top rated/≤30 min/≤4 €, sort (top rated / most recent / most cooked), cards with rating, cost per portion, cooked N×
-- [ ] Detail: photo, chips, stats (cooked, last cooked, avg rating), Recipe / Nutrition (per portion + "how filling" tip) / Ratings tabs
-- [ ] Rating sheet: taste (half stars), make again, worth the effort, how filling; partner's rating + "waiting for partner"; combined score
-- [ ] "I cooked this again": meal type, used-up ingredients → cook log, food log, stock
+- [x] Feed: meal-type filter, Any/Top rated/≤30 min/≤4 €, sort (top rated / most recent / most cooked), cards with rating, cost per portion, cooked N×
+- [x] Detail: photo, chips, stats (cooked, last cooked, avg rating), Recipe / Nutrition (per portion + "how filling" tip) / Ratings tabs
+- [x] Rating sheet: taste (half stars), make again, worth the effort, how filling; partner's rating + "waiting for partner"; combined score
+- [x] "I cooked this again": meal type, used-up ingredients → cook log, food log, stock
 
 ### S4 — Ingredients (fridge & pantry)
 - [ ] Inventory API: list by location, add (+default amount), ±50 g, expiry from shelf days

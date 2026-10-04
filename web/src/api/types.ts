@@ -29,7 +29,34 @@ export type AnalysisItem = {
   nutrients: Nutrients | null
 }
 
-export type Meal = {
+export type Fill = 'hungry' | 'right' | 'heavy'
+
+export type Rating = {
+  taste: number // 0.5–5 in half steps
+  again: 1 | 3 | 5
+  effort: 1 | 3 | 5
+  fill: Fill
+  note?: string | null
+}
+
+export type MealStats = { score: number | null; cooked_count: number; last_cooked: string | null }
+
+export type MealCard = MealStats & {
+  id: number
+  name: string
+  emoji: string
+  photo_url: string | null
+  types: MealType[]
+  tags: string[]
+  prep_minutes: number
+  portions: number
+  cost: number
+  rated_by_me: boolean
+  kcal_per_portion: number
+  created_at: string
+}
+
+export type Meal = MealStats & {
   id: number
   name: string
   emoji: string
@@ -44,8 +71,11 @@ export type Meal = {
   steps_source: 'template' | 'model'
   ingredients: { ingredient: Ingredient; grams: number }[]
   per_portion: Nutrients
+  ratings: { user_id: number; name: string; color: string; rating: Rating | null }[]
   created_at: string
 }
+
+export type CookIn = { meal_type: MealType; eaten_on: string; used_up: number[] }
 
 export type MealCreate = {
   name: string

@@ -3,23 +3,49 @@ from fastapi.responses import FileResponse
 
 from app.auth.deps import CurrentUser, Session
 from app.config import get_settings
-from app.meals.schemas import MealCreate, MealOut
-from app.meals.service import get_own_meal, meal_out, post_meal
+from app.meals.schemas import CookIn, MealCard, MealCreate, MealOut, RatingIn
+from app.meals.service import (
+    cook_again,
+    get_own_meal,
+    meal_cards,
+    meal_out,
+    post_meal,
+    save_rating,
+)
 from app.meals.tasks import generate_recipe
 
 router = APIRouter(prefix="/meals", tags=["meals"])
+
+
+@router.get("")
+async def list_meals(user: CurrentUser, session: Session) -> list[MealCard]:
+    return await meal_cards(session, user)
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_meal(body: MealCreate, user: CurrentUser, session: Session) -> MealOut:
     meal = await post_meal(session, user, body)
     await generate_recipe.defer_async(meal_id=meal.id)
-    return meal_out(meal)
+    return await meal_out(session, user, meal)
 
 
 @router.get("/{meal_id}")
 async def get_meal(meal_id: int, user: CurrentUser, session: Session) -> MealOut:
-    return meal_out(await get_own_meal(session, user, meal_id))
+    return await meal_out(session, user, await get_own_meal(session, user, meal_id))
+
+
+@router.put("/{meal_id}/rating")
+async def rate_meal(meal_id: int, body: RatingIn, user: CurrentUser, session: Session) -> MealOut:
+    meal = await get_own_meal(session, user, meal_id)
+    await save_rating(session, user, meal, body)
+    return await meal_out(session, user, meal)
+
+
+@router.post("/{meal_id}/cook")
+async def cook_meal(meal_id: int, body: CookIn, user: CurrentUser, session: Session) -> MealOut:
+    meal = await get_own_meal(session, user, meal_id)
+    await cook_again(session, user, meal, body)
+    return await meal_out(session, user, meal)
 
 
 @router.get("/{meal_id}/photo", response_class=FileResponse)

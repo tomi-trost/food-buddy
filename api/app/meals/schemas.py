@@ -6,6 +6,13 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from app.nutrition.schemas import IngredientOut, NutrientsOut
 
 MealType = Literal["breakfast", "lunch", "dinner"]
+Fill = Literal["hungry", "right", "heavy"]
+
+
+def _half_steps(v: float) -> float:
+    if (v * 2) != int(v * 2):
+        raise ValueError("must be a multiple of 0.5")
+    return v
 
 
 class ItemIn(BaseModel):
@@ -27,12 +34,7 @@ class MealCreate(BaseModel):
     used_up: list[int] = Field(default_factory=list)
     analysis_id: int | None = None
 
-    @field_validator("servings_eaten")
-    @classmethod
-    def half_steps(cls, v: float) -> float:
-        if (v * 2) != int(v * 2):
-            raise ValueError("servings_eaten must be a multiple of 0.5")
-        return v
+    _servings = field_validator("servings_eaten")(_half_steps)
 
     @model_validator(mode="after")
     def consistent_ids(self) -> "MealCreate":
@@ -44,12 +46,60 @@ class MealCreate(BaseModel):
         return self
 
 
+class CookIn(BaseModel):
+    """ "I cooked this again": one portion eaten by the current user."""
+
+    meal_type: MealType
+    eaten_on: date
+    used_up: list[int] = Field(default_factory=list)
+
+
+class RatingIn(BaseModel):
+    taste: float = Field(ge=0.5, le=5)
+    again: Literal[1, 3, 5]
+    effort: Literal[1, 3, 5]
+    fill: Fill = "right"
+    note: str | None = Field(default=None, max_length=500)
+
+    _taste = field_validator("taste")(_half_steps)
+
+
+class RatingOut(BaseModel):
+    user_id: int
+    name: str
+    color: str
+    rating: RatingIn | None  # None = not rated yet
+
+
 class MealIngredientOut(BaseModel):
     ingredient: IngredientOut
     grams: float
 
 
-class MealOut(BaseModel):
+class MealStats(BaseModel):
+    score: float | None
+    cooked_count: int
+    last_cooked: date | None
+
+
+class MealCard(MealStats):
+    """Feed item."""
+
+    id: int
+    name: str
+    emoji: str
+    photo_url: str | None
+    types: list[str]
+    tags: list[str]
+    prep_minutes: int
+    portions: int
+    cost: float
+    rated_by_me: bool
+    kcal_per_portion: float
+    created_at: datetime
+
+
+class MealOut(MealStats):
     id: int
     name: str
     emoji: str
@@ -64,4 +114,5 @@ class MealOut(BaseModel):
     steps_source: str
     ingredients: list[MealIngredientOut]
     per_portion: NutrientsOut
+    ratings: list[RatingOut]
     created_at: datetime

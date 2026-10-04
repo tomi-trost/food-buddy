@@ -1,4 +1,6 @@
-import type { AnalysisJob, HouseholdPatch, Ingredient, Me, Meal, MealCreate, MePatch, RegisterBody } from './types'
+import type {
+  AnalysisJob, CookIn, HouseholdPatch, Ingredient, Me, Meal, MealCard, MealCreate, MePatch, Rating, RegisterBody,
+} from './types'
 
 const TOKEN_KEY = 'fb.token'
 
@@ -84,6 +86,11 @@ export const api = {
     json<Ingredient[]>(`/ingredients?${new URLSearchParams({ q, limit: String(limit) })}`),
   createMeal: (body: MealCreate) => json<Meal>('/meals', { method: 'POST', body: JSON.stringify(body) }),
   meal: (id: number | string) => json<Meal>(`/meals/${id}`),
+  meals: () => json<MealCard[]>('/meals'),
+  rateMeal: (id: number, rating: Rating) =>
+    json<Meal>(`/meals/${id}/rating`, { method: 'PUT', body: JSON.stringify(rating) }),
+  cookMeal: (id: number, body: CookIn) =>
+    json<Meal>(`/meals/${id}/cook`, { method: 'POST', body: JSON.stringify(body) }),
   /** Photos need the auth header, so they're fetched as blobs instead of plain <img src>. */
   async photoBlob(url: string) {
     return (await request(url.replace(/^\/api/, ''))).blob()

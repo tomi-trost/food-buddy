@@ -3,13 +3,16 @@ import { render } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { MemoryRouter, Routes } from 'react-router'
 import { vi } from 'vitest'
+import { ToastProvider } from '../ui/Toast'
 
 export function renderAt(path: string, routes: ReactNode) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
     <QueryClientProvider client={client}>
       <MemoryRouter initialEntries={[path]}>
-        <Routes>{routes}</Routes>
+        <ToastProvider>
+          <Routes>{routes}</Routes>
+        </ToastProvider>
       </MemoryRouter>
     </QueryClientProvider>,
   )

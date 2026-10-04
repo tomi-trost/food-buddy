@@ -7,6 +7,7 @@ from sqlalchemy import func, select
 from app.auth.deps import CurrentUser, Session
 from app.auth.models import Household, User
 from app.auth.security import create_access_token, hash_password, verify_password
+from app.auth.service import household_members
 
 router = APIRouter(tags=["account"])
 
@@ -81,14 +82,6 @@ class HouseholdPatch(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=80)
     reward_per: int | None = Field(default=None, ge=2, le=3)
     reward_cap: int | None = Field(default=None, ge=1, le=5)
-
-
-async def household_members(session, household_id: int) -> list[User]:
-    return list(
-        await session.scalars(
-            select(User).where(User.household_id == household_id).order_by(User.id)
-        )
-    )
 
 
 async def me_out(session, user: User) -> MeOut:
