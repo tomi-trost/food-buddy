@@ -1,24 +1,51 @@
-import type { ReactNode } from 'react'
-import { Navigate, Route, Routes, useLocation } from 'react-router'
-import { tokenStore } from './api/client'
+import { useQuery } from '@tanstack/react-query'
+import { type ReactNode, useEffect } from 'react'
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router'
+import { api, tokenStore } from './api/client'
+import { AppLayout, BareLayout } from './layout/AppLayout'
+import { applyTheme } from './lib/theme'
 import { AnalysisPage } from './pages/AnalysisPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
+import { Placeholder } from './pages/Placeholder'
 import { SnapPage } from './pages/SnapPage'
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const location = useLocation()
-  if (!tokenStore.get()) return <Navigate to="/login" replace state={{ from: location.pathname }} />
+  const navigate = useNavigate()
+  const hasToken = !!tokenStore.get()
+  // A stale/invalid token shows up as 401 on /me: the client clears it, we go to login.
+  const me = useQuery({ queryKey: ['me'], queryFn: api.me, enabled: hasToken, staleTime: 60_000 })
+  useEffect(() => {
+    if (me.isError) navigate('/login', { replace: true })
+  }, [me.isError, navigate])
+
+  if (!hasToken) return <Navigate to="/login" replace state={{ from: location.pathname }} />
   return children
 }
 
 export function App() {
+  useEffect(() => {
+    applyTheme()
+    const mq = matchMedia('(prefers-color-scheme: dark)')
+    mq.addEventListener('change', applyTheme)
+    return () => mq.removeEventListener('change', applyTheme)
+  }, [])
+
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/" element={<RequireAuth><HomePage /></RequireAuth>} />
-      <Route path="/snap" element={<RequireAuth><SnapPage /></RequireAuth>} />
-      <Route path="/analysis/:id" element={<RequireAuth><AnalysisPage /></RequireAuth>} />
+      <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
+        <Route index element={<HomePage />} />
+        <Route path="meals" element={<Placeholder title="Meals" section="S3" />} />
+        <Route path="plan" element={<Placeholder title="Plan" section="S5" />} />
+        <Route path="ingredients" element={<Placeholder title="Ingredients" section="S4" />} />
+        <Route path="insights" element={<Placeholder title="Insights" section="S6" />} />
+      </Route>
+      <Route element={<RequireAuth><BareLayout /></RequireAuth>}>
+        <Route path="snap" element={<SnapPage />} />
+        <Route path="analysis/:id" element={<AnalysisPage />} />
+      </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

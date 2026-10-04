@@ -37,12 +37,35 @@ export type AnalysisJob = {
   finished_at: string | null
 }
 
+export type Member = { id: number; name: string; color: string }
+
+export type Goals = { kcal: number; protein: number; fiber: number; sugar: number }
+
 export type Me = {
   id: number
   email: string
   name: string
-  household: { id: number; name: string; invite_code: string }
+  color: string
+  goals: Goals
+  household: {
+    id: number
+    name: string
+    invite_code: string
+    reward_per: number
+    reward_cap: number
+    members: Member[]
+  }
 }
+
+export type MePatch = Partial<{
+  name: string
+  goal_kcal: number
+  goal_protein: number
+  goal_fiber: number
+  goal_sugar: number
+}>
+
+export type HouseholdPatch = Partial<{ name: string; reward_per: number; reward_cap: number }>
 
 export type RegisterBody = {
   email: string

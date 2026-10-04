@@ -23,7 +23,58 @@ Photo in the PWA → FastAPI saves it → job queued in Postgres → worker asks
 
 Learned in M0 (feeds M2/M3): plain `qwen3-vl` tags are thinking models → use `-instruct`; the 2B model badly underestimates portions (50 g of spaghetti on a full plate); the 23-item seed list misses common items (peas, ground meat).
 
-## M1 — Running on Oracle (needs you for accounts)
+## M1 — Mock parity (in progress, branch `feat/mock-parity`)
+
+Decided 2026-10-04: build the whole app up to the mock first, deploy afterwards. Work goes in **sections**. Each section is a vertical slice (API + screens + tests), ends green, and gets one local commit. Nothing is pushed or merged without asking.
+
+Shared conventions for all sections:
+- "Today" is the phone's local date. The client sends `YYYY-MM-DD` and the server never guesses time zones.
+- Everything is scoped to the household. A partner's data is visible (ratings, Versus), never another household's.
+- Meal photos come from the snap; meals without one show the mock's gradient + emoji.
+- One `FoodLog` table holds everything eaten (meals and snacks). Daily totals, Home and Insights all read from it.
+
+### S1 — App shell, design system, profile & settings
+- [x] Ingredient fields from the mock: emoji, category, price per 100 g, shelf days (seed updated)
+- [x] User goals (kcal, protein, fiber, sugar) + avatar colour; household reward settings (treat-free days per croissant, weekly cap); `PATCH /api/me`, `PATCH /api/household`; members listed in `/api/me`
+- [x] Web: tab bar + Snap FAB, line-icon set from the mock, bottom sheet, toast (with undo), stepper, half-star rating, segmented/underline/mini toggles, macro tiles; Home header (date, greeting, Insights, avatar → Settings)
+- [x] Settings sheet: goals, croissant settings, dark mode, accent colour (per device), invite code, log out
+
+### S2 — Snap → meal
+- [ ] Ingredient search API (`GET /api/ingredients?q=`) for add/replace
+- [ ] Verdict: tap chip → grams/remove/replace sheet, resolve unmatched items, add ingredient, portions eaten, live macros
+- [ ] Meal details: meal type, prep time, cost (auto from ingredient prices), portions made, used-up ingredients, auto recipe preview
+- [ ] `POST /api/meals` from an analysis → `Meal` + ingredients + `CookLog` + `FoodLog` (portion share) + stock deduction + used-up → shopping list; corrections stored
+- [ ] Recipe steps: template right away, replaced by a model-generated recipe in the background
+- [ ] Snap can start from Home's "+" per meal type
+
+### S3 — Meals & ratings
+- [ ] Feed: meal-type filter, Any/Top rated/≤30 min/≤4 €, sort (top rated / most recent / most cooked), cards with rating, cost per portion, cooked N×
+- [ ] Detail: photo, chips, stats (cooked, last cooked, avg rating), Recipe / Nutrition (per portion + "how filling" tip) / Ratings tabs
+- [ ] Rating sheet: taste (half stars), make again, worth the effort, how filling; partner's rating + "waiting for partner"; combined score
+- [ ] "I cooked this again": meal type, used-up ingredients → cook log, food log, stock
+
+### S4 — Ingredients (fridge & pantry)
+- [ ] Inventory API: list by location, add (+default amount), ±50 g, expiry from shelf days
+- [ ] Minus to zero → "used it up" (→ shopping list) / "just remove" / keep
+- [ ] "Cook with what you have" suggestions; "Use soon" data for Home
+
+### S5 — Plan & shopping
+- [ ] Wizard grid (7 days × breakfast/lunch/dinner; cook 15/30/45/60+, prep, out, skip) and deterministic generator from ratings + time + variety
+- [ ] Week view: summary (cook/prep/out/skip, grocery cost), batch-cook note, kcal per day, slot sheet (mode + meal picker), add-to-plan from a meal
+- [ ] Approve together (both users; any change resets approval)
+- [ ] Shopping list: needs minus stock, rounded, grouped by category, ran-out items, check-off, est. total, "finished shopping" → inventory
+
+### S6 — Home & Insights
+- [ ] Home: kcal ring + macro bars (animated), today by meal type with "+", snacks card, planned today / plan CTA, rate-this-meal, use soon
+- [ ] Insights Overview: calories vs goal (day/week), macro split donut, fiber goal days, avg cost / cook time, top rated
+- [ ] Versus: per-category winners, score, weekly challenge (fiber / protein / on target)
+
+### S7 — Snacks & croissant rewards
+- [ ] Log a snack: pick from list, photo (vision model, snack schema), nutrition-label scan (vision model → per-100 g values, editable); kind sweet/savory/drink
+- [ ] Treat sugar vs goal, treat-free days, croissant passes (earn, cap, use)
+- [ ] Insights → Snacks tab: sugar chart, rewards, today, "who resists better"
+
+## M2 — Running on Oracle (after M1; needs you for accounts)
 
 - [ ] **You:** create the Oracle Always Free A1 VM (Ubuntu 24.04 arm64, 2 OCPU / 12 GB, 100+ GB boot volume), add an SSH key
 - [ ] **You:** Cloudflare Zero Trust → Tunnels → create tunnel `food-buddy`, public hostname `food.<domain>` → `http://caddy:80`; copy the token into `.env`
@@ -32,30 +83,26 @@ Learned in M0 (feeds M2/M3): plain `qwen3-vl` tags are thinking models → use `
 - [ ] Backups: nightly `pg_dump` + photos with restic; Jetson pulls over SSH; restore drill
 - [ ] Optional: Uptime Kuma on the Pi 3
 
-## M2 — Model benchmark (`eval/`)
+## M3 — Model benchmark (`eval/`)
 
 - [ ] Script running every provider over a Nutrition5k subset + our weighed meals; metrics: ingredient P/R, kcal/macro % error, JSON validity, latency, RAM
 - [ ] Compare Qwen3-VL 2B/4B, Qwen2.5-VL 3B, Gemma 4 small, food-analysis LoRA on Oracle
 - [ ] Pick default model + prompt; accept 0018
 
-## M3 — Nutrition data
+## M4 — Nutrition data
 
 - [ ] Import USDA FoodData Central (Foundation + SR Legacy), Ciqual; aliases; fiber + sugar
 - [ ] Open Food Facts barcode lookup endpoint (cached)
 - [ ] Matching quality tests on a fixed list of model outputs → expected ingredients
 
-## M4 — Snap loop complete
+## M5 — Hardening & extras
 
-- [ ] Verdict editing persisted (rename/replace ingredient, add/remove, grams); store corrections
-- [ ] Post meal: meal type, servings, prep time, cost, who ate/cooked → `Meal`
-- [ ] Recipe + prep time generation task; Web Push "analysis ready" (VAPID)
+- [ ] Web Push (VAPID): "analysis ready", "partner rated", "approve the plan"
 - [ ] Refresh tokens; rate limit on login
 - [ ] Client-side photo resize before upload (saves mobile data); HEIC check on iPhone
+- [ ] API types generated from OpenAPI
 - [ ] Capacitor Android build (APK sideload)
-
-## M5+ — Features in mock order
-
-Meals feed & ratings → Ingredients (fridge/pantry) & shopping → Weekly plan generator → Insights & snacks (label scan, barcode, croissants) → Offline write queue, failover drill, README/self-hosting docs, go public (license decision).
+- [ ] Offline write queue, failover drill, README/self-hosting docs, go public (license decision)
 
 ## Local development
 

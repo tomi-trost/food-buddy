@@ -1,4 +1,4 @@
-from sqlalchemy import ARRAY, Float, String, Text, UniqueConstraint
+from sqlalchemy import ARRAY, Float, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base
@@ -21,6 +21,15 @@ class Ingredient(Base):
     fat: Mapped[float] = mapped_column(Float)
     fiber: Mapped[float] = mapped_column(Float, default=0)
     sugar: Mapped[float] = mapped_column(Float, default=0)
+    emoji: Mapped[str] = mapped_column(String(8), default="")
+    category: Mapped[str] = mapped_column(String(20), default="Pantry")  # Meat|Produce|Dairy|Pantry
+    price_per_100g: Mapped[float] = mapped_column(Float, default=0)  # EUR; 0 = unknown
+    shelf_days: Mapped[int] = mapped_column(Integer, default=7)
+
+    @property
+    def location(self) -> str:
+        """Where it's stored at home: dry/canned goods in the pantry, the rest in the fridge."""
+        return "pantry" if self.category == "Pantry" else "fridge"
 
     @property
     def per100(self) -> Nutrients:

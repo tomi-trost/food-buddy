@@ -10,7 +10,7 @@ export function SnapPage() {
   })
 
   return (
-    <main className="screen">
+    <>
       <Link to="/" className="sub">← Back</Link>
       <h1>Snap your meal</h1>
       <p className="sub">Take a photo from above with the whole plate in view.</p>
@@ -29,6 +29,6 @@ export function SnapPage() {
         />
       </label>
       {upload.isError && <p className="error" role="alert">{upload.error.message}</p>}
-    </main>
+    </>
   )
 }

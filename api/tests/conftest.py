@@ -76,8 +76,8 @@ async def client(queue):
         yield c
 
 
-async def register(client, email="tomi@example.com", **extra) -> dict[str, str]:
-    body = {"email": email, "password": "correct horse", "name": "Tomi"}
+async def register(client, email="tomi@example.com", name="Tomi", **extra) -> dict[str, str]:
+    body = {"email": email, "password": "correct horse", "name": name}
     body.update(extra or {"household_name": "Home"})
     response = await client.post("/api/auth/register", json=body)
     assert response.status_code == 201, response.text

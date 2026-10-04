@@ -35,7 +35,7 @@ export function LoginPage() {
   }
 
   return (
-    <main className="screen">
+    <main className="app screen bare">
       <h1>Food Buddy</h1>
       <p className="sub">Snap your meal, see the macros, plan the week together.</p>
       <div className="seg" role="group" aria-label="Account">

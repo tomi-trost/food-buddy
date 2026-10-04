@@ -1,4 +1,4 @@
-import type { AnalysisJob, Me, RegisterBody } from './types'
+import type { AnalysisJob, HouseholdPatch, Me, MePatch, RegisterBody } from './types'
 
 const TOKEN_KEY = 'fb.token'
 
@@ -71,6 +71,9 @@ export const api = {
   },
   logout: () => tokenStore.set(null),
   me: () => json<Me>('/auth/me'),
+  updateMe: (patch: MePatch) => json<Me>('/auth/me', { method: 'PATCH', body: JSON.stringify(patch) }),
+  updateHousehold: (patch: HouseholdPatch) =>
+    json<Me>('/household', { method: 'PATCH', body: JSON.stringify(patch) }),
   uploadPhoto(file: File) {
     const form = new FormData()
     form.append('photo', file)

@@ -51,7 +51,7 @@ export function AnalysisPage() {
   const photo = usePhoto(job.data?.photo_url)
 
   return (
-    <main className="screen">
+    <>
       <Link to="/" className="sub">← Home</Link>
       {photo ? <img className="photo" src={photo} alt="Your meal" /> : <div className="photo" />}
       {job.isError && <p className="error" role="alert">{job.error.message}</p>}
@@ -66,7 +66,7 @@ export function AnalysisPage() {
         </section>
       )}
       {job.data?.status === 'done' && job.data.result && <Verdict result={job.data.result} />}
-    </main>
+    </>
   )
 }
 

@@ -53,3 +53,17 @@ async def test_seed_is_idempotent(seeded):
     await seed_mock(seeded)
     match = await match_ingredient(seeded, "banana")
     assert match.ingredient.name == "Banana"
+
+
+async def test_seed_carries_mock_metadata(seeded):
+    match = await match_ingredient(seeded, "chickpeas")
+    ing = match.ingredient
+    assert (ing.emoji, ing.category, ing.price_per_100g, ing.shelf_days) == (
+        "🫘",
+        "Pantry",
+        0.25,
+        200,
+    )
+    assert ing.location == "pantry"
+    chicken = (await match_ingredient(seeded, "chicken breast")).ingredient
+    assert chicken.location == "fridge"
