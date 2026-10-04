@@ -38,3 +38,8 @@
 - Log a snack by photo (auto-detect) or by scanning the nutrition label on the pack, or pick from a list.
 - Home progress ring and bars animate from empty (with kcal count-up) every time you navigate to Home; skipped when the OS asks for reduced motion.
 - "Photo of snack" button renamed "Photo". First commit pushed; next session: tech stack, deployment and serving decisions.
+
+## 2026-10-04 (planning)
+- Design plan for the real app (`docs/design-plan.md`): Expo client, FastAPI + Postgres + worker, one Docker Compose stack for Oracle Always Free and the Raspberry Pi, open food-analysis model research and pipeline, phased roadmap.
+- Decisions 0015 (FastAPI) and 0016 (Docker on both hosts) accepted; 0017 (Expo) and 0018 (self-hosted VLM + nutrition DB) proposed pending the phase-0 spike.
+- Plan v2 after answers: both iPhones and no fees → web-first PWA + Capacitor (0017 revised from Expo); Pi 5 app host + Jetson (if Orin Nano) GPU inference + Oracle off-site standby, exposed via Cloudflare Tunnel (0016); zero cost + open source (0019).

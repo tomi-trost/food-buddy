@@ -13,7 +13,7 @@ Phone-first app for two people (Tomi + partner): snap a plate photo → AI ident
 - Original plan: `docs/plan.md`
 
 ## Next session
-Move from mock to implementation: decide the tech stack (web + native, e.g. Expo/React Native vs Capacitor + web framework), deployment options and how the app is served (hosting, backend/sync for two users, AI/vision + nutrition data sources). Start from the open questions in `docs/ideas.md`, record choices in `docs/decisions/`, then write the implementation plan.
+Design plan is in `docs/design-plan.md` (zero cost + open source; React/Vite PWA + Capacitor; FastAPI + Postgres + worker; Docker Compose with Pi 5 app host, Jetson GPU inference, Oracle off-site standby, Cloudflare Tunnel; self-hosted Qwen3-VL + USDA/Ciqual/OFF grounding). Next: answer its open questions (§9: which Jetson, Pi specs, license), then phase 0 spikes. Confirm 0017/0018 afterwards.
 
 ## Working agreements (keep logs current)
 - When the user makes a design/tech decision → add `docs/decisions/NNNN-title.md` (Context, Decision, Alternatives, Consequences) and link it in `docs/decisions/README.md`.

@@ -16,5 +16,10 @@
 | [0012](0012-croissant-rewards.md) | Croissant reward system for avoiding sweets | accepted |
 | [0013](0013-ingredients-section.md) | Ingredients tab with Fridge + Pantry | accepted |
 | [0014](0014-snacks-one-category.md) | Snacks as one category; photo + label capture | accepted |
+| [0015](0015-fastapi-backend.md) | FastAPI backend + Postgres + worker | accepted |
+| [0016](0016-docker-dual-host.md) | One Docker Compose stack: Pi app host, Jetson AI node, Oracle off-site standby | accepted |
+| [0017](0017-expo-client.md) | Web-first PWA (React + Vite) wrapped with Capacitor (revised from Expo) | proposed |
+| [0018](0018-food-analysis-pipeline.md) | Self-hosted open VLM + nutrition-database grounding | proposed |
+| [0019](0019-zero-cost-open-source.md) | Zero cost and open source | accepted |
 
 Template: Context · Decision · Alternatives · Consequences.

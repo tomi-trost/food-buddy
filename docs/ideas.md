@@ -4,10 +4,10 @@ Status: idea · planned · done · dropped
 
 | Date | Idea / question | Status |
 |---|---|---|
-| 2026-10-04 | Pick the real stack (web + native): Expo/React Native vs Capacitor + web framework | open |
-| 2026-10-04 | Which AI/vision API for dish + macro detection; nutrition DB source | open |
+| 2026-10-04 | Pick the real stack (web + native): Expo/React Native vs Capacitor + web framework | planned (PWA + Capacitor proposed, 0017) |
+| 2026-10-04 | Which AI/vision API for dish + macro detection; nutrition DB source | planned (self-hosted Qwen3-VL on Jetson + USDA/Ciqual/OFF, 0018) |
 | 2026-10-04 | Price estimation source (manual vs store price DB vs learned from past receipts) | open |
-| 2026-10-04 | Sync/auth between the two users (shared household, offline-first?) | open |
+| 2026-10-04 | Sync/auth between the two users (shared household, offline-first?) | planned (household auth + cached offline, design-plan §3) |
 | 2026-10-04 | Plan variety rules: avoid the same breakfast all week (shopping list currently balloons with repeats) | open |
 | 2026-10-04 | Choose which day the meal-prep batch is cooked; show a "prep session" entry in the plan | open |
 | 2026-10-04 | Weekly challenge rewards/streak history for the Versus tab | idea |
@@ -19,4 +19,12 @@ Status: idea · planned · done · dropped
 | 2026-10-04 | Sweets story: temptation triggers (time of day, after which meal), weekly treat budget, streak of treat-free days | idea |
 | 2026-10-04 | Barcode scan for packaged snacks (Open Food Facts) as a fallback/validation for label OCR | idea |
 | 2026-10-04 | Let the user correct label-scan values before logging (editable table) and remember products | idea |
-| 2026-10-04 | NEXT SESSION: decide tech stack, deployment options and app serving, then write the implementation plan | planned |
+| 2026-10-04 | NEXT SESSION: decide tech stack, deployment options and app serving, then write the implementation plan | done (docs/design-plan.md) |
+| 2026-10-04 | Which phones (iPhone/Android)? Pay Apple 99 USD/yr or use home-screen web on iOS | done (both iPhone → PWA, no fee; Android APK too) |
+| 2026-10-04 | Raspberry Pi model/RAM + SSD → decides local model size | open |
+| 2026-10-04 | Which Jetson: original Nano (no usable LLM GPU) or Orin Nano (AI node)? | open |
+| 2026-10-04 | Domain: DuckDNS vs own domain; public URL vs Tailscale-only | done (Cloudflare domain + Cloudflare Tunnel) |
+| 2026-10-04 | Offload inference to a home Mac (Ollama over Tailscale) when it is on | dropped (Jetson instead) |
+| 2026-10-04 | Allow Gemini free tier as an emergency fallback, or strictly open source? | dropped (0019: nothing paid/closed) |
+| 2026-10-04 | Household portion priors learned from corrections (e.g. our rice portion ≈ 180 g) fed into the prompt | planned |
+| 2026-10-04 | Open-source license: AGPL-3.0 vs MIT; when to make the repo public | open |
