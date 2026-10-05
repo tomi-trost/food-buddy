@@ -17,8 +17,6 @@ Phone-first app for two people (Tomi + partner): snap a plate photo → AI ident
 - `docs/design-plan.md` (stack, hosting, model research) · `docs/execution-plan.md` (milestones, checkboxes) · original mock plan: `docs/plan.md`
 
 ## Next session
-**First: fix CI.** The push of M1 to `main` (run 37239904499) failed one web test: `web/src/pages/PlanPage.test.tsx` → "approving as the last person opens the shopping list" (line ~87: Shopping list tab expected `aria-pressed="true"`). Passes locally; most likely a timing issue on the slower CI runner (the assertion runs right after the toast appears, before the tab switch has rendered). Fix: wrap that assertion in `waitFor`/`findByRole`, then re-run CI. The app itself is fine (backend job and the other 81 web tests passed).
-
 M1 (mock parity) is done on `feat/mock-parity`. Next is M2, deployment to Oracle: needs the user for the Oracle VM and the Cloudflare tunnel token. Then M3 (model benchmark) and M4 (USDA/Ciqual import). Parked questions: license, subdomain, confirming 0017. Vision models must be **instruct** tags (e.g. `qwen3-vl:4b-instruct`); the plain `qwen3-vl:2b` thinks and returns empty content. After rebuilding the web image locally, clear the PWA service worker in the browser (it serves the old bundle until reload).
 
 ## Testing (required)
