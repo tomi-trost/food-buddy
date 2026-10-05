@@ -84,7 +84,7 @@ describe('PlanPage menu', () => {
     renderAt('/plan', routes)
     fireEvent.click(await screen.findByRole('button', { name: 'Approve as Tomi' }))
     expect(await screen.findByText('Menu approved — shopping list ready')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Shopping list' })).toHaveAttribute('aria-pressed', 'true')
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Shopping list' })).toHaveAttribute('aria-pressed', 'true'))
   })
 })
 
