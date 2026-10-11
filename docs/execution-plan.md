@@ -79,9 +79,9 @@ Shared conventions for all sections:
 
 ## M2 — Running on Oracle (after M1; needs you for accounts)
 
-- [ ] **You:** create the Oracle Always Free A1 VM (Ubuntu 24.04 arm64, 2 OCPU / 12 GB, 100+ GB boot volume), add an SSH key
-- [ ] **You:** Cloudflare Zero Trust → Tunnels → create tunnel `food-buddy`, public hostname `food.<domain>` → `http://caddy:80`; copy the token into `.env`
-- [ ] Bootstrap script: Docker, firewall (no ingress besides SSH), `deploy/` checkout, `.env`
+- [x] **You:** create the Oracle Always Free A1 VM (Ubuntu 24.04 arm64, 2 OCPU / 12 GB, 100+ GB boot volume), add an SSH key. Done 2026-10-11 after upgrading to Pay As You Go (free-tier capacity never came); quota policy `free-tier-guard` caps everything at the Always Free limits, budget alerts at 0.01 actual / 1 forecast
+- [x] **You:** Cloudflare Zero Trust → Tunnels → create tunnel `food-buddy`, public hostname `food-buddy.web-corner.cc` → `http://caddy:80`; token in `.env` on the VM. Cloudflare Access (one-time PIN, only our two emails, 1-month session) in front of the whole hostname
+- [x] Bootstrap script `deploy/bootstrap.sh`: Docker, swap, 25 Mbit/s egress cap (stays under the free 10 TB/month), checkout in `/opt/food-buddy`, `.env` with generated secrets. Oracle's host firewall already accepts only SSH
 - [ ] `docker compose --profile ai --profile tunnel up -d`; pull the model; smoke test from both iPhones (Add to Home Screen)
 - [ ] Backups: nightly `pg_dump` + photos with restic; Jetson pulls over SSH; restore drill
 - [ ] Optional: Uptime Kuma on the Pi 3

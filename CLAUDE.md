@@ -17,7 +17,14 @@ Phone-first app for two people (Tomi + partner): snap a plate photo → AI ident
 - `docs/design-plan.md` (stack, hosting, model research) · `docs/execution-plan.md` (milestones, checkboxes) · original mock plan: `docs/plan.md`
 
 ## Next session
-M1 (mock parity) is done on `feat/mock-parity`. Next is M2, deployment to Oracle: needs the user for the Oracle VM and the Cloudflare tunnel token. Then M3 (model benchmark) and M4 (USDA/Ciqual import). Parked questions: license, subdomain, confirming 0017. Vision models must be **instruct** tags (e.g. `qwen3-vl:4b-instruct`); the plain `qwen3-vl:2b` thinks and returns empty content. After rebuilding the web image locally, clear the PWA service worker in the browser (it serves the old bundle until reload).
+M2 is mostly done (2026-10-11): the stack runs on the Oracle A1 VM `food-buddy` (138.3.250.82, `ssh ubuntu@138.3.250.82`, stack in `/opt/food-buddy/deploy`) and is live at **https://food-buddy.web-corner.cc** behind Cloudflare Access (one-time PIN, only Tomi's and partner's emails). Oracle is Pay As You Go, kept at 0 € by quota policy `free-tier-guard` + a budget alert; never create resources beyond the Always Free limits.
+
+**First thing next session: iPhone smoke test** (with Tomi):
+1. Open the link in Safari → enter email → enter the code Cloudflare emails.
+2. Register in the app: the first person creates a new household; the app shows an invite code; the partner registers with that code to join the same household.
+3. Share → Add to Home Screen.
+4. Snap a test meal. Analysis runs on the VM's CPU (`qwen3-vl:4b-instruct`): tens of seconds to a couple of minutes.
+Then: rest of M2 (nightly backups with restic), M3 (model benchmark), M4 (USDA/Ciqual import). Family members later: add their emails to the Access policy; they can register their own household. Parked questions: license, subdomain, confirming 0017. Vision models must be **instruct** tags (e.g. `qwen3-vl:4b-instruct`); the plain `qwen3-vl:2b` thinks and returns empty content. After rebuilding the web image locally, clear the PWA service worker in the browser (it serves the old bundle until reload).
 
 ## Testing (required)
 - Every feature or bug fix ships with tests in the same change: backend in `api/tests/` (pytest), web in `web/src/**/*.test.ts(x)` (Vitest + Testing Library).
