@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { type CSSProperties, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router'
 import { api } from '../api/client'
 import { useMe } from '../api/hooks'
@@ -50,9 +50,9 @@ export function HomePage() {
       </div>
 
       {me && totals && (
-        <Link to="/insights" className="card row" style={{ textDecoration: 'none' }} aria-label="Today's nutrition">
+        <Link to="/insights" className="card today" style={{ textDecoration: 'none' }} aria-label="Today's nutrition">
           <Ring value={totals.kcal} goal={me.goals.kcal} />
-          <div className="sp">
+          <div className="mbars">
             {([
               ['protein', me.goals.protein], ['carbs', CARBS_REF], ['fat', FAT_REF],
               ['fiber', me.goals.fiber], ['sugar', me.goals.sugar],
@@ -142,14 +142,9 @@ export function HomePage() {
 function MacroBar({ nutrient, value, goal, delay }: { nutrient: keyof Nutrients; value: number; goal: number; delay: number }) {
   const m = MAC[nutrient]
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '16px 1fr', columnGap: 7, rowGap: 2, margin: '7px 0', alignItems: 'center' } as CSSProperties}>
-      <span />
-      <div className="row" style={{ alignItems: 'baseline' }}>
-        <span style={{ fontSize: 13 }}>{m.name}</span>
-        <span className="sp" />
-        <span className="sub" style={{ fontSize: 10.5 }}>{Math.round(value)} / {goal} g</span>
-      </div>
-      <span style={{ color: m.color, display: 'flex', lineHeight: 0 }}><Icon name={m.icon} size={16} /></span>
+    <div className="mbar">
+      <span className="mbar-name" style={{ color: m.color }}><Icon name={m.icon} size={14} /><span>{m.name}</span></span>
+      <span className="sub mbar-val">{Math.round(value)} / {goal} g</span>
       <ProgressBar pct={goal ? (value / goal) * 100 : 0} color={m.color} delay={delay} />
     </div>
   )

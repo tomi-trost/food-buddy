@@ -51,6 +51,10 @@ describe('HomePage', () => {
     const ring = screen.getByRole('link', { name: "Today's nutrition" })
     expect(within(ring).getByText('59 / 110 g')).toBeInTheDocument() // protein vs goal
     expect(within(ring).getByText('104 / 250 g')).toBeInTheDocument() // carbs vs mock reference
+    // one row per nutrient: icon + name, bar, amount
+    const rows = [...ring.querySelectorAll('.mbar')]
+    expect(rows.map((r) => r.querySelector('.mbar-name')!.textContent)).toEqual(['protein', 'carbs', 'fat', 'fiber', 'sugar'])
+    expect(rows[0]).toHaveTextContent('protein59 / 110 g')
     expect(screen.getByText(/Avocado egg toast/)).toBeInTheDocument()
     expect(screen.getByText('Not logged')).toBeInTheDocument() // dinner
     expect(screen.getByRole('link', { name: 'Log Dinner' })).toHaveAttribute('href', '/snap?type=dinner')

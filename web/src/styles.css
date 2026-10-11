@@ -23,6 +23,8 @@
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; background: var(--bg); color: var(--ink); }
+/* Native-app feel on iOS: no double-tap zoom, no text inflation, never scroll sideways */
+html { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; overflow-x: clip; }
 body { font: 16px/1.4 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
 button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; padding: 0; }
 a { color: inherit; }
@@ -30,7 +32,7 @@ a { color: inherit; }
 .ic.fill { fill: currentColor; }
 
 /* Layout */
-.app { max-width: 480px; margin: 0 auto; min-height: 100dvh; position: relative; }
+.app { max-width: 480px; margin: 0 auto; min-height: 100dvh; position: relative; overflow-x: clip; }
 .screen { padding: env(safe-area-inset-top) 16px calc(var(--tabbar-h) + 34px + env(safe-area-inset-bottom)); }
 .screen.bare { padding-bottom: 30px; }
 .top { display: flex; align-items: center; justify-content: space-between; padding: 18px 0 10px; gap: 10px; }
@@ -57,7 +59,7 @@ h3 { margin: 0; font-size: 15px; font-weight: 600; }
 .icon { width: 44px; height: 44px; border-radius: var(--r); background: var(--surface); border: 1px solid var(--line); display: grid; place-items: center; flex: none; }
 .avatar { width: 40px; height: 40px; border-radius: var(--r); display: grid; place-items: center; font-weight: 650; color: #fff; font-size: 14px; flex: none; }
 .field { display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--ink2); }
-.field input, .input { min-height: 46px; padding: 0 12px; border-radius: var(--r2); border: 1px solid var(--line2); background: var(--surface); color: var(--ink); font: inherit; width: 100%; }
+.field input, .input { min-height: 46px; padding: 0 12px; border-radius: var(--r2); border: 1px solid var(--line2); background: var(--surface); color: var(--ink); font: inherit; font-size: 16px; width: 100%; } /* <16px makes iOS zoom on focus */
 .stepper { display: flex; align-items: center; gap: 8px; }
 .stepper button { width: 40px; height: 40px; border-radius: var(--r); background: var(--surface2); font-size: 20px; }
 .stepper b { min-width: 54px; text-align: center; }
@@ -84,6 +86,14 @@ h3 { margin: 0; font-size: 15px; font-weight: 600; }
 /* Data display */
 .bar { height: 6px; border-radius: 3px; background: var(--surface2); overflow: hidden; }
 .bar i { display: block; height: 100%; background: var(--accent); }
+/* Home "today" card: calorie ring beside one compact row per nutrient (icon · name · amount, bar below) */
+.today { display: flex; align-items: center; gap: 14px; }
+.mbars { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 7px; }
+.mbar { display: grid; grid-template-columns: 1fr auto; align-items: center; row-gap: 3px; }
+.mbar .bar { grid-column: 1 / -1; }
+.mbar-name { display: flex; align-items: center; gap: 5px; }
+.mbar-name span { color: var(--ink); font-size: 13px; }
+.mbar-val { font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .macro { display: grid; grid-template-columns: repeat(var(--n, 3), 1fr); gap: 6px; }
 .macro > div { background: var(--surface2); border-radius: var(--r); padding: 8px 2px; text-align: center; }
 .macro b { display: block; font-size: 15px; }
@@ -126,10 +136,33 @@ svg text { fill: var(--ink2); font-size: 11px; }
 @media (prefers-reduced-motion: reduce) { .pulse, .shimmer { animation: none; } }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-/* Snap camera screen (mock .camera) */
-.camera { position: fixed; inset: 0; background: #15110d; z-index: 15; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: calc(30px + env(safe-area-inset-top)) 20px calc(40px + env(safe-area-inset-bottom)); }
-.plate { width: 240px; height: 240px; border-radius: 50%; border: 2px dashed rgba(255, 255, 255, 0.5); display: grid; place-items: center; margin: 0 auto; }
-.shutter { width: 72px; height: 72px; border-radius: 50%; border: 4px solid #fff; background: rgba(255, 255, 255, 0.2); display: grid; place-items: center; cursor: pointer; }
+/* Snap camera screen: camera-app layout (viewfinder · modes · library | shutter) */
+.camera { position: fixed; inset: 0; background: #12100e; z-index: 15; color: #fff; display: flex; flex-direction: column; gap: 14px; padding: calc(10px + env(safe-area-inset-top)) 16px calc(18px + env(safe-area-inset-bottom)); max-width: 480px; margin: 0 auto; }
+.cam-top { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; gap: 8px; }
+.cam-top h1 { font-size: 17px; text-align: center; font-weight: 600; letter-spacing: -0.2px; }
+.cam-round { width: 44px; height: 44px; border-radius: 50%; background: rgba(255, 255, 255, 0.12); color: #fff; display: grid; place-items: center; }
+.viewfinder { position: relative; flex: 1; min-height: 0; border-radius: 22px; background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02) 70%); display: grid; place-items: center; cursor: pointer; }
+.viewfinder:active { background-color: rgba(255, 255, 255, 0.04); }
+.vf-c { position: absolute; width: 34px; height: 34px; border: 3px solid rgba(255, 255, 255, 0.85); }
+.vf-c.tl { top: 18px; left: 18px; border-right: 0; border-bottom: 0; border-top-left-radius: 14px; }
+.vf-c.tr { top: 18px; right: 18px; border-left: 0; border-bottom: 0; border-top-right-radius: 14px; }
+.vf-c.bl { bottom: 18px; left: 18px; border-right: 0; border-top: 0; border-bottom-left-radius: 14px; }
+.vf-c.br { bottom: 18px; right: 18px; border-left: 0; border-top: 0; border-bottom-right-radius: 14px; }
+.vf-msg { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; padding: 0 40px; }
+.vf-msg .ic { opacity: 0.9; margin-bottom: 4px; }
+.vf-msg b { font-size: 16px; font-weight: 600; }
+.vf-msg small { font-size: 13px; opacity: 0.65; }
+.vf-error { position: absolute; left: 16px; right: 16px; bottom: 64px; background: rgba(179, 71, 62, 0.92); border-radius: var(--r); padding: 10px 12px; font-size: 14px; text-align: center; }
+.cam-modes { display: flex; justify-content: center; gap: 4px; }
+.cam-modes button { min-height: 36px; padding: 0 16px; border-radius: 18px; font-size: 14px; font-weight: 600; color: rgba(255, 255, 255, 0.6); }
+.cam-modes button[aria-pressed='true'] { background: rgba(255, 255, 255, 0.16); color: #fff; }
+.cam-bar { display: grid; grid-template-columns: 1fr 84px 1fr; align-items: center; }
+.cam-lib { justify-self: start; display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: rgba(255, 255, 255, 0.85); cursor: pointer; padding-left: 12px; }
+.cam-lib-tile { width: 48px; height: 48px; border-radius: 12px; border: 2px solid rgba(255, 255, 255, 0.85); display: grid; place-items: center; background: rgba(255, 255, 255, 0.1); }
+.shutter { width: 80px; height: 80px; border-radius: 50%; border: 4px solid #fff; padding: 5px; display: block; cursor: pointer; }
+.shutter span { display: block; width: 100%; height: 100%; border-radius: 50%; background: #fff; transition: transform 0.12s; }
+.shutter:active span { transform: scale(0.88); }
+.cam-lib[aria-disabled='true'], .shutter[aria-disabled='true'] { opacity: 0.4; pointer-events: none; }
 .chip.warn { background: color-mix(in srgb, var(--warn) 18%, var(--surface2)); color: var(--ink); }
 
 /* Meals feed (mock .mealgrid/.mealcard) */

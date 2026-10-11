@@ -30,5 +30,6 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['src/test/setup.ts'],
     restoreMocks: true,
+    css: { include: [/styles\.css/] }, // styles.test.ts reads the real stylesheet
   },
 })

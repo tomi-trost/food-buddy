@@ -1,6 +1,6 @@
 import { fireEvent, screen } from '@testing-library/react'
 import { Route } from 'react-router'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { tokenStore } from '../api/client'
 import { jsonResponse, mockFetch, renderAt } from '../test/utils'
 import { SnapPage } from './SnapPage'
@@ -16,11 +16,77 @@ describe('SnapPage', () => {
         <Route path="/analysis/:id" element={<p>analysis page</p>} />
       </>
     ))
-    const input = document.querySelector('input[type=file]') as HTMLInputElement
+    const input = screen.getByLabelText('Take photo') as HTMLInputElement
     expect(input).toHaveAttribute('capture', 'environment')
     fireEvent.change(input, { target: { files: [new File(['x'], 'p.jpg', { type: 'image/jpeg' })] } })
     expect(await screen.findByText('analysis page')).toBeInTheDocument()
     expect(fetch.mock.calls[0][0]).toBe('/api/analyses')
   })
-})
 
+  it('uploads a photo picked from the library (no camera capture)', async () => {
+    const fetch = mockFetch(() => jsonResponse({ id: 4, status: 'queued' }, 202))
+    renderAt('/snap?type=lunch', (
+      <>
+        <Route path="/snap" element={<SnapPage />} />
+        <Route path="/analysis/:id" element={<p>analysis page</p>} />
+      </>
+    ))
+    const input = screen.getByLabelText('Choose from library') as HTMLInputElement
+    expect(input).toHaveAttribute('accept', 'image/*')
+    expect(input).not.toHaveAttribute('capture')
+    fireEvent.change(input, { target: { files: [new File(['x'], 'old.jpg', { type: 'image/jpeg' })] } })
+    expect(await screen.findByText('analysis page')).toBeInTheDocument()
+    expect(fetch).toHaveBeenCalledTimes(1)
+  })
+
+  it('ignores an empty pick and lets the same photo be picked again after an error', async () => {
+    const fetch = mockFetch(() => jsonResponse({ detail: 'Too large' }, 413))
+    renderAt('/snap', <Route path="/snap" element={<SnapPage />} />)
+    const input = screen.getByLabelText('Choose from library') as HTMLInputElement
+    fireEvent.change(input, { target: { files: [] } })
+    expect(fetch).not.toHaveBeenCalled()
+    const photo = new File(['x'], 'p.jpg', { type: 'image/jpeg' })
+    fireEvent.change(input, { target: { files: [photo] } })
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+    expect(input.value).toBe('')
+    fireEvent.change(input, { target: { files: [photo] } })
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(2))
+  })
+
+  it('disables both pickers while uploading', async () => {
+    mockFetch(() => new Promise(() => {}))
+    renderAt('/snap', <Route path="/snap" element={<SnapPage />} />)
+    const library = screen.getByLabelText('Choose from library') as HTMLInputElement
+    fireEvent.change(library, { target: { files: [new File(['x'], 'p.jpg', { type: 'image/jpeg' })] } })
+    expect(await screen.findByText('Uploading photo…')).toBeInTheDocument()
+    expect(screen.getByLabelText('Take photo')).toBeDisabled()
+    expect(library).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Snack' })).toBeDisabled()
+  })
+
+  it('switches between meal, snack and label and uploads with the chosen kind', async () => {
+    const fetch = mockFetch(() => jsonResponse({ id: 5, status: 'queued' }, 202))
+    renderAt('/snap?type=lunch', (
+      <>
+        <Route path="/snap" element={<SnapPage />} />
+        <Route path="/snack/:id" element={<p>snack page</p>} />
+      </>
+    ))
+    expect(screen.getByRole('heading', { name: 'Snap your lunch' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Meal' })).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(screen.getByRole('button', { name: 'Label' }))
+    expect(screen.getByRole('heading', { name: 'Scan a nutrition label' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Label' })).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.change(screen.getByLabelText('Take photo'), { target: { files: [new File(['x'], 'l.jpg', { type: 'image/jpeg' })] } })
+    expect(await screen.findByText('snack page')).toBeInTheDocument()
+    expect((fetch.mock.calls[0][1]!.body as FormData).get('kind')).toBe('label')
+  })
+
+  it('opens the camera from both the viewfinder and the shutter', () => {
+    renderAt('/snap', <Route path="/snap" element={<SnapPage />} />)
+    const camera = screen.getByLabelText('Take photo')
+    const targets = document.querySelectorAll(`label[for="${camera.id}"]`)
+    expect(targets).toHaveLength(2)
+    expect(screen.getByText('Tap to take a photo').closest('label')).toBe(targets[0])
+  })
+})
