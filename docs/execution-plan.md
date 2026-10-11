@@ -83,6 +83,7 @@ Shared conventions for all sections:
 - [x] **You:** Cloudflare Zero Trust → Tunnels → create tunnel `food-buddy`, public hostname `food-buddy.web-corner.cc` → `http://caddy:80`; token in `.env` on the VM. Cloudflare Access (one-time PIN, only our two emails, 1-month session) in front of the whole hostname
 - [x] Bootstrap script `deploy/bootstrap.sh`: Docker, swap, 25 Mbit/s egress cap (stays under the free 10 TB/month), checkout in `/opt/food-buddy`, `.env` with generated secrets. Oracle's host firewall already accepts only SSH
 - [ ] `docker compose --profile ai --profile tunnel up -d`; pull the model; smoke test from both iPhones (Add to Home Screen)
+- [ ] Continuous deploy: CI `deploy` job (after api + web pass on main) SSHes to the VM with a deploy-only key forced to `deploy/deploy.sh` (pull, build on the VM, `up -d`, health check). Needs the key in `authorized_keys`, `DEPLOY_SSH_KEY` + `DEPLOY_KNOWN_HOSTS` secrets, `DEPLOY_HOST` variable, `production` environment
 - [ ] Backups: nightly `pg_dump` + photos with restic; Jetson pulls over SSH; restore drill
 - [ ] Optional: Uptime Kuma on the Pi 3
 
