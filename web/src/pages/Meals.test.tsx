@@ -38,7 +38,9 @@ describe('MealsPage', () => {
   it('invites the first snap when there are no meals', async () => {
     mockFetch(() => jsonResponse([]))
     renderAt('/meals', <Route path="/meals" element={<MealsPage />} />)
-    expect(await screen.findByText('No meals yet. Snap your first plate.')).toBeInTheDocument()
+    expect(await screen.findByText('No meals yet. Snap or type your first plate.')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /Add your first meal/ }))
+    expect(screen.getByRole('dialog', { name: 'Add food' })).toBeInTheDocument()
   })
 })
 

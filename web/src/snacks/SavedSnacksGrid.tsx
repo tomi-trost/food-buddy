@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { PhotoInput } from '../add/PhotoInput'
+import { useFoodUpload } from '../add/upload'
 import { api } from '../api/client'
 import type { SavedSnack } from '../api/types'
 import { KIND_LABEL } from '../lib/snacks'
@@ -12,6 +13,7 @@ import { LogSnackSheet, SAVED_SNACKS } from './LogSnackSheet'
 export function SavedSnacksGrid() {
   const snacks = useQuery({ queryKey: SAVED_SNACKS, queryFn: api.savedSnacks })
   const [open, setOpen] = useState<SavedSnack | null>(null)
+  const upload = useFoodUpload()
 
   return (
     <>
@@ -30,7 +32,10 @@ export function SavedSnacksGrid() {
       {snacks.isSuccess && !snacks.data.length && (
         <div className="card" style={{ textAlign: 'center' }}>
           <p className="sub">No saved snacks yet. Snap one and switch on “Save to our snacks”.</p>
-          <Link to="/snap?kind=snack" className="btn"><Icon name="camera" size={18} /> Snap a snack</Link>
+          <PhotoInput camera label="Snap a snack" disabled={upload.busy} className="btn"
+            onFile={(file) => upload.photo.mutate({ file, kind: 'snack' })}>
+            <Icon name="camera" size={18} /> Snap a snack
+          </PhotoInput>
         </div>
       )}
       <LogSnackSheet open={open !== null} onClose={() => setOpen(null)} saved={open ?? undefined} key={open?.id ?? 'none'} />

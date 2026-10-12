@@ -1,9 +1,9 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, screen, within } from '@testing-library/react'
 import { Route } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { tokenStore } from '../api/client'
 import type { Day } from '../api/types'
-import { card, ING, logEntry, me, meal, memberInsights, plan, reward } from '../test/fixtures'
+import { card, ING, logEntry, me, memberInsights, plan, reward } from '../test/fixtures'
 import { jsonResponse, mockFetch, renderAt } from '../test/utils'
 import { HomePage } from './HomePage'
 import { InsightsPage } from './InsightsPage'
@@ -60,33 +60,12 @@ describe('HomePage', () => {
     expect(screen.getByRole('button', { name: 'Log Dinner' })).toBeInTheDocument()
   })
 
-  it('adds a meal to a slot from our meals, or offers to snap one', async () => {
-    const fetch = api({
-      '/api/meals': [card({ id: 1, name: 'Oats', types: ['breakfast'] }), card({ id: 3, name: 'Chicken rice bowl', types: ['dinner'] })],
-      '/api/meals/3': meal(),
-      '/api/meals/3/cook': meal(),
-    })
-    const cooked = () => {
-      const call = fetch.mock.calls.find(([url]) => String(url).endsWith('/cook'))
-      return call && JSON.parse(String(call[1]!.body))
-    }
+  it("opens Add food with that slot's meal type from Today's +", async () => {
+    api()
     renderAt('/', <Route path="/" element={<HomePage />} />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Log Dinner' }))
-    const picker = screen.getByRole('dialog', { name: 'Add Dinner' })
-    expect(within(picker).getByRole('link', { name: /Snap a photo/ })).toHaveAttribute('href', '/snap?type=dinner')
-    const names = () => within(within(picker).getByLabelText('Your meals')).getAllByRole('button').map((b) => b.textContent)
-    await waitFor(() => expect(names()[0]).toMatch(/Chicken rice bowl/)) // dinner meals first
-
-    fireEvent.change(within(picker).getByLabelText('Search meals'), { target: { value: 'pizza' } })
-    expect(within(picker).getByText('No meal matches.')).toBeInTheDocument()
-    fireEvent.change(within(picker).getByLabelText('Search meals'), { target: { value: 'rice' } })
-    fireEvent.click(within(picker).getByRole('button', { name: /Chicken rice bowl/ }))
-
-    const sheet = await screen.findByRole('dialog', { name: 'Log this meal' })
-    expect(within(sheet).getByRole('button', { name: 'Dinner' })).toHaveAttribute('aria-pressed', 'true')
-    fireEvent.click(within(sheet).getByRole('button', { name: 'Log 552 kcal' }))
-    await waitFor(() => expect(cooked()).toMatchObject({ meal_type: 'dinner', eaten_on: '2026-10-04', cooked: true }))
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    fireEvent.click(await screen.findByRole('button', { name: 'Log Breakfast' }))
+    const sheet = screen.getByRole('dialog', { name: 'Add food' })
+    expect(within(sheet).getByRole('button', { name: 'Breakfast' })).toHaveAttribute('aria-pressed', 'true')
   })
 
   it('lists snacks between the meals by time and edits a meal entry', async () => {

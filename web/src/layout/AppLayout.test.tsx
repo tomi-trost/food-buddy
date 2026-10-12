@@ -10,7 +10,6 @@ const routes = (
       <Route index element={<p>home</p>} />
       <Route path="meals" element={<p>meals</p>} />
     </Route>
-    <Route path="snap" element={<p>snap page</p>} />
   </>
 )
 
@@ -27,9 +26,9 @@ describe('AppLayout', () => {
     expect(screen.getByText('home')).toBeInTheDocument()
   })
 
-  it('opens the snap flow from the camera button', () => {
+  it('opens the Add food sheet from the + button', () => {
     renderAt('/', routes)
-    fireEvent.click(screen.getByRole('button', { name: 'Snap meal' }))
-    expect(screen.getByText('snap page')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Add food' }))
+    expect(screen.getByRole('dialog', { name: 'Add food' })).toBeInTheDocument()
   })
 })

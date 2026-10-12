@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { useNavigate } from 'react-router'
+import { PhotoInput } from '../add/PhotoInput'
+import { useFoodUpload } from '../add/upload'
 import { api } from '../api/client'
 import type { Nutrients, SavedSnack, SnackKind } from '../api/types'
 import { todayISO } from '../lib/dates'
@@ -40,7 +41,7 @@ const fromSaved = (s: SavedSnack): Draft => ({
 function LogSnack({ onClose, saved }: { onClose: () => void; saved?: SavedSnack }) {
   const qc = useQueryClient()
   const toast = useToast()
-  const navigate = useNavigate()
+  const upload = useFoodUpload(onClose)
   const catalog = useQuery({ queryKey: ['snack-catalog'], queryFn: api.snackCatalog, staleTime: Infinity })
   const ours = useQuery({ queryKey: SAVED_SNACKS, queryFn: api.savedSnacks })
   const [draft, setDraft] = useState<Draft | null>(saved ? fromSaved(saved) : null) // picked: confirm amount and values first
@@ -105,8 +106,14 @@ function LogSnack({ onClose, saved }: { onClose: () => void; saved?: SavedSnack 
         Sweets and sugary drinks count as treats for your streak and croissant rewards. Savory snacks only add to your macros.
       </div>
       <div className="row" style={{ gap: 8 }}>
-        <button className="btn ghost" onClick={() => navigate('/snap?kind=snack')}><Icon name="camera" size={18} /> Photo</button>
-        <button className="btn ghost" onClick={() => navigate('/snap?kind=label')}><Icon name="plan" size={18} /> Scan label</button>
+        <PhotoInput camera label="Snack photo" disabled={upload.busy} className="btn ghost"
+          onFile={(file) => upload.photo.mutate({ file, kind: 'snack' })}>
+          <Icon name="camera" size={18} /> Photo
+        </PhotoInput>
+        <PhotoInput camera label="Scan label" disabled={upload.busy} className="btn ghost"
+          onFile={(file) => upload.photo.mutate({ file, kind: 'label' })}>
+          <Icon name="tag" size={18} /> Scan label
+        </PhotoInput>
       </div>
       {!!ours.data?.length && (
         <>

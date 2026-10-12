@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
+import { useNavigate, useParams, useSearchParams } from 'react-router'
+import { useAddFood } from '../add/AddFood'
 import { api, ApiError } from '../api/client'
 import type { AnalysisJob, AnalysisResult, MealType, Nutrients, Rating } from '../api/types'
 import { OPEN_ANALYSES } from '../layout/PendingBanner'
@@ -20,6 +21,7 @@ export function AnalysisPage() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
   const toast = useToast()
+  const addFood = useAddFood()
   const job = useQuery({
     queryKey: ['analysis', id],
     queryFn: () => api.analysis(id),
@@ -50,7 +52,7 @@ export function AnalysisPage() {
         <div className="top">{close}<span /><span style={{ width: 44 }} /></div>
         <section className="card">
           <h3>This photo was discarded</h3>
-          <Link to="/snap" className="btn" style={{ marginTop: 12 }}>Take another photo</Link>
+          <button className="btn" style={{ marginTop: 12 }} onClick={() => addFood()}>Add another</button>
         </section>
       </>
     )
@@ -79,6 +81,7 @@ export function AnalysisPage() {
 
 /** While the model works (a few minutes on the VM): rate right away, or leave and come back. */
 function Waiting({ job }: { job: AnalysisJob }) {
+  const addFood = useAddFood()
   const navigate = useNavigate()
   const toast = useToast()
   const qc = useQueryClient()
@@ -113,7 +116,7 @@ function Waiting({ job }: { job: AnalysisJob }) {
           <h3>Couldn't analyze this photo</h3>
           <p className="sub">{job.error}</p>
           <button className="btn" disabled={retry.isPending} onClick={() => retry.mutate()}>Try again</button>
-          <Link to="/snap" className="btn ghost" style={{ marginTop: 8 }}>Try another photo</Link>
+          <button className="btn ghost" style={{ marginTop: 8 }} onClick={() => addFood()}>Try another photo</button>
         </section>
       ) : (
         <div role="status" aria-label="Analyzing your meal" className="card" style={{ marginTop: 12 }}>

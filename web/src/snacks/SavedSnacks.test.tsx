@@ -94,6 +94,6 @@ describe('Meals → Snacks', () => {
     api([])
     renderAt('/meals?type=snacks', <Route path="/meals" element={<MealsPage />} />)
     expect(await screen.findByText(/No saved snacks yet/)).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /Snap a snack/ })).toHaveAttribute('href', '/snap?kind=snack')
+    expect(screen.getByLabelText('Snap a snack')).toHaveAttribute('capture', 'environment')
   })
 })

@@ -3,6 +3,7 @@ import { render } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { MemoryRouter, Routes } from 'react-router'
 import { vi } from 'vitest'
+import { AddFoodProvider } from '../add/AddFood'
 import { ToastProvider } from '../ui/Toast'
 
 /** `path` can be a history (last entry shown) so navigate(-1) has somewhere to go. */
@@ -12,7 +13,9 @@ export function renderAt(path: string | string[], routes: ReactNode) {
     <QueryClientProvider client={client}>
       <MemoryRouter initialEntries={Array.isArray(path) ? path : [path]} initialIndex={Array.isArray(path) ? path.length - 1 : 0}>
         <ToastProvider>
-          <Routes>{routes}</Routes>
+          <AddFoodProvider>
+            <Routes>{routes}</Routes>
+          </AddFoodProvider>
         </ToastProvider>
       </MemoryRouter>
     </QueryClientProvider>,

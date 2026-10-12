@@ -165,38 +165,22 @@ html.sheet-open, html.sheet-open body { overflow: hidden; overscroll-behavior: n
 @media (prefers-reduced-motion: reduce) { .pulse, .shimmer { animation: none; } }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-/* Snap camera screen: camera-app layout (viewfinder · modes · library | shutter) */
-.camera { position: fixed; inset: 0; background: #12100e; z-index: 15; color: #fff; display: flex; flex-direction: column; gap: 14px; padding: calc(10px + env(safe-area-inset-top)) 16px calc(18px + env(safe-area-inset-bottom)); max-width: 480px; margin: 0 auto; }
-.cam-top { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; gap: 8px; }
-.cam-top h1 { font-size: 17px; text-align: center; font-weight: 600; letter-spacing: -0.2px; }
-.cam-round { width: 44px; height: 44px; border-radius: 50%; background: rgba(255, 255, 255, 0.12); color: #fff; display: grid; place-items: center; }
-.viewfinder { position: relative; flex: 1; min-height: 0; border-radius: 22px; background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02) 70%); display: grid; place-items: center; cursor: pointer; }
-.viewfinder:active { background-color: rgba(255, 255, 255, 0.04); }
-.vf-c { position: absolute; width: 34px; height: 34px; border: 3px solid rgba(255, 255, 255, 0.85); }
-.vf-c.tl { top: 18px; left: 18px; border-right: 0; border-bottom: 0; border-top-left-radius: 14px; }
-.vf-c.tr { top: 18px; right: 18px; border-left: 0; border-bottom: 0; border-top-right-radius: 14px; }
-.vf-c.bl { bottom: 18px; left: 18px; border-right: 0; border-top: 0; border-bottom-left-radius: 14px; }
-.vf-c.br { bottom: 18px; right: 18px; border-left: 0; border-top: 0; border-bottom-right-radius: 14px; }
-.vf-msg { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; padding: 0 40px; }
-.vf-msg .ic { opacity: 0.9; margin-bottom: 4px; }
-.vf-msg b { font-size: 16px; font-weight: 600; }
-.vf-msg small { font-size: 13px; opacity: 0.65; }
-.vf-error { position: absolute; left: 16px; right: 16px; bottom: 64px; background: rgba(179, 71, 62, 0.92); border-radius: var(--r); padding: 10px 12px; font-size: 14px; text-align: center; }
-.cam-modes { display: flex; justify-content: center; gap: 4px; }
-.cam-modes button { min-height: 36px; padding: 0 16px; border-radius: 18px; font-size: 14px; font-weight: 600; color: rgba(255, 255, 255, 0.6); }
-.cam-modes button[aria-pressed='true'] { background: rgba(255, 255, 255, 0.16); color: #fff; }
-/* Which meal: chips under the mode switcher (Meal mode only) */
-.cam-types { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-.cam-types button { min-height: 44px; border-radius: 12px; font-size: 13px; font-weight: 600; color: rgba(255, 255, 255, 0.75); border: 1px solid rgba(255, 255, 255, 0.18); }
-.cam-types button[aria-pressed='true'] { background: #fff; color: #12100e; border-color: #fff; }
-.cam-bar { display: grid; grid-template-columns: 1fr 84px 1fr; align-items: center; }
-.cam-lib { justify-self: start; display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: rgba(255, 255, 255, 0.85); cursor: pointer; padding-left: 12px; }
-.cam-type { justify-self: end; padding: 0 12px 0 0; background: none; border: 0; }
-.cam-lib-tile { width: 48px; height: 48px; border-radius: 12px; border: 2px solid rgba(255, 255, 255, 0.85); display: grid; place-items: center; background: rgba(255, 255, 255, 0.1); }
-.shutter { width: 80px; height: 80px; border-radius: 50%; border: 4px solid #fff; padding: 5px; display: block; cursor: pointer; }
-.shutter span { display: block; width: 100%; height: 100%; border-radius: 50%; background: #fff; transition: transform 0.12s; }
-.shutter:active span { transform: scale(0.88); }
-.cam-lib[aria-disabled='true'], .shutter[aria-disabled='true'] { opacity: 0.4; pointer-events: none; }
+/* Add food sheet: camera first, then the other ways in */
+.add-hero { display: flex; align-items: center; gap: 14px; margin: 14px 0 10px; padding: 18px 16px; border-radius: var(--r); background: var(--accent); color: var(--accent-ink); cursor: pointer; min-height: 96px; }
+.add-hero b { display: block; font-size: 18px; }
+.add-hero small { display: block; font-size: 13px; opacity: 0.85; margin-top: 2px; }
+.add-ic { width: 56px; height: 56px; border-radius: 50%; background: rgba(255, 255, 255, 0.18); display: grid; place-items: center; flex: none; }
+.add-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.add-opt { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 14px; min-height: 96px; border-radius: var(--r); background: var(--surface); border: 1px solid var(--line); color: var(--ink); text-align: left; cursor: pointer; }
+.add-opt svg, .add-row svg:first-child { color: var(--accent); }
+.add-opt b { font-size: 15px; }
+.add-opt small { font-size: 12px; color: var(--ink2); }
+.add-opt:disabled { opacity: 0.5; }
+.add-row { display: flex; align-items: center; gap: 12px; margin-top: 10px; padding: 12px 14px; min-height: 56px; border-radius: var(--r); background: var(--surface); border: 1px solid var(--line); cursor: pointer; }
+.add-row b { display: block; font-size: 15px; }
+.add-row small { display: block; font-size: 12px; color: var(--ink2); }
+.add-hero[aria-disabled='true'], .add-opt[aria-disabled='true'], .add-row[aria-disabled='true'] { opacity: 0.5; pointer-events: none; }
+.add-back { display: flex; align-items: center; gap: 4px; margin-top: 14px; }
 .chip.warn { background: color-mix(in srgb, var(--warn) 18%, var(--surface2)); color: var(--ink); }
 
 /* Meals feed (mock .mealgrid/.mealcard) */

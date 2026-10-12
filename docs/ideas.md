@@ -46,3 +46,4 @@ Status: idea · planned · done · dropped
 | 2026-10-12 | Add a meal or snack by typing its name; the model estimates ingredients/values | done 2026-10-12 (no photo yet: shows the emoji) |
 | 2026-10-12 | Picture for typed meals (stock photo or generated) | idea (no image model on the VM; Openverse/Wikimedia lookup would be the free option) |
 | 2026-10-12 | Push texts say "photo" for typed dishes too ("Couldn't analyze the photo") | idea |
+| 2026-10-12 | With photo, library, typing and our meals, replace the black camera page with a clean "add food" view (camera still the main option); "+" instead of the camera icon | done 2026-10-12 (Add food bottom sheet) |

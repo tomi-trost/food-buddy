@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { api } from '../api/client'
 import { MEAL_TYPE_SHORT } from '../lib/dates'
+import { useAddFood } from '../add/AddFood'
 import { CookMealSheet } from '../meals/CookSheet'
 import { SavedSnacksGrid } from '../snacks/SavedSnacksGrid'
 import { feed, type FeedSeg, type FeedSort, type FeedType, NEXT_SORT, SORT_LABEL } from '../lib/meals'
@@ -24,6 +25,7 @@ export function MealsPage() {
     }, { replace: true })
   const cards = useQuery({ queryKey: ['meals'], queryFn: api.meals })
   const [logging, setLogging] = useState<number | null>(null)
+  const addFood = useAddFood()
   const snacks = type === 'snacks'
   const list = snacks ? [] : feed(cards.data ?? [], type, seg, sort)
 
@@ -85,8 +87,8 @@ export function MealsPage() {
         </div>
         {cards.isSuccess && !cards.data.length && (
           <div className="card" style={{ textAlign: 'center' }}>
-            <p className="sub">No meals yet. Snap your first plate.</p>
-            <Link to="/snap" className="btn"><Icon name="camera" size={18} /> Snap your meal</Link>
+            <p className="sub">No meals yet. Snap or type your first plate.</p>
+            <button className="btn" onClick={() => addFood()}><Icon name="plus" size={18} /> Add your first meal</button>
           </div>
         )}
         {cards.isSuccess && !!cards.data.length && !list.length && <p className="sub">No meals match this filter.</p>}

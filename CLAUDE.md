@@ -23,7 +23,7 @@ M2 is mostly done (2026-10-11): the stack runs on the Oracle A1 VM `food-buddy` 
 
 **Smoke test (done 2026-10-12):** snap, library, camera, zoom, partner registration with the invite code and Add to Home Screen all work on the iPhone.
 
-**After first use (2026-10-12, `docs/execution-plan.md` → M2b):** login fix for expired Cloudflare Access sessions (`/api/reauth`); log an existing meal from Today's "+" or a meal card (portions, "cooked now" vs "already made" = no second stock deduction); saved snacks (Meals → Snacks); "Type it" on Snap (`POST /api/analyses/text`, same check screen); "You too?" suggestions of the other one's logged meals (Home card + `shared` push).
+**After first use (2026-10-12, `docs/execution-plan.md` → M2b):** login fix for expired Cloudflare Access sessions (`/api/reauth`); log an existing meal from Today's "+" or a meal card (portions, "cooked now" vs "already made" = no second stock deduction); saved snacks (Meals → Snacks); the center "+" opens an Add food sheet (`web/src/add/`) that replaced the camera page; "Type it" (`POST /api/analyses/text`, same check screen); "You too?" suggestions of the other one's logged meals (Home card + `shared` push).
 
 **Analysis speed (measured 2026-10-12, pasta photo, qwen3-vl:4b-instruct on 2 cores):** 1280 px → 234 s (1,328 prompt tokens); 896 px → 202 s; 768 px → 202 s (both 1,164 tokens: Ollama scales small images up to ~1,030 image tokens). Same answer at all sizes. `vision_max_px` = 896 (model copy only; stored photo stays 1280). Remaining time ≈ 140 s image encoding + 65 s for ~250 output tokens. Smaller models checked 2026-10-12 (3 real photos: pasta, overnight oats, biscotti label): `qwen3-vl:2b-instruct` ~40% faster and read the label exactly, but invented ingredients (garlic, butter, "spoon") with a flat 0.95 confidence; `qwen2.5vl:3b` slower and missed chia, called biscotti savory; `gemma3:4b` mixed up label columns (kcal 169 = kJ per biscuit). **Kept `qwen3-vl:4b-instruct`** (best meal answers, label right via the per-biscuit column). Other speedups: shorter answer schema, llama.cpp `--image-max-tokens`. **Ingredients:** 23 mock rows + ~250 hand-picked USDA/Ciqual rows (decision 0021; add foods in `api/scripts/{usda,ciqual}_catalog.txt`, rebuild with `scripts/build_catalog.py`, loaded on API start). What's missing: `docker compose exec api python -m app.nutrition.unmatched` on the VM.
 
@@ -77,5 +77,5 @@ Then: M4 (USDA/Ciqual import); M3's second comparison when enough of our plates 
 ## Style / UX conventions
 - Warm, food-forward look; one accent color; light + dark via CSS tokens on `:root`.
 - Mobile first: 390×844 target, tap targets ≥44px, no horizontal scroll.
-- Navigation: tabs Home / Meals / [Snap FAB] / Plan / Ingredients (Fridge + Pantry sections); Insights + Settings via Home header.
+- Navigation: tabs Home / Meals / [+ Add food] / Plan / Ingredients (Fridge + Pantry sections); Insights + Settings via Home header.
 - Ratings: 3 axes per person — Taste (1–5), Make again (yes/maybe/no), Worth the effort (yes/meh/no).

@@ -178,7 +178,8 @@ describe('snap flow', () => {
     render()
     expect(await screen.findByText("Couldn't analyze this photo")).toBeInTheDocument()
     expect(screen.getByText('No vision provider succeeded')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Try another photo' })).toHaveAttribute('href', '/snap')
+    fireEvent.click(screen.getByRole('button', { name: 'Try another photo' }))
+    expect(screen.getByRole('dialog', { name: 'Add food' })).toBeInTheDocument()
   })
 })
 

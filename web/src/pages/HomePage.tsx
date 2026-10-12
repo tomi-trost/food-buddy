@@ -3,10 +3,10 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { api } from '../api/client'
 import { useMe } from '../api/hooks'
-import type { LogEntry, MealType, Nutrients, PlanSlot } from '../api/types'
+import type { LogEntry, Nutrients, PlanSlot } from '../api/types'
 import { EntrySheet } from '../day/EntrySheet'
 import { MEAL_TYPE_LABEL, todayISO } from '../lib/dates'
-import { LogMealSheet } from '../meals/LogMealSheet'
+import { useAddFood } from '../add/AddFood'
 import { SuggestionsCard } from '../meals/SuggestionsCard'
 import { expiryClass } from '../lib/stock'
 import { todayRows } from '../lib/today'
@@ -27,7 +27,7 @@ export function HomePage() {
   const today = todayISO()
   const [settings, setSettings] = useState(false)
   const [entry, setEntry] = useState<LogEntry | null>(null)
-  const [adding, setAdding] = useState<MealType | null>(null)
+  const addFood = useAddFood()
   const day = useQuery({ queryKey: ['day', today], queryFn: () => api.day(today) })
   const plan = useQuery({ queryKey: ['plan'], queryFn: api.plan })
   const meals = useQuery({ queryKey: ['meals'], queryFn: api.meals })
@@ -99,7 +99,7 @@ export function HomePage() {
                   </div>
                 )) : <span className="sub today-empty">Not logged</span>}
               </div>
-              <button className="icon today-btn" aria-label={`Log ${MEAL_TYPE_LABEL[row.mealType]}`} onClick={() => setAdding(row.mealType)}>
+              <button className="icon today-btn" aria-label={`Log ${MEAL_TYPE_LABEL[row.mealType]}`} onClick={() => addFood({ type: row.mealType })}>
                 <Icon name="plus" size={18} />
               </button>
             </div>
@@ -107,7 +107,6 @@ export function HomePage() {
         </div>
       </div>
       <EntrySheet entry={entry} onClose={() => setEntry(null)} />
-      <LogMealSheet mealType={adding} onClose={() => setAdding(null)} />
 
       {me && <SnacksCard me={me} entries={day.data?.entries ?? []} />}
 

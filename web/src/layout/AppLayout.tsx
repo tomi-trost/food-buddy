@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router'
+import { NavLink, Outlet } from 'react-router'
+import { useAddFood } from '../add/AddFood'
 import { syncPush } from '../lib/push'
 import { Icon, type IconName } from '../ui/Icon'
 import { PendingBanner } from './PendingBanner'
@@ -21,7 +22,7 @@ function Tab({ to, label, icon }: (typeof TABS)[number]) {
 }
 
 export function AppLayout() {
-  const navigate = useNavigate()
+  const addFood = useAddFood()
   useEffect(() => {
     syncPush().catch(() => {}) // best effort: keeps this phone's subscription current
   }, [])
@@ -34,8 +35,8 @@ export function AppLayout() {
       <nav className="tabbar" aria-label="Main">
         <Tab {...TABS[0]} />
         <Tab {...TABS[1]} />
-        <button className="fab" aria-label="Snap meal" onClick={() => navigate('/snap')}>
-          <Icon name="camera" size={26} />
+        <button className="fab" aria-label="Add food" onClick={() => addFood()}>
+          <Icon name="plus" size={28} />
         </button>
         <Tab {...TABS[2]} />
         <Tab {...TABS[3]} />
@@ -44,7 +45,7 @@ export function AppLayout() {
   )
 }
 
-/** Full-screen pages (snap flow) without the tab bar. */
+/** Full-screen pages (checking a photo, editing a meal) without the tab bar. */
 export function BareLayout() {
   return (
     <div className="app">

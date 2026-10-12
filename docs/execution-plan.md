@@ -93,6 +93,7 @@ Shared conventions for all sections:
 - [x] Log an existing meal: Today's "+" opens a picker (snap or one of our meals, slot's type first); meal cards have a log button; the cook sheet has portions eaten and "cooked it now" vs "already made" (leftovers / partner cooked: no second stock deduction, source `leftover`)
 - [x] Saved snacks: "Save to our snacks" when logging a snack (photo kept), "Our snacks" in the snack sheet, Meals → Snacks tab; one per name per household, edit/remove (`saved_snack`, 0013)
 - [x] Type it instead: meals and snacks from a typed name (`POST /api/analyses/text`), same job, check screen and push; text prompts with portion anchors (0014). ~4 s on the Mac vs ~1 min expected on the VM (no image encoding)
+- [x] Add food sheet instead of the black camera page: the center tab button is now "+" and opens one sheet with every way in (photo first, library, type it, our meals, snack, label scan) and the meal type on top; Today's "+" opens it with its slot's type; old `/snap` links open it
 - [x] "You too?": a meal one of us logs is suggested to the other (Home card + `shared` push); accepting logs it without touching stock (`meal_suggestion`, 0015)
 
 ## M3 — Model benchmark (`eval/`)
