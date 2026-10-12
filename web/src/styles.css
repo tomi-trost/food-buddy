@@ -215,3 +215,6 @@ svg text { fill: var(--ink2); font-size: 11px; }
 .cell.prep { background: var(--ink); color: var(--bg); }
 .cell.out { background: transparent; border: 1px dashed var(--line2); color: var(--ink2); }
 .cell.skip { color: var(--ink2); opacity: 0.6; }
+.nfields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.nfields .field svg { color: var(--mc); }
+.field input[aria-invalid="true"] { border-color: var(--bad); }

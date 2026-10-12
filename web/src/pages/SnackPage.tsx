@@ -8,6 +8,7 @@ import { todayISO } from '../lib/dates'
 import { amountStep, KIND_LABEL, snackNutrients } from '../lib/snacks'
 import { Icon } from '../ui/Icon'
 import { MacroTiles } from '../ui/Macro'
+import { NutrientFields } from '../ui/NutrientFields'
 import { Photo } from '../ui/Photo'
 import { Stepper } from '../ui/Stepper'
 import { Toggle } from '../ui/Toggle'
@@ -100,6 +101,8 @@ function SnackForm({ analysisId, photoUrl, label, initial, close }: {
   const toast = useToast()
   const [snack, setSnack] = useState(initial)
   useEffect(() => setSnack(initial), [initial])
+  const [editing, setEditing] = useState(false)
+  const [valuesOk, setValuesOk] = useState(true)
   const values = snackNutrients(snack)
   const unit = snack.per === 'piece' ? (snack.amount === 1 ? ' piece' : ' pieces') : ' g'
 
@@ -140,6 +143,25 @@ function SnackForm({ analysisId, photoUrl, label, initial, close }: {
       <Toggle<SnackKind> label="Snack type" value={snack.kind} onChange={(kind) => setSnack((s) => ({ ...s, kind }))}
         options={(['sweet', 'savory', 'drink'] as const).map((k) => ({ value: k, label: KIND_LABEL[k] }))} />
       <MacroTiles values={values} label="This snack" />
+      <section className="card" style={{ marginTop: 14 }}>
+        <div className="row">
+          <div className="sp">
+            <h3>{snack.per === 'piece' ? 'Values per piece' : 'Values per 100 g'}</h3>
+            <div className="sub">{label ? 'as read from the label' : 'estimated from the photo'}</div>
+          </div>
+          <button type="button" className="btn ghost" style={{ width: 'auto', padding: '0 14px' }} aria-expanded={editing}
+            disabled={!valuesOk} onClick={() => setEditing((e) => !e)}>
+            {editing ? 'Done' : 'Edit values'}
+          </button>
+        </div>
+        {editing && (
+          <NutrientFields initial={snack.per_unit} onChange={(n) => {
+            setValuesOk(n !== null)
+            if (n) setSnack((s) => ({ ...s, per_unit: n }))
+          }} />
+        )}
+        {!valuesOk && <p className="error" role="alert">Fix the values marked in red.</p>}
+      </section>
       <div className="card row" style={{ marginTop: 14 }}>
         <div className="sp"><h3>Amount</h3><div className="sub">{label ? 'portion you ate' : 'how many'}</div></div>
         <Stepper label="amount" value={snack.amount} step={amountStep(snack.per)} min={amountStep(snack.per)} max={2000} unit={unit}
@@ -149,7 +171,7 @@ function SnackForm({ analysisId, photoUrl, label, initial, close }: {
         <div className="sub row" style={{ gap: 6, marginBottom: 12 }}><Icon name="gift" size={16} /> Counts as a treat for your streak</div>
       )}
       {log.isError && <p className="error" role="alert">{log.error.message}</p>}
-      <button className="btn" disabled={log.isPending} onClick={() => log.mutate()}>Log snack</button>
+      <button className="btn" disabled={log.isPending || !valuesOk} onClick={() => log.mutate()}>Log snack</button>
     </>
   )
 }

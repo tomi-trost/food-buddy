@@ -17,3 +17,14 @@ export function sum(items: Nutrients[]): Nutrients {
   for (const item of items) for (const key of NUTRIENT_KEYS) out[key] += item[key]
   return out
 }
+
+/** Same limits as the API's NutrientsIn (per 100 g or per piece). */
+export const NUTRIENT_MAX: Nutrients = { kcal: 5000, protein: 500, carbs: 500, fat: 500, fiber: 200, sugar: 500 }
+
+/** A typed value: "7,6" (Italian keyboard) and "7.6" both work; empty, negative or too big → null. */
+export function parseNutrient(key: keyof Nutrients, text: string): number | null {
+  const t = text.trim().replace(',', '.')
+  if (!/^\d*\.?\d+$|^\d+\.$/.test(t)) return null
+  const n = Number(t)
+  return n <= NUTRIENT_MAX[key] ? n : null
+}
