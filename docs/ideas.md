@@ -32,9 +32,9 @@ Status: idea · planned · done · dropped
 | 2026-10-04 | A GPU machine later = just another URL in VISION_PROVIDERS | idea |
 | 2026-10-05 | Edit the snack name and per-100 g values after a label scan (model names are sometimes vague, e.g. "non-detectable") | idea |
 | 2026-10-05 | Undo after posting a meal (the mock's toast had Undo; the real app doesn't yet) | idea |
-| 2026-10-05 | Delete/edit food log entries (wrong portion, logged twice) | idea |
+| 2026-10-05 | Delete/edit food log entries (wrong portion, logged twice) | done 2026-10-12 (Home → Today: portions, amount, values, remove) |
 | 2026-10-05 | Service worker serves the previous app version until reload; show an "update available" prompt | idea |
-| 2026-10-05 | Edit a meal's ingredients and steps after posting | idea |
+| 2026-10-05 | Edit a meal's ingredients and steps after posting | ingredients, portions, cost, nutrition done 2026-10-12; recipe steps open |
 
 | 2026-10-12 | Taste stars: drag/slide a finger across the stars to set the rating (half-step snapping), tapping alone is fiddly on the phone | done (2026-10-12) |
 | 2026-10-12 | Edit the macro values the model read (kcal, carbs, protein, fat, fiber, sugar): label scan shows them read-only, so a misread number can't be fixed. Meals: macros come from the matched ingredients (grams/ingredients are editable), but a manual per-ingredient or total override may be wanted too | done 2026-10-12: snacks + labels (Edit values), meals (per-portion override on the check screen and the edit page) |

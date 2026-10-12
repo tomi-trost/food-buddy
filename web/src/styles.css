@@ -111,7 +111,7 @@ h3 { margin: 0; font-size: 15px; font-weight: 600; }
 .starw .hz { position: absolute; top: 0; bottom: 0; width: 50%; }
 .hz.l { left: 0; } .hz.r { right: 0; }
 /* Slide sideways to rate; vertical swipes still scroll the page */
-.stars.edit { touch-action: pan-y; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.stars.edit { touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .exp-1 { color: var(--bad); } .exp-2 { color: var(--warn); } .exp-3 { color: var(--good); }
 svg text { fill: var(--ink2); font-size: 11px; }
 .vs { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
@@ -220,6 +220,10 @@ html.sheet-open, html.sheet-open body { overflow: hidden; overscroll-behavior: n
 .nfields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
 .nfields .field svg { color: var(--mc); }
 .field input[aria-invalid="true"] { border-color: var(--bad); }
-.today-entry { display: flex; align-items: center; gap: 6px; min-height: 32px; margin-bottom: 4px; }
+.today-entry { display: flex; align-items: center; gap: 10px; min-height: 36px; }
+.today-entry + .today-entry { margin-top: 4px; }
+.today-type { display: flex; align-items: center; min-height: 36px; width: 70px; font-weight: 600; } /* same height as the buttons, so all line up */
+.today-btn { width: 36px; height: 36px; }
+.today-empty { display: flex; align-items: center; min-height: 36px; }
 .today-entry > .sp { display: block; text-align: left; padding: 4px 0; background: none; border: 0; color: var(--ink); font: inherit; text-decoration: none; }
 .list > .today-snack { width: 100%; text-align: left; background: none; border-top: 0; border-left: 0; border-right: 0; color: var(--ink); font: inherit; font-size: 14px; } /* bottom line from .list */

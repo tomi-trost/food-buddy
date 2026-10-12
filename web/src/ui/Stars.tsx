@@ -26,6 +26,7 @@ export function Stars({ value, onChange, size = 32 }: { value: number; onChange?
       role={onChange ? 'group' : 'img'}
       aria-label={`${value} of 5 stars`}
       {...(onChange && {
+        'data-no-swipe': true,
         onPointerDown: (e: React.PointerEvent<HTMLSpanElement>) => {
           dragging.current = true
           e.currentTarget.setPointerCapture?.(e.pointerId)

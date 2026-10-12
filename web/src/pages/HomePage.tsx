@@ -75,7 +75,7 @@ export function HomePage() {
             </button>
           ) : (
             <div key={row.mealType} style={{ alignItems: 'flex-start' }}>
-              <span className="sub" style={{ width: 70, paddingTop: 2, fontWeight: 600 }}>{MEAL_TYPE_LABEL[row.mealType]}</span>
+              <span className="sub today-type">{MEAL_TYPE_LABEL[row.mealType]}</span>
               <div className="sp">
                 {row.entries.length ? row.entries.map((e) => (
                   <div key={e.id} className="today-entry">
@@ -88,13 +88,13 @@ export function HomePage() {
                         {e.emoji} {e.name} <span className="sub">· {Math.round(e.nutrients.kcal)} kcal</span>
                       </button>
                     )}
-                    <button className="icon" style={{ width: 32, height: 32 }} aria-label={`Change ${e.name}`} onClick={() => setEntry(e)}>
-                      <Icon name="edit" size={16} />
+                    <button className="icon today-btn" aria-label={`Change ${e.name}`} onClick={() => setEntry(e)}>
+                      <Icon name="edit" size={18} />
                     </button>
                   </div>
-                )) : <span className="sub">Not logged</span>}
+                )) : <span className="sub today-empty">Not logged</span>}
               </div>
-              <Link to={`/snap?type=${row.mealType}`} className="icon" style={{ width: 36, height: 36 }} aria-label={`Log ${MEAL_TYPE_LABEL[row.mealType]}`}>
+              <Link to={`/snap?type=${row.mealType}`} className="icon today-btn" aria-label={`Log ${MEAL_TYPE_LABEL[row.mealType]}`}>
                 <Icon name="plus" size={18} />
               </Link>
             </div>

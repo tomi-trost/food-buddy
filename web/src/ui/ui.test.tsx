@@ -142,6 +142,17 @@ describe('Sheet swipe', () => {
     expect(onClose).not.toHaveBeenCalled()
   })
 
+  it('stays put when the drag starts on the rating stars', () => {
+    const onClose = vi.fn()
+    render(<Sheet open onClose={onClose} label="Test"><Stars value={3} onChange={() => {}} /></Sheet>)
+    const stars = screen.getByRole('group', { name: '3 of 5 stars' })
+    fireEvent.touchStart(stars, { touches: [{ clientY: 100 }] })
+    fireEvent.touchMove(stars, { touches: [{ clientY: 200 }] })
+    expect(screen.getByRole('dialog').style.transform).toBe('')
+    fireEvent.touchEnd(stars, { touches: [] })
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
   it('locks the page behind while any sheet is open', () => {
     const html = document.documentElement
     const { rerender, unmount } = render(<>

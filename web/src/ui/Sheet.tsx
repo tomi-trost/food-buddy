@@ -13,7 +13,7 @@ function lockPage() {
   }
 }
 
-/** Bottom sheet. Closes on backdrop tap, Escape, or a swipe down from its top. */
+/** Bottom sheet. Closes on backdrop tap, Escape, or a swipe down from its top (not from `[data-no-swipe]`). */
 export function Sheet({ open, onClose, label, children }: {
   open: boolean
   onClose: () => void
@@ -41,17 +41,20 @@ export function Sheet({ open, onClose, label, children }: {
     let startT = 0
     let dy = 0
     let dragging = false
+    let ignore = false // gesture started on a control that drags itself (rating stars)
     const move = (y: number) => {
       sheet.style.transition = 'none'
       sheet.style.transform = `translateY(${y}px)`
     }
     const onStart = (e: TouchEvent) => {
+      ignore = e.target instanceof Element && !!e.target.closest('[data-no-swipe]')
       startY = e.touches[0].clientY
       startT = performance.now()
       dy = 0
       dragging = false
     }
     const onMove = (e: TouchEvent) => {
+      if (ignore) return
       dy = e.touches[0].clientY - startY
       // only a pull down while the content is at its top drags the sheet; anything else scrolls it
       if (!dragging && dy > 0 && sheet.scrollTop <= 0) dragging = true
