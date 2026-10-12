@@ -1,0 +1,11 @@
+[Unit]
+Description=Food Buddy backup to Backblaze B2 (restic)
+After=docker.service network-online.target
+Wants=network-online.target
+ConditionPathExists=/etc/food-buddy/backup.env
+
+[Service]
+Type=oneshot
+ExecStart=/opt/food-buddy/deploy/backup.sh
+Nice=10
+IOSchedulingClass=idle

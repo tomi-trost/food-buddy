@@ -84,7 +84,7 @@ Shared conventions for all sections:
 - [x] Bootstrap script `deploy/bootstrap.sh`: Docker, swap, 25 Mbit/s egress cap (stays under the free 10 TB/month), checkout in `/opt/food-buddy`, `.env` with generated secrets. Oracle's host firewall already accepts only SSH
 - [ ] `docker compose --profile ai --profile tunnel up -d`; pull the model; smoke test from both iPhones (Add to Home Screen)
 - [ ] Continuous deploy: CI `deploy` job (after api + web pass on main) SSHes to the VM with a deploy-only key forced to `deploy/deploy.sh` (pull, build on the VM, `up -d`, health check). Needs the key in `authorized_keys`, `DEPLOY_SSH_KEY` + `DEPLOY_KNOWN_HOSTS` secrets, `DEPLOY_HOST` variable, `production` environment
-- [ ] Backups: nightly `pg_dump` + photos with restic; Jetson pulls over SSH; restore drill
+- [ ] Backups: nightly `pg_dump` + photos with restic → Backblaze B2 (0020, `deploy/backup.sh`, timer from `bootstrap.sh`). **You:** B2 account, private bucket with "Keep only the last version", Caps & Alerts at $0, bucket-only app key → `/etc/food-buddy/backup.env`. Then first run + `restore-test`. Later: Jetson pulls a second copy
 - [ ] Optional: Uptime Kuma on the Pi 3
 
 ## M3 — Model benchmark (`eval/`)

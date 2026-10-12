@@ -227,7 +227,7 @@ Files: `deploy/compose.yaml` (everything) + `deploy/compose.dev.yaml` (local dev
 
 ### 5.6 Backups and ops
 
-- Nightly `pg_dump` + photos → **restic, encrypted**, pulled by the Jetson (repo on a USB disk if possible). Restore drill once per phase.
+- Nightly `pg_dump` + photos → **restic, encrypted** → Backblaze B2 free tier (0020, `deploy/backup.sh`). The Jetson can pull a second copy later. Restore drill (`backup.sh restore-test`) once per phase.
 - Container healthchecks; Uptime Kuma on the Pi 3 (optional).
 - Secrets only in `.env` on hosts (`.env.example` in the repo). This matters because the repo will be public.
 

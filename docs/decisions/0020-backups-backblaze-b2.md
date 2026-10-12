@@ -1,0 +1,8 @@
+# 0020 — Nightly restic backups to Backblaze B2 (free tier)
+Date: 2026-10-12 · Status: accepted
+
+**Context:** The app now holds real data (meals, ratings, photos) on one Oracle VM. 0016 planned for the Jetson at home to pull backups, but it isn't set up yet, and a copy outside Oracle is what matters most if the account or VM disappears.
+**Decision:** `deploy/backup.sh` runs nightly (systemd timer, 03:30) on the VM: `pg_dump` + the photos volume → **restic** (encrypted on the VM, deduplicated) → a private **Backblaze B2** bucket over the S3 API. Retention 7 daily / 4 weekly / 6 monthly; weekly metadata check; `backup.sh restore-test` as the restore drill. Credentials in `/etc/food-buddy/backup.env` on the VM only.
+**Staying at 0 €:** B2 is free for the first 10 GB stored, downloads up to 3× storage per month, and all Class A/B/C API calls (only event notifications cost, unused). Guards: the script refuses to upload once the repository reaches 8 GB; the bucket uses lifecycle "Keep only the last version" (otherwise pruned data is kept as hidden versions and keeps counting); B2 Caps & Alerts are set to $0 so B2 stops instead of billing. Expected size: ~200 KB per photo → well under 1 GB a year.
+**Alternatives:** Oracle Object Storage (free 20 GB, but same account as the VM: one failure loses both); Jetson pull only (not running yet; can be added later as a second copy).
+**Consequences:** An exception to 0019's "no closed free tiers": acceptable because the data is encrypted before upload and restic can move to any other backend (Jetson, another bucket) without changing the app. The restic password must also live in a password manager: without it the backups are unreadable.

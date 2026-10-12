@@ -93,5 +93,14 @@ if [ ! -f "$ENV" ]; then
   chmod 600 "$ENV"
 fi
 
+log "Nightly backups (restic → Backblaze B2)"
+sudo apt-get install -yq restic
+sudo install -d -m 700 /etc/food-buddy
+sudo install -m 644 "$DIR"/deploy/systemd/food-buddy-backup.{service,timer} /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now food-buddy-backup.timer >/dev/null 2>&1
+[ -f /etc/food-buddy/backup.env ] ||
+  log "Backups stay off until /etc/food-buddy/backup.env exists (template: deploy/backup.env.example)"
+
 log "Done. Next: put CLOUDFLARE_TUNNEL_TOKEN in $ENV, then (after logging in again for the docker group):"
 log "  cd $DIR/deploy && docker compose build && docker compose --profile ai --profile tunnel up -d"
