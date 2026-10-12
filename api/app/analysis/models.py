@@ -9,7 +9,7 @@ from app.db import Base, TimestampMixin
 
 
 class AnalysisJob(TimestampMixin, Base):
-    """One photo sent to the vision model.
+    """One photo (or typed dish name, then `photo_path` is empty) sent to the vision model.
 
     `raw` is the model's answer, `result` the version grounded in the nutrition table.
     """
@@ -19,7 +19,8 @@ class AnalysisJob(TimestampMixin, Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     household_id: Mapped[int] = mapped_column(ForeignKey("household.id", ondelete="CASCADE"))
     user_id: Mapped[int] = mapped_column(ForeignKey("app_user.id", ondelete="CASCADE"))
-    photo_path: Mapped[str] = mapped_column(String(255))
+    photo_path: Mapped[str | None] = mapped_column(String(255))
+    description: Mapped[str | None] = mapped_column(String(200))  # typed instead of a photo
     kind: Mapped[str] = mapped_column(String(5), default="meal")  # meal|snack|label
     status: Mapped[str] = mapped_column(String(10), default="queued")  # queued|running|done|failed
     provider: Mapped[str | None] = mapped_column(String(40))

@@ -39,7 +39,8 @@ class AnalysisJobOut(BaseModel):
     by: JobBy  # who took the photo
     kind: Literal["meal", "snack", "label"]
     status: Literal["queued", "running", "done", "failed"]
-    photo_url: str
+    photo_url: str | None  # None: typed, not snapped
+    description: str | None
     provider: str | None
     result: AnalysisResult | None  # meals
     snack: SnackResult | None  # snack photos and labels

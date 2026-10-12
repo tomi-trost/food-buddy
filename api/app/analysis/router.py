@@ -1,7 +1,8 @@
-from typing import Literal
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Form, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
+from pydantic import BaseModel, Field, StringConstraints
 from sqlalchemy import select
 
 from app.analysis.models import AnalysisJob, AnalysisRating
@@ -41,7 +42,8 @@ async def jobs_out(session: Session, user: User, jobs: list[AnalysisJob]) -> lis
                 by=JobBy(id=job.user_id, name=names.get(job.user_id, "")),
                 kind=job.kind,
                 status=job.status,
-                photo_url=f"/api/analyses/{job.id}/photo",
+                photo_url=f"/api/analyses/{job.id}/photo" if job.photo_path else None,
+                description=job.description,
                 provider=job.provider,
                 result=job.result if meal else None,
                 snack=None if meal else job.result,
@@ -103,6 +105,34 @@ async def create_analysis(
         kind=kind,
         meal_type=meal_type if kind == "meal" else None,
         save_only=save_only and kind == "meal",
+    )
+    session.add(job)
+    await session.commit()
+    await session.refresh(job)
+    await analyze_photo.defer_async(job_id=job.id)
+    return await job_out(session, user, job)
+
+
+class TextIn(BaseModel):
+    kind: Literal["meal", "snack"] = "meal"  # a label has to be photographed
+    text: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
+    meal_type: Literal["breakfast", "lunch", "dinner"] | None = None
+    save_only: bool = Field(default=False)
+
+
+@router.post("/text", status_code=status.HTTP_202_ACCEPTED)
+async def create_text_analysis(body: TextIn, user: CurrentUser, session: Session) -> AnalysisJobOut:
+    """Type a dish ("spaghetti carbonara", "2 slices of tiramisu"): the model estimates it
+    from the name, then it's checked and posted like a photo."""
+    meal = body.kind == "meal"
+    job = AnalysisJob(
+        household_id=user.household_id,
+        user_id=user.id,
+        photo_path=None,
+        description=body.text,
+        kind=body.kind,
+        meal_type=body.meal_type if meal else None,
+        save_only=body.save_only and meal,
     )
     session.add(job)
     await session.commit()
@@ -176,4 +206,6 @@ async def retry_analysis(job_id: int, user: CurrentUser, session: Session) -> An
 @router.get("/{job_id}/photo", response_class=FileResponse)
 async def get_analysis_photo(job_id: int, user: CurrentUser, session: Session) -> FileResponse:
     job = await get_own_job(session, user, job_id)
+    if not job.photo_path:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "This was typed, not photographed")
     return FileResponse(get_settings().photo_dir / job.photo_path, media_type="image/jpeg")

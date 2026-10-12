@@ -57,7 +57,7 @@ describe('NotificationSettings', () => {
     expect(await screen.findByText(/Notifications are blocked/)).toBeInTheDocument()
   })
 
-  it('turns notifications on with the server key, then shows the four switches', async () => {
+  it('turns notifications on with the server key, then shows the five switches', async () => {
     serve()
     render()
     vi.mocked(push.enablePush).mockImplementation(async () => {
@@ -66,8 +66,9 @@ describe('NotificationSettings', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Turn on notifications' }))
     await waitFor(() => expect(push.enablePush).toHaveBeenCalledWith('BKEY'))
     expect(await screen.findByRole('switch', { name: /Photo analyzed/ })).toBeChecked()
-    expect(screen.getAllByRole('switch')).toHaveLength(4)
+    expect(screen.getAllByRole('switch')).toHaveLength(5)
     expect(screen.getByRole('switch', { name: /Ana rated/ })).toBeInTheDocument()
+    expect(screen.getByRole('switch', { name: /Ana logged a meal/ })).toBeChecked()
   })
 
   it('shows why turning on failed', async () => {

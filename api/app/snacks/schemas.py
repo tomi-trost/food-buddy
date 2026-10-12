@@ -52,13 +52,41 @@ class SnackResult(BaseModel):
     per_unit: NutrientsIn
 
 
+Per = Literal["piece", "100g"]
+
+
 class SnackIn(BaseModel):
     eaten_on: date
     name: str = Field(min_length=1, max_length=120)
     emoji: str = Field(default="🍪", max_length=8)
     kind: SnackKind
-    source: Literal["list", "photo", "label"]
-    per: Literal["piece", "100g"]
+    source: Literal["list", "photo", "label", "saved"]
+    per: Per
     amount: float = Field(gt=0, le=2000)
     per_unit: NutrientsIn
     analysis_id: int | None = None  # the photo/label this came from; closes it
+    save: bool = False  # also keep it in our snacks (with the photo, if any)
+    saved_id: int | None = None  # logged from our snacks
+
+
+class SavedSnackOut(BaseModel):
+    id: int
+    name: str
+    emoji: str
+    kind: SnackKind
+    per: Per
+    amount: float
+    per_unit: NutrientsIn
+    photo_url: str | None
+    last_eaten_on: date | None
+
+
+class SavedSnackPatch(BaseModel):
+    """Only the fields sent change."""
+
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    emoji: str | None = Field(default=None, min_length=1, max_length=8)
+    kind: SnackKind | None = None
+    per: Per | None = None
+    amount: float | None = Field(default=None, gt=0, le=2000)
+    per_unit: NutrientsIn | None = None

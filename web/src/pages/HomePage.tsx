@@ -3,9 +3,11 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { api } from '../api/client'
 import { useMe } from '../api/hooks'
-import type { LogEntry, Nutrients, PlanSlot } from '../api/types'
+import type { LogEntry, MealType, Nutrients, PlanSlot } from '../api/types'
 import { EntrySheet } from '../day/EntrySheet'
 import { MEAL_TYPE_LABEL, todayISO } from '../lib/dates'
+import { LogMealSheet } from '../meals/LogMealSheet'
+import { SuggestionsCard } from '../meals/SuggestionsCard'
 import { expiryClass } from '../lib/stock'
 import { todayRows } from '../lib/today'
 import { ProgressBar, Ring } from '../ui/charts'
@@ -25,6 +27,7 @@ export function HomePage() {
   const today = todayISO()
   const [settings, setSettings] = useState(false)
   const [entry, setEntry] = useState<LogEntry | null>(null)
+  const [adding, setAdding] = useState<MealType | null>(null)
   const day = useQuery({ queryKey: ['day', today], queryFn: () => api.day(today) })
   const plan = useQuery({ queryKey: ['plan'], queryFn: api.plan })
   const meals = useQuery({ queryKey: ['meals'], queryFn: api.meals })
@@ -65,6 +68,8 @@ export function HomePage() {
         </Link>
       )}
 
+      <SuggestionsCard />
+
       <h2>Today</h2>
       <div className="card" style={{ padding: '4px 14px' }}>
         <div className="list" aria-label="Today">
@@ -94,14 +99,15 @@ export function HomePage() {
                   </div>
                 )) : <span className="sub today-empty">Not logged</span>}
               </div>
-              <Link to={`/snap?type=${row.mealType}`} className="icon today-btn" aria-label={`Log ${MEAL_TYPE_LABEL[row.mealType]}`}>
+              <button className="icon today-btn" aria-label={`Log ${MEAL_TYPE_LABEL[row.mealType]}`} onClick={() => setAdding(row.mealType)}>
                 <Icon name="plus" size={18} />
-              </Link>
+              </button>
             </div>
           ))}
         </div>
       </div>
       <EntrySheet entry={entry} onClose={() => setEntry(null)} />
+      <LogMealSheet mealType={adding} onClose={() => setAdding(null)} />
 
       {me && <SnacksCard me={me} entries={day.data?.entries ?? []} />}
 

@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react'
+import { fireEvent, screen, within } from '@testing-library/react'
 import { Route } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { tokenStore } from '../api/client'
@@ -131,5 +131,57 @@ describe('SnapPage', () => {
   it('hides the meal choice for snacks and labels', () => {
     renderAt('/snap?kind=snack', <Route path="/snap" element={<SnapPage />} />)
     expect(screen.queryByRole('group', { name: 'Which meal is it?' })).not.toBeInTheDocument()
+  })
+
+  describe('typing instead of snapping', () => {
+    const routes = (
+      <>
+        <Route path="/snap" element={<SnapPage />} />
+        <Route path="/analysis/:id" element={<p>analysis page</p>} />
+        <Route path="/" element={<p>home</p>} />
+      </>
+    )
+
+    it('sends a typed meal with its meal type and opens the check screen', async () => {
+      const fetch = mockFetch(() => jsonResponse({ id: 12, status: 'queued' }, 202))
+      renderAt('/snap?type=dinner', routes)
+      fireEvent.click(screen.getByRole('button', { name: /Type it/ }))
+      const sheet = screen.getByRole('dialog', { name: 'Type it instead' })
+      expect(within(sheet).getByRole('heading', { name: 'What did you eat?' })).toBeInTheDocument()
+      fireEvent.change(within(sheet).getByLabelText('Dish'), { target: { value: '  spaghetti carbonara ' } })
+      fireEvent.click(within(sheet).getByRole('button', { name: 'Estimate it' }))
+      expect(await screen.findByText('analysis page')).toBeInTheDocument()
+      const [url, init] = fetch.mock.calls[0]
+      expect(url).toBe('/api/analyses/text')
+      expect(JSON.parse(String(init!.body))).toEqual({ kind: 'meal', text: 'spaghetti carbonara', meal_type: 'dinner', save_only: false })
+    })
+
+    it('sends a typed snack and goes home to wait for it', async () => {
+      const fetch = mockFetch(() => jsonResponse({ id: 13, status: 'queued' }, 202))
+      renderAt('/snap?kind=snack', routes)
+      fireEvent.click(screen.getByRole('button', { name: /Type it/ }))
+      fireEvent.change(screen.getByLabelText('Snack'), { target: { value: '2 slices of tiramisu' } })
+      fireEvent.click(screen.getByRole('button', { name: 'Estimate it' }))
+      expect(await screen.findByText('home')).toBeInTheDocument()
+      expect(JSON.parse(String(fetch.mock.calls[0][1]!.body))).toMatchObject({ kind: 'snack', text: '2 slices of tiramisu', meal_type: null })
+    })
+
+    it('does not send blank text and shows server errors', async () => {
+      const fetch = mockFetch(() => jsonResponse({ detail: 'String should have at most 200 characters' }, 422))
+      renderAt('/snap?type=lunch', routes)
+      fireEvent.click(screen.getByRole('button', { name: /Type it/ }))
+      const sheet = screen.getByRole('dialog', { name: 'Type it instead' })
+      fireEvent.change(within(sheet).getByLabelText('Dish'), { target: { value: '   ' } })
+      fireEvent.submit(within(sheet).getByRole('button', { name: 'Estimate it' }).closest('form')!)
+      expect(fetch).not.toHaveBeenCalled()
+      fireEvent.change(within(sheet).getByLabelText('Dish'), { target: { value: 'pasta' } })
+      fireEvent.click(within(sheet).getByRole('button', { name: 'Estimate it' }))
+      expect(await within(sheet).findByRole('alert')).toHaveTextContent('at most 200 characters')
+    })
+
+    it('is not offered for labels (they need the photo)', () => {
+      renderAt('/snap?kind=label', routes)
+      expect(screen.queryByRole('button', { name: /Type it/ })).not.toBeInTheDocument()
+    })
   })
 })

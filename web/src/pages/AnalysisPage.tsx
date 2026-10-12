@@ -146,7 +146,7 @@ function Waiting({ job }: { job: AnalysisJob }) {
 
 function SnapFlow({ analysisId, photoUrl, result, rated, chosenType, saveOnly, close }: {
   analysisId: number
-  photoUrl: string
+  photoUrl: string | null
   result: AnalysisResult
   rated: boolean // rated while waiting: the rating is already on the meal
   chosenType: MealType | null // picked on the Snap screen

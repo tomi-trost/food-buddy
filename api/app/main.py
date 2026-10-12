@@ -16,6 +16,7 @@ from app.plan.router import router as plan_router
 from app.push.router import router as push_router
 from app.shopping.router import router as shopping_router
 from app.snacks.router import router as snacks_router
+from app.suggestions.router import router as suggestions_router
 
 
 @asynccontextmanager
@@ -60,4 +61,5 @@ api.include_router(plan_router)
 api.include_router(shopping_router)
 api.include_router(logs_router)
 api.include_router(snacks_router)
+api.include_router(suggestions_router)
 app.include_router(api)

@@ -146,11 +146,50 @@ describe('MealPage', () => {
     mealApi(undefined, (b) => (cooked = b as typeof cooked))
     renderMeal()
     fireEvent.click(await screen.findByRole('button', { name: /I cooked this again/ }))
-    const sheet = screen.getByRole('dialog', { name: 'Log this cook' })
+    const sheet = screen.getByRole('dialog', { name: 'Log this meal' })
     fireEvent.click(within(sheet).getByRole('button', { name: 'Dinner' }))
     fireEvent.click(within(sheet).getByRole('button', { name: /Rice \(cooked\)/ }))
-    fireEvent.click(within(sheet).getByRole('button', { name: 'Confirm' }))
+    fireEvent.click(within(sheet).getByRole('button', { name: 'More portions eaten' }))
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Log 828 kcal' }))
     await screen.findByText('Logged · ingredients updated')
-    expect(cooked).toMatchObject({ meal_type: 'dinner', used_up: [2] })
+    expect(cooked).toEqual({ meal_type: 'dinner', eaten_on: expect.any(String), servings_eaten: 1.5, cooked: true, used_up: [2] })
+  })
+
+  it('logs leftovers without touching stock or used-up ingredients', async () => {
+    let cooked: unknown
+    mealApi(undefined, (b) => (cooked = b))
+    renderMeal()
+    fireEvent.click(await screen.findByRole('button', { name: /I cooked this again/ }))
+    const sheet = screen.getByRole('dialog', { name: 'Log this meal' })
+    fireEvent.click(within(sheet).getByRole('button', { name: /Rice \(cooked\)/ }))
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Already made' }))
+    expect(within(sheet).queryByText('Used up an ingredient?')).not.toBeInTheDocument()
+    expect(within(sheet).getByText(/Stock stays as it is/)).toBeInTheDocument()
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Log 552 kcal' }))
+    await screen.findByText('Logged')
+    expect(cooked).toMatchObject({ meal_type: 'lunch', servings_eaten: 1, cooked: false, used_up: [] })
+  })
+})
+
+describe('MealsPage log button', () => {
+  it('logs a meal straight from its card for the filtered meal type', async () => {
+    let cooked: unknown
+    mockFetch((url, init) => {
+      if (url === '/api/meals') return jsonResponse([card({ id: 3, name: 'Chicken rice bowl', types: ['lunch'] })])
+      if (url.endsWith('/cook')) {
+        cooked = JSON.parse(String(init!.body))
+        return jsonResponse(meal({ cooked_count: 2 }))
+      }
+      return jsonResponse(meal())
+    })
+    renderAt('/meals?type=dinner&seg=all', <Route path="/meals" element={<MealsPage />} />)
+    fireEvent.click(screen.getByRole('button', { name: /Lunch/ }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Log Chicken rice bowl' }))
+    const sheet = await screen.findByRole('dialog', { name: 'Log this meal' })
+    expect(within(sheet).getByRole('button', { name: 'Lunch' })).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Log 552 kcal' }))
+    await screen.findByText('Logged · ingredients updated')
+    expect(cooked).toMatchObject({ meal_type: 'lunch', cooked: true })
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 })

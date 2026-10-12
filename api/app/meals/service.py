@@ -178,14 +178,15 @@ async def save_rating(session: AsyncSession, user: User, meal: Meal, body: Ratin
 
 
 async def cook_again(session: AsyncSession, user: User, meal: Meal, body: CookIn) -> None:
-    """Logs one portion as eaten and takes the whole recipe out of stock (like the mock)."""
+    """Logs the portions eaten; cooking now also takes the whole recipe out of stock."""
     recipe = {mi.ingredient_id: mi.grams for mi in meal.ingredients}
     if not set(body.used_up) <= set(recipe):
         raise HTTPException(
             status.HTTP_422_UNPROCESSABLE_CONTENT,
             "used_up must only contain this meal's ingredients",
         )
-    session.add(CookLog(meal_id=meal.id, user_id=user.id, cooked_on=body.eaten_on))
+    if body.cooked:
+        session.add(CookLog(meal_id=meal.id, user_id=user.id, cooked_on=body.eaten_on))
     log = FoodLog(
         household_id=user.household_id,
         user_id=user.id,
@@ -195,12 +196,14 @@ async def cook_again(session: AsyncSession, user: User, meal: Meal, body: CookIn
         emoji=meal.emoji,
         meal_id=meal.id,
         kind="meal",
-        source="cook",
+        source="cook" if body.cooked else "leftover",
+        servings=body.servings_eaten,
     )
-    log.set_nutrients(per_portion(meal))
+    log.set_nutrients(per_portion(meal).scaled(body.servings_eaten * 100))
     session.add(log)
-    await deduct(session, user.household_id, recipe)
-    await mark_used_up(session, user.household_id, body.used_up)
+    if body.cooked:
+        await deduct(session, user.household_id, recipe)
+        await mark_used_up(session, user.household_id, body.used_up)
     await session.commit()
 
 

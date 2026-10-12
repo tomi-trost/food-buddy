@@ -26,8 +26,8 @@ from app.push.models import PushSent, PushSubscription
 
 log = logging.getLogger(__name__)
 
-Kind = Literal["ready", "rate", "partner", "daily"]
-KINDS: tuple[Kind, ...] = ("ready", "rate", "partner", "daily")
+Kind = Literal["ready", "rate", "partner", "shared", "daily"]
+KINDS: tuple[Kind, ...] = ("ready", "rate", "partner", "shared", "daily")
 
 TTL_S = 12 * 3600  # phone offline longer than this: the notification is stale anyway
 

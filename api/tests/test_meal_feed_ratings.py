@@ -131,3 +131,55 @@ async def test_cook_rejects_foreign_used_up(client, auth, seeded, queue):
         headers=auth,
     )
     assert response.status_code == 422
+
+
+async def test_cook_logs_the_portions_eaten(client, auth, seeded, queue):
+    meal = await post(client, auth, seeded)
+    response = await client.post(
+        f"/api/meals/{meal['id']}/cook",
+        json={"meal_type": "lunch", "eaten_on": TODAY.isoformat(), "servings_eaten": 1.5},
+        headers=auth,
+    )
+    assert response.status_code == 200
+    log = (await seeded.scalars(select(FoodLog).order_by(FoodLog.id.desc()))).first()
+    assert (log.servings, log.kcal) == (1.5, round(551.7 * 1.5, 1))
+
+
+async def test_eating_leftovers_logs_without_cooking_or_touching_stock(client, auth, seeded, queue):
+    meal = await post(client, auth, seeded)
+    rice = await stock(seeded, "Rice (cooked)", 1000)
+
+    response = await client.post(
+        f"/api/meals/{meal['id']}/cook",
+        json={"meal_type": "dinner", "eaten_on": TODAY.isoformat(), "cooked": False},
+        headers=auth,
+    )
+    assert response.json()["cooked_count"] == 1  # only the original post
+
+    log = (await seeded.scalars(select(FoodLog).order_by(FoodLog.id.desc()))).first()
+    assert (log.source, log.meal_type, log.kcal) == ("leftover", "dinner", 551.7)
+    seeded.expire_all()
+    assert {i.ingredient_id: i.grams for i in await seeded.scalars(select(InventoryItem))} == {
+        rice: 1000
+    }
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        {"cooked": False, "used_up": "chicken"},  # nothing gets used up without cooking
+        {"servings_eaten": 0},
+        {"servings_eaten": 1.25},
+        {"servings_eaten": 11},
+    ],
+)
+async def test_cook_rejects_invalid_bodies(client, auth, seeded, queue, body):
+    meal = await post(client, auth, seeded)
+    if body.get("used_up") == "chicken":
+        body["used_up"] = [meal["ingredients"][0]["ingredient"]["id"]]
+    response = await client.post(
+        f"/api/meals/{meal['id']}/cook",
+        json={"meal_type": "dinner", "eaten_on": TODAY.isoformat(), **body},
+        headers=auth,
+    )
+    assert response.status_code == 422

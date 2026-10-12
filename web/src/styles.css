@@ -74,7 +74,7 @@ h3 { margin: 0; font-size: 15px; font-weight: 600; }
 .mini button { padding: 4px 10px; font-size: 12px; border-radius: 5px; min-height: 28px; color: var(--ink2); }
 .mini button[aria-pressed='true'] { background: var(--surface); color: var(--ink); font-weight: 600; }
 .tseg { display: flex; gap: 6px; margin-bottom: 12px; }
-.tseg button { flex: 1 1 0; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 4px; min-height: 34px; font-size: 12px; padding: 0 2px; border-radius: var(--r2); background: var(--surface2); color: var(--ink2); }
+.tseg button { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 44px; font-size: 11px; padding: 4px 2px; border-radius: var(--r2); background: var(--surface2); color: var(--ink2); }
 .tseg button[aria-pressed='true'] { background: var(--ink); color: var(--bg); font-weight: 600; }
 .sortbtn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line2); border-radius: var(--r2); padding: 6px 10px; font-size: 13px; min-height: 34px; background: var(--surface); }
 .sortbtn small { color: var(--ink2); font-size: 12px; }
@@ -191,6 +191,7 @@ html.sheet-open, html.sheet-open body { overflow: hidden; overscroll-behavior: n
 .cam-types button[aria-pressed='true'] { background: #fff; color: #12100e; border-color: #fff; }
 .cam-bar { display: grid; grid-template-columns: 1fr 84px 1fr; align-items: center; }
 .cam-lib { justify-self: start; display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: rgba(255, 255, 255, 0.85); cursor: pointer; padding-left: 12px; }
+.cam-type { justify-self: end; padding: 0 12px 0 0; background: none; border: 0; }
 .cam-lib-tile { width: 48px; height: 48px; border-radius: 12px; border: 2px solid rgba(255, 255, 255, 0.85); display: grid; place-items: center; background: rgba(255, 255, 255, 0.1); }
 .shutter { width: 80px; height: 80px; border-radius: 50%; border: 4px solid #fff; padding: 5px; display: block; cursor: pointer; }
 .shutter span { display: block; width: 100%; height: 100%; border-radius: 50%; background: #fff; transition: transform 0.12s; }
@@ -203,6 +204,9 @@ html.sheet-open, html.sheet-open body { overflow: hidden; overscroll-behavior: n
 .mealcard { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; text-align: left; text-decoration: none; color: inherit; }
 .mealcard .photo { border-radius: 0; font-size: 40px; }
 .mealcard .b { padding: 10px 12px 12px; }
+.mealcard-wrap { position: relative; display: grid; }
+.mealcard-wrap .b { padding-right: 52px; }
+.mealcard-log { position: absolute; right: 6px; bottom: 6px; width: 44px; height: 44px; border-radius: 50%; background: var(--surface); }
 
 /* Plan (mock .dayc/.slot/.wgrid/.cell) */
 .dayc { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); margin-bottom: 10px; overflow: hidden; }

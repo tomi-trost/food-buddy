@@ -54,12 +54,23 @@ class MealCreate(BaseModel):
 
 
 class CookIn(BaseModel):
-    """ "I cooked this again": one portion eaten by the current user."""
+    """ "I ate this meal again": cooked now (recipe leaves stock) or from what's already made
+    (leftovers, or my partner cooked and logged it), so stock isn't taken twice."""
 
     meal_type: MealType
     eaten: bool = True  # False = save for later: library only, no log/stock/reminder
     eaten_on: date | None = None  # required when eaten
+    servings_eaten: float = Field(default=1, gt=0, le=10)
+    cooked: bool = True
     used_up: list[int] = Field(default_factory=list)
+
+    _servings = field_validator("servings_eaten")(_half_steps)
+
+    @model_validator(mode="after")
+    def used_up_needs_cooking(self) -> "CookIn":
+        if not self.cooked and self.used_up:
+            raise ValueError("Only a meal cooked now can use up ingredients")
+        return self
 
 
 def _unique_ingredients(items: list[ItemIn] | None) -> list[ItemIn] | None:

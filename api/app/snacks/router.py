@@ -1,17 +1,21 @@
 from datetime import date, timedelta
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Response, status
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import nulls_last, select
 
 from app.analysis.queue import close, lock_open_job
 from app.auth.deps import CurrentUser, Session
 from app.auth.service import household_members
+from app.config import get_settings
 from app.logs.models import FoodLog
 from app.logs.router import is_treat
 from app.logs.service import snack_nutrients
+from app.snacks import saved
 from app.snacks.catalog import CATALOG, CROISSANT, CatalogItem
-from app.snacks.schemas import SnackIn
+from app.snacks.models import SavedSnack
+from app.snacks.schemas import SavedSnackOut, SavedSnackPatch, SnackIn
 
 router = APIRouter(tags=["snacks"])
 
@@ -24,6 +28,7 @@ class LoggedOut(BaseModel):
     kcal: float
     sugar: float
     treat: bool
+    saved_id: int | None = None  # in our snacks (saved now or logged from there)
 
 
 class RewardOut(BaseModel):
@@ -45,8 +50,12 @@ async def catalog(_: CurrentUser) -> list[CatalogItem]:
 
 @router.post("/snacks", status_code=status.HTTP_201_CREATED)
 async def log_snack(body: SnackIn, user: CurrentUser, session: Session) -> LoggedOut:
+    from_list = await saved.get_own(session, user, body.saved_id) if body.saved_id else None
+    photo_path = None
     if body.analysis_id is not None:
-        close(await lock_open_job(session, user, body.analysis_id))
+        job = await lock_open_job(session, user, body.analysis_id)
+        close(job)
+        photo_path = job.photo_path
     entry = FoodLog(
         household_id=user.household_id,
         user_id=user.id,
@@ -63,10 +72,65 @@ async def log_snack(body: SnackIn, user: CurrentUser, session: Session) -> Logge
     )
     entry.set_nutrients(snack_nutrients(entry))
     session.add(entry)
+    kept = await saved.save(session, user, body, photo_path) if body.save else from_list
+    if from_list is not None:
+        saved.eaten(from_list, body.eaten_on)
     await session.commit()
     return LoggedOut(
-        id=entry.id, name=entry.name, kcal=entry.kcal, sugar=entry.sugar, treat=is_treat(entry)
+        id=entry.id,
+        name=entry.name,
+        kcal=entry.kcal,
+        sugar=entry.sugar,
+        treat=is_treat(entry),
+        saved_id=kept.id if kept else None,
     )
+
+
+@router.get("/snacks/saved")
+async def list_saved(user: CurrentUser, session: Session) -> list[SavedSnackOut]:
+    """Most recently eaten first."""
+    rows = await session.scalars(
+        select(SavedSnack)
+        .where(SavedSnack.household_id == user.household_id)
+        .order_by(nulls_last(SavedSnack.last_eaten_on.desc()), SavedSnack.name)
+    )
+    return [saved.saved_out(s) for s in rows]
+
+
+@router.patch("/snacks/saved/{saved_id}")
+async def edit_saved(
+    saved_id: int, body: SavedSnackPatch, user: CurrentUser, session: Session
+) -> SavedSnackOut:
+    snack = await saved.get_own(session, user, saved_id)
+    changes = body.model_dump(exclude_unset=True)
+    if "name" in changes:
+        changes["name"] = changes["name"].strip()
+        other = await saved.by_name(session, user.household_id, changes["name"])
+        if other is not None and other.id != snack.id:
+            raise HTTPException(
+                status.HTTP_409_CONFLICT, "You already saved a snack with this name"
+            )
+    for key, value in changes.items():
+        if value is not None:
+            setattr(snack, key, value)
+    await session.commit()
+    return saved.saved_out(snack)
+
+
+@router.delete("/snacks/saved/{saved_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_saved(saved_id: int, user: CurrentUser, session: Session) -> Response:
+    """Past days keep their entries (they hold their own values)."""
+    await session.delete(await saved.get_own(session, user, saved_id))
+    await session.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/snacks/saved/{saved_id}/photo", response_class=FileResponse)
+async def saved_photo(saved_id: int, user: CurrentUser, session: Session) -> FileResponse:
+    snack = await saved.get_own(session, user, saved_id)
+    if not snack.photo_path:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "This snack has no photo")
+    return FileResponse(get_settings().photo_dir / snack.photo_path, media_type="image/jpeg")
 
 
 async def rewards_for(session, user, today: date) -> list[RewardOut]:

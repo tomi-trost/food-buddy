@@ -28,6 +28,11 @@ async def notify_partner_rated(meal_id: int, rater_id: int) -> None:
     await _run(notify.notify_partner_rated, meal_id, rater_id)
 
 
+@jobs_app.task(name="notify_suggested", queue="push")
+async def notify_suggested(suggestion_id: int) -> None:
+    await _run(notify.notify_suggested, suggestion_id)
+
+
 # 18:00 UTC = 20:00 in summer, 19:00 in winter (Central Europe)
 @jobs_app.periodic(cron="0 18 * * *")
 @jobs_app.task(name="daily_reminder", queue="push")

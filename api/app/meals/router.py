@@ -17,7 +17,8 @@ from app.meals.service import (
 )
 from app.meals.tasks import generate_recipe
 from app.push.notify import RATE_AFTER_MIN
-from app.push.tasks import notify_partner_rated, remind_rate
+from app.push.tasks import notify_partner_rated, notify_suggested, remind_rate
+from app.suggestions.service import suggest
 
 router = APIRouter(prefix="/meals", tags=["meals"])
 
@@ -35,7 +36,14 @@ async def create_meal(body: MealCreate, user: CurrentUser, session: Session) -> 
         await remind_rate.configure(schedule_in={"minutes": RATE_AFTER_MIN}).defer_async(
             meal_id=meal.id
         )
+        await suggest_to_others(session, user, meal, body.meal_type, body.eaten_on)
     return await meal_out(session, user, meal)
+
+
+async def suggest_to_others(session, user, meal, meal_type, eaten_on) -> None:
+    """ "You too?" for the rest of the household, with a push."""
+    for suggestion_id in await suggest(session, user, meal, meal_type, eaten_on):
+        await notify_suggested.defer_async(suggestion_id=suggestion_id)
 
 
 @router.get("/{meal_id}")
@@ -78,6 +86,8 @@ async def rate_meal(meal_id: int, body: RatingIn, user: CurrentUser, session: Se
 async def cook_meal(meal_id: int, body: CookIn, user: CurrentUser, session: Session) -> MealOut:
     meal = await get_own_meal(session, user, meal_id)
     await cook_again(session, user, meal, body)
+    if body.eaten and body.eaten_on is not None:
+        await suggest_to_others(session, user, meal, body.meal_type, body.eaten_on)
     return await meal_out(session, user, meal)
 
 

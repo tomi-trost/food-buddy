@@ -13,9 +13,10 @@ from app.nutrition.matching import match_ingredient
 from app.nutrition.schemas import IngredientOut, NutrientsOut
 from app.nutrition.unmatched import record_unmatched
 from app.snacks.schemas import LabelAnswer, SnackPhotoAnswer, SnackResult
+from app.vision.prompt import MEAL_TEXT_PROMPT
 from app.vision.providers import AllProvidersFailed, VisionChain, image_message
 from app.vision.schemas import MealAnalysis
-from app.vision.snack_prompts import LABEL_PROMPT, SNACK_PHOTO_PROMPT
+from app.vision.snack_prompts import LABEL_PROMPT, SNACK_PHOTO_PROMPT, SNACK_TEXT_PROMPT
 
 
 async def ground(session: AsyncSession, analysis: MealAnalysis) -> AnalysisResult:
@@ -73,12 +74,30 @@ async def run_analysis(
     job.status = "running"
     await session.commit()
 
-    jpeg = shrink_jpeg((photo_dir / job.photo_path).read_bytes(), vision_max_px)
     try:
+        if job.photo_path is None:  # typed: the model estimates it from the name
+            jpeg = None
+        else:
+            jpeg = shrink_jpeg((photo_dir / job.photo_path).read_bytes(), vision_max_px)
         if job.kind == "meal":
-            provider, analysis = await chain.analyze_meal(jpeg)
+            if jpeg is None:
+                messages = [
+                    {"role": "system", "content": MEAL_TEXT_PROMPT},
+                    {"role": "user", "content": job.description or ""},
+                ]
+                provider, analysis = await chain.chat_json(messages, MealAnalysis)
+            else:
+                provider, analysis = await chain.analyze_meal(jpeg)
             job.raw = analysis.model_dump()
             job.result = (await ground(session, analysis)).model_dump()
+        elif jpeg is None:
+            messages = [
+                {"role": "system", "content": SNACK_TEXT_PROMPT},
+                {"role": "user", "content": job.description or ""},
+            ]
+            provider, snack = await chain.chat_json(messages, SnackPhotoAnswer)
+            job.raw = snack.model_dump()
+            job.result = snack_result(snack).model_dump()
         else:
             provider, snack = await analyze_snack(chain, job.kind, jpeg)
             job.raw = snack.model_dump()

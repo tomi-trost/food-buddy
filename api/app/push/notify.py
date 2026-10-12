@@ -1,4 +1,5 @@
-"""The four notifications: photo ready, rate after eating, partner rated, daily reminder."""
+"""The notifications: photo ready, rate after eating, partner rated, "you too?" (a meal the
+other one logged), daily reminder."""
 
 from datetime import date, timedelta
 
@@ -13,6 +14,7 @@ from app.meals.models import CookLog, Meal
 from app.push.models import PushSubscription
 from app.push.service import PushMessage, push
 from app.ratings.models import Rating
+from app.suggestions.models import MealSuggestion
 
 RATE_AFTER_MIN = 90  # roughly when the plate is empty
 DAILY_LOOKBACK_DAYS = 14  # older unrated meals stop nagging
@@ -91,6 +93,26 @@ async def notify_partner_rated(
     others = [uid for uid in await _not_rated(session, meal) if uid != rater_id]
     return await push(
         session, client, others, "partner", message, ref=f"meal{meal.id}:by{rater_id}"
+    )
+
+
+async def notify_suggested(
+    session: AsyncSession, client: httpx.AsyncClient, suggestion_id: int
+) -> int:
+    """The other one logged a meal: did you eat it too? Skipped once answered."""
+    suggestion = await session.get(MealSuggestion, suggestion_id)
+    if suggestion is None or suggestion.status != "pending":
+        return 0
+    meal = await session.get(Meal, suggestion.meal_id)
+    by = await session.get(User, suggestion.from_user_id)
+    message = PushMessage(
+        title=f"{by.name} had {meal.name} for {suggestion.meal_type}",
+        body="Did you eat it too? Tap to log it.",
+        url="/",
+        tag=f"shared{suggestion.id}",
+    )
+    return await push(
+        session, client, [suggestion.to_user_id], "shared", message, ref=f"s{suggestion.id}"
     )
 
 

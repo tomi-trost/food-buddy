@@ -1,11 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { type ChangeEvent, useId } from 'react'
+import { type ChangeEvent, type FormEvent, useId, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { api } from '../api/client'
 import { OPEN_ANALYSES } from '../layout/PendingBanner'
 import type { MealType } from '../api/types'
 import { guessMealType, MEAL_TYPE_LABEL } from '../lib/dates'
 import { Icon } from '../ui/Icon'
+import { Sheet } from '../ui/Sheet'
 import { useToast } from '../ui/Toast'
 
 const TYPES: MealType[] = ['breakfast', 'lunch', 'dinner']
@@ -32,9 +33,10 @@ export function SnapPage() {
   const kind = KINDS.find((k) => k === params.get('kind')) ?? 'meal'
   const cameraId = useId()
   const libraryId = useId()
-  const upload = useMutation({
-    mutationFn: (file: File) => api.uploadPhoto(file, kind, kind === 'meal' ? { type, saveOnly: forLater } : undefined),
-    onSuccess: (job) => {
+  const [typing, setTyping] = useState(false)
+  const meal = kind === 'meal' ? { type, saveOnly: forLater } : undefined
+  const sent = {
+    onSuccess: (job: { id: number }) => {
       qc.invalidateQueries({ queryKey: OPEN_ANALYSES })
       if (kind === 'meal') {
         navigate(`/analysis/${job.id}`, { replace: true }) // rate while it runs; the job keeps the type
@@ -43,7 +45,14 @@ export function SnapPage() {
         toast(`${kind === 'label' ? 'Reading the label' : 'Analyzing your snack'}… it shows up above the tabs when ready`)
       }
     },
-  })
+  }
+  const upload = useMutation({ mutationFn: (file: File) => api.uploadPhoto(file, kind, meal), ...sent })
+  const typed = useMutation({ mutationFn: (text: string) => api.describe(kind === 'snack' ? 'snack' : 'meal', text, meal), ...sent })
+  const submitText = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const text = String(new FormData(e.currentTarget).get('text') ?? '').trim()
+    if (text) typed.mutate(text)
+  }
   const pick = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) upload.mutate(file)
@@ -119,8 +128,29 @@ export function SnapPage() {
           Library
         </label>
         <label htmlFor={cameraId} className="shutter" aria-disabled={busy} title="Take photo"><span /></label>
-        <span aria-hidden />
+        {kind === 'label' ? <span aria-hidden /> : (
+          <button className="cam-lib cam-type" disabled={busy} onClick={() => setTyping(true)}>
+            <span className="cam-lib-tile"><Icon name="edit" size={24} /></span>
+            Type it
+          </button>
+        )}
       </div>
+
+      <Sheet open={typing} onClose={() => setTyping(false)} label="Type it instead">
+        <h1>{kind === 'snack' ? 'What snack was it?' : 'What did you eat?'}</h1>
+        <p className="sub">
+          The name is enough, add amounts if you know them. You check the {kind === 'snack' ? 'values' : 'ingredients'} afterwards, like with a photo.
+        </p>
+        <form onSubmit={submitText} style={{ display: 'grid', gap: 12 }}>
+          <label className="field">
+            {kind === 'snack' ? 'Snack' : 'Dish'}
+            <input name="text" required maxLength={200} autoComplete="off"
+              placeholder={kind === 'snack' ? 'e.g. 2 slices of tiramisu' : 'e.g. spaghetti carbonara'} />
+          </label>
+          {typed.isError && <p className="error" role="alert">{typed.error.message}</p>}
+          <button className="btn" disabled={typed.isPending}>{typed.isPending ? 'Sending…' : 'Estimate it'}</button>
+        </form>
+      </Sheet>
     </div>
   )
 }

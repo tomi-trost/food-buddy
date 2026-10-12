@@ -46,3 +46,15 @@ export function feed(cards: MealCard[], type: FeedType, seg: FeedSeg, sort: Feed
         : lastCooked(b).localeCompare(lastCooked(a)),
   )
 }
+
+/** Meals to pick for a slot: name contains the query; ones made for this meal type first,
+ *  then the most recently cooked. */
+export function pickable(cards: MealCard[], type: MealType, query: string): MealCard[] {
+  const q = query.trim().toLowerCase()
+  return cards
+    .filter((m) => m.name.toLowerCase().includes(q))
+    .sort((a, b) =>
+      Number(b.types.includes(type)) - Number(a.types.includes(type)) ||
+      (b.last_cooked ?? '').localeCompare(a.last_cooked ?? '') ||
+      a.name.localeCompare(b.name))
+}

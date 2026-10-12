@@ -32,7 +32,7 @@ export const ING: Record<string, Ingredient> = {
 }
 
 export const analysisJob = (over: Partial<AnalysisJob> = {}): AnalysisJob => ({
-  id: 5, by: { id: 1, name: 'Tomi' }, kind: 'meal', status: 'queued', photo_url: '/api/analyses/5/photo', provider: null,
+  id: 5, by: { id: 1, name: 'Tomi' }, kind: 'meal', status: 'queued', photo_url: '/api/analyses/5/photo', description: null, provider: null,
   result: null, snack: null, error: null, created_at: '2026-10-04T12:00:00Z', finished_at: null,
   closed: false, meal_id: null, my_rating: null, meal_type: null, save_only: false, ...over,
 })

@@ -78,7 +78,8 @@ export type Meal = MealStats & {
   created_at: string
 }
 
-export type CookIn = { meal_type: MealType; eaten_on: string; used_up: number[] }
+/** cooked: false = leftovers / my partner cooked it: logged, stock untouched. */
+export type CookIn = { meal_type: MealType; eaten_on: string; servings_eaten: number; cooked: boolean; used_up: number[] }
 
 export type MealCreate = {
   name: string
@@ -119,7 +120,8 @@ export type AnalysisJob = {
   by: { id: number; name: string } // who took the photo
   kind: 'meal' | 'snack' | 'label'
   status: 'queued' | 'running' | 'done' | 'failed'
-  photo_url: string
+  photo_url: string | null // null: typed, not snapped
+  description: string | null // what was typed
   provider: string | null
   result: AnalysisResult | null
   snack: SnackResult | null
@@ -259,12 +261,31 @@ export type SnackIn = {
   name: string
   emoji: string
   kind: SnackKind
-  source: 'list' | 'photo' | 'label'
+  source: 'list' | 'photo' | 'label' | 'saved'
   per: 'piece' | '100g'
   amount: number
   per_unit: Nutrients
   analysis_id?: number
+  save?: boolean // also keep it in our snacks (with the photo, if any)
+  saved_id?: number // logged from our snacks
 }
+
+export type SnackLogged = { id: number; name: string; kcal: number; sugar: number; treat: boolean; saved_id: number | null }
+
+/** A snack the household logs again (home-made tiramisu…), shared by both of us. */
+export type SavedSnack = {
+  id: number
+  name: string
+  emoji: string
+  kind: SnackKind
+  per: 'piece' | '100g'
+  amount: number
+  per_unit: Nutrients
+  photo_url: string | null
+  last_eaten_on: string | null
+}
+
+export type SavedSnackPatch = Partial<Pick<SavedSnack, 'name' | 'emoji' | 'kind' | 'per' | 'amount' | 'per_unit'>>
 
 export type Reward = {
   user_id: number
@@ -278,5 +299,14 @@ export type Reward = {
   per: number
 }
 
-export type PushKind = 'ready' | 'rate' | 'partner' | 'daily'
+export type PushKind = 'ready' | 'rate' | 'partner' | 'shared' | 'daily'
+
+/** A meal the other one logged: "you too?" */
+export type Suggestion = {
+  id: number
+  by: { id: number; name: string; color: string }
+  meal: { id: number; name: string; emoji: string; photo_url: string | null; kcal_per_portion: number }
+  meal_type: MealType
+  eaten_on: string
+}
 export type PushConfig = { enabled: boolean; public_key: string | null; off: PushKind[] }

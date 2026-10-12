@@ -1,5 +1,5 @@
 import type {
-  AnalysisJob, CatalogItem, CookIn, Day, Insights, LogEntry, LogPatch, Reward, SnackIn, HouseholdPatch, Ingredient, Me, Meal, MealCard, MealCreate, MealPatch, MealType, MePatch, Plan, PushConfig, PushKind, PlanMode, Rating, RegisterBody, Shopping, StockItem, WizardCell,
+  AnalysisJob, CatalogItem, CookIn, Day, Insights, LogEntry, LogPatch, Reward, SnackIn, HouseholdPatch, Ingredient, Me, Meal, MealCard, MealCreate, MealPatch, MealType, MePatch, Plan, PushConfig, PushKind, SavedSnack, Suggestion, SavedSnackPatch, SnackLogged, PlanMode, Rating, RegisterBody, Shopping, StockItem, WizardCell,
 } from './types'
 
 const TOKEN_KEY = 'fb.token'
@@ -103,6 +103,12 @@ export const api = {
     if (meal?.saveOnly) form.append('save_only', 'true')
     return json<AnalysisJob>('/analyses', { method: 'POST', body: form })
   },
+  /** Type a dish instead of snapping it; checked and posted like a photo. */
+  describe: (kind: 'meal' | 'snack', text: string, meal?: { type: MealType | null; saveOnly: boolean }) =>
+    json<AnalysisJob>('/analyses/text', {
+      method: 'POST',
+      body: JSON.stringify({ kind, text, meal_type: meal?.type ?? null, save_only: meal?.saveOnly ?? false }),
+    }),
   analysis: (id: number | string) => json<AnalysisJob>(`/analyses/${id}`),
   openAnalyses: () => json<AnalysisJob[]>('/analyses/open'),
   pushConfig: () => json<PushConfig>('/push'),
@@ -147,8 +153,19 @@ export const api = {
   },
   insights: (end: string, days = 7) => json<Insights>(`/insights?end=${end}&days=${days}`),
   snackCatalog: () => json<CatalogItem[]>('/snacks/catalog'),
-  logSnack: (body: SnackIn) =>
-    json<{ id: number; name: string; kcal: number; sugar: number; treat: boolean }>('/snacks', { method: 'POST', body: JSON.stringify(body) }),
+  logSnack: (body: SnackIn) => json<SnackLogged>('/snacks', { method: 'POST', body: JSON.stringify(body) }),
+  savedSnacks: () => json<SavedSnack[]>('/snacks/saved'),
+  suggestions: (today: string) => json<Suggestion[]>(`/suggestions?today=${today}`),
+  acceptSuggestion: (id: number, servings = 1) =>
+    json<{ log_id: number }>(`/suggestions/${id}/accept`, { method: 'POST', body: JSON.stringify({ servings_eaten: servings }) }),
+  async declineSuggestion(id: number) {
+    await request(`/suggestions/${id}/decline`, { method: 'POST' })
+  },
+  updateSavedSnack: (id: number, patch: SavedSnackPatch) =>
+    json<SavedSnack>(`/snacks/saved/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),
+  async deleteSavedSnack(id: number) {
+    await request(`/snacks/saved/${id}`, { method: 'DELETE' })
+  },
   rewards: (today: string) => json<Reward[]>(`/rewards?today=${today}`),
   useReward: (today: string) => json<Reward[]>('/rewards/use', { method: 'POST', body: JSON.stringify({ today }) }),
   plan: () => json<Plan | null>('/plan'),

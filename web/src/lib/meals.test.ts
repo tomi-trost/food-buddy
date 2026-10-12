@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { card } from '../test/fixtures'
-import { ago, feed, fillTip } from './meals'
+import { ago, feed, fillTip, pickable } from './meals'
 
 describe('ago', () => {
   it('describes days since a date', () => {
@@ -40,5 +40,25 @@ describe('feed', () => {
     expect(names(feed(cards, 'all', 'all', 'rating'))).toEqual(['Oats', 'Curry', 'New'])
     expect(names(feed(cards, 'all', 'all', 'recent'))).toEqual(['New', 'Curry', 'Oats'])
     expect(names(feed(cards, 'all', 'all', 'cooked'))).toEqual(['Oats', 'Curry', 'New'])
+  })
+})
+
+describe('pickable', () => {
+  const cards = [
+    card({ id: 1, name: 'Curry', types: ['dinner'], last_cooked: '2026-10-09' }),
+    card({ id: 2, name: 'Oats', types: ['breakfast'], last_cooked: '2026-10-10' }),
+    card({ id: 3, name: 'Chicken curry bowl', types: ['lunch', 'dinner'], last_cooked: '2026-10-01' }),
+    card({ id: 4, name: 'Toast', types: ['breakfast'], last_cooked: null }),
+  ]
+
+  it('puts meals for the slot first, then the most recently cooked', () => {
+    expect(pickable(cards, 'breakfast', '').map((m) => m.id)).toEqual([2, 4, 1, 3])
+    expect(pickable(cards, 'dinner', '').map((m) => m.id)).toEqual([1, 3, 2, 4])
+  })
+
+  it('filters by name, ignoring case and spaces around the query', () => {
+    expect(pickable(cards, 'lunch', '  CURRY ').map((m) => m.id)).toEqual([3, 1])
+    expect(pickable(cards, 'lunch', 'pizza')).toEqual([])
+    expect(pickable([], 'lunch', '')).toEqual([])
   })
 })
