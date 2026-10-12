@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { api } from '../api/client'
 import type { WizardCell } from '../api/types'
 import { MEAL_TYPE_SHORT, todayISO } from '../lib/dates'
@@ -8,12 +8,18 @@ import { Sheet } from '../ui/Sheet'
 import { Toggle } from '../ui/Toggle'
 
 export function WizardSheet({ open, onClose, initial }: { open: boolean; onClose: () => void; initial?: WizardCell[][] }) {
+  return (
+    <Sheet open={open} onClose={onClose} label="Plan the week">
+      {/* mounted on each open: starts from `initial`, and a refetch while open doesn't reset edits */}
+      <WizardForm onClose={onClose} initial={initial} />
+    </Sheet>
+  )
+}
+
+function WizardForm({ onClose, initial }: { onClose: () => void; initial?: WizardCell[][] }) {
   const qc = useQueryClient()
-  const [grid, setGrid] = useState<WizardCell[][]>(defaultWizard)
+  const [grid, setGrid] = useState<WizardCell[][]>(() => (initial ? initial.map((r) => r.map((c) => ({ ...c }))) : defaultWizard()))
   const [week, setWeek] = useState<'this' | 'next'>('next')
-  useEffect(() => {
-    if (open) setGrid(initial ? initial.map((r) => r.map((c) => ({ ...c }))) : defaultWizard())
-  }, [open, initial])
 
   const generate = useMutation({
     mutationFn: () => api.makePlan(weekStart(todayISO(), week), grid),
@@ -25,7 +31,7 @@ export function WizardSheet({ open, onClose, initial }: { open: boolean; onClose
   })
 
   return (
-    <Sheet open={open} onClose={onClose} label="Plan the week">
+    <>
       <h1 style={{ fontSize: 20 }}>Plan the week</h1>
       <p className="sub" style={{ margin: '4px 0 10px', fontSize: 12 }}>
         Tap a cell to cycle: cook time → Prep (batch) → Out → – (skip)
@@ -44,7 +50,7 @@ export function WizardSheet({ open, onClose, initial }: { open: boolean; onClose
       <button className="btn" style={{ marginTop: 12 }} disabled={generate.isPending} onClick={() => generate.mutate()}>
         Generate menu
       </button>
-    </Sheet>
+    </>
   )
 }
 

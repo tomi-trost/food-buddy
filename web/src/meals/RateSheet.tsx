@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { api } from '../api/client'
 import type { Meal, Rating } from '../api/types'
 import { Sheet } from '../ui/Sheet'
@@ -7,13 +7,20 @@ import { useToast } from '../ui/Toast'
 import { DEFAULT_RATING, RatingFields } from './RatingFields'
 
 export function RateSheet({ meal, meId, open, onClose }: { meal: Meal; meId: number; open: boolean; onClose: () => void }) {
+  return (
+    <Sheet open={open} onClose={onClose} label="Rate meal">
+      {/* mounted on each open, so the draft starts from my saved rating without a reset effect
+          (an effect ran after the first render and could overwrite a quick first tap) */}
+      <RateForm meal={meal} meId={meId} onClose={onClose} />
+    </Sheet>
+  )
+}
+
+function RateForm({ meal, meId, onClose }: { meal: Meal; meId: number; onClose: () => void }) {
   const qc = useQueryClient()
   const toast = useToast()
   const existing = meal.ratings.find((r) => r.user_id === meId)?.rating
   const [draft, setDraft] = useState<Rating>(existing ?? DEFAULT_RATING)
-  useEffect(() => {
-    if (open) setDraft(existing ?? DEFAULT_RATING)
-  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const save = useMutation({
     mutationFn: () => api.rateMeal(meal.id, draft),
@@ -38,7 +45,7 @@ export function RateSheet({ meal, meId, open, onClose }: { meal: Meal; meId: num
   const error = save.error ?? remove.error
 
   return (
-    <Sheet open={open} onClose={onClose} label="Rate meal">
+    <>
       <h1>Rate {meal.name}</h1>
       <RatingFields draft={draft} set={set} />
       {error && <p className="error" role="alert">{error.message}</p>}
@@ -50,6 +57,6 @@ export function RateSheet({ meal, meId, open, onClose }: { meal: Meal; meId: num
           Remove my rating
         </button>
       )}
-    </Sheet>
+    </>
   )
 }

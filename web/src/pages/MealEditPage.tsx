@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { api } from '../api/client'
 import type { Meal, MealPatch, MealType, Nutrients } from '../api/types'
@@ -143,11 +143,18 @@ function EditForm({ meal, close }: { meal: Meal; close: React.ReactNode }) {
 }
 
 function DeleteSheet({ meal, open, onClose, onDeleted }: { meal: Meal; open: boolean; onClose: () => void; onDeleted: () => void }) {
+  return (
+    <Sheet open={open} onClose={onClose} label="Delete meal">
+      <DeleteForm meal={meal} onClose={onClose} onDeleted={onDeleted} /> {/* fresh state on each open */}
+    </Sheet>
+  )
+}
+
+function DeleteForm({ meal, onClose, onDeleted }: { meal: Meal; onClose: () => void; onDeleted: () => void }) {
   const navigate = useNavigate()
   const qc = useQueryClient()
   const toast = useToast()
   const [alsoLog, setAlsoLog] = useState(true)
-  useEffect(() => setAlsoLog(true), [open])
   const remove = useMutation({
     mutationFn: () => api.deleteMeal(meal.id, !alsoLog),
     onSuccess: () => {
@@ -160,7 +167,7 @@ function DeleteSheet({ meal, open, onClose, onDeleted }: { meal: Meal; open: boo
   const times = meal.logged_count === 1 ? 'once' : `${meal.logged_count} times`
 
   return (
-    <Sheet open={open} onClose={onClose} label="Delete meal">
+    <>
       <h1>Delete “{meal.name}”?</h1>
       <p className="sub">Its ratings and recipe go too, and it leaves any plan it's in. This can't be undone.</p>
       {meal.logged_count > 0 && (
@@ -172,6 +179,6 @@ function DeleteSheet({ meal, open, onClose, onDeleted }: { meal: Meal; open: boo
       {remove.isError && <p className="error" role="alert">{remove.error.message}</p>}
       <button className="btn danger" disabled={remove.isPending} onClick={() => remove.mutate()}>Delete meal</button>
       <button className="btn ghost" style={{ marginTop: 8 }} onClick={onClose}>Cancel</button>
-    </Sheet>
+    </>
   )
 }
