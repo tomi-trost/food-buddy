@@ -32,13 +32,32 @@ export class ApiError extends Error {
   }
 }
 
+/** Cloudflare Access wants its PIN again; the page is on its way to /api/reauth. */
+export class SessionExpired extends Error {
+  constructor() {
+    super('Session expired, opening the sign-in page…')
+  }
+}
+
 async function request(path: string, init: RequestInit = {}): Promise<Response> {
   const headers = new Headers(init.headers)
   const token = tokenStore.get()
   if (token) headers.set('Authorization', `Bearer ${token}`)
   if (init.body && !(init.body instanceof FormData)) headers.set('Content-Type', 'application/json')
 
-  const response = await fetch(`/api${path}`, { ...init, headers })
+  let response: Response
+  try {
+    // The API never redirects; a redirect means Cloudflare Access sends us to its PIN page.
+    response = await fetch(`/api${path}`, { ...init, headers, redirect: 'manual' })
+  } catch {
+    throw new ApiError(0, "Can't reach Food Buddy. Check your connection and try again.")
+  }
+  if (response.type === 'opaqueredirect') {
+    // A full navigation outside the service worker's scope, so Access can show its page.
+    const here = window.location.pathname + window.location.search
+    window.location.assign(`/api/reauth?next=${encodeURIComponent(here)}`)
+    throw new SessionExpired()
+  }
   if (response.status === 401) tokenStore.set(null)
   if (!response.ok) {
     let message = response.statusText || 'Request failed'

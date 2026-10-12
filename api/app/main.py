@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import APIRouter, FastAPI
+from fastapi.responses import RedirectResponse
 from sqlalchemy import text
 
 from app.analysis.router import router as analysis_router
@@ -34,6 +35,19 @@ api = APIRouter(prefix="/api")
 async def health(session: Session) -> dict[str, str]:
     await session.execute(text("SELECT 1"))
     return {"status": "ok"}
+
+
+@api.get("/reauth", tags=["meta"], include_in_schema=False)
+async def reauth(next: str = "/") -> RedirectResponse:
+    """Full-page stop for the web app when Cloudflare Access' session ran out.
+
+    The service worker serves the app shell from cache, so a plain reload never passes Access
+    and every fetch gets redirected to its PIN page (fetch can't follow that). Navigating here
+    goes to the network (the worker skips /api/), Access asks for the PIN, then we send the
+    page back. Only same-app paths, so this can't bounce anyone to another site.
+    """
+    safe = next.startswith("/") and not next.startswith(("//", "/\\"))
+    return RedirectResponse(next if safe else "/", 303, headers={"Cache-Control": "no-store"})
 
 
 api.include_router(auth_router)

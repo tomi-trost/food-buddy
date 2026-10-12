@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { jsonResponse, mockFetch } from '../test/utils'
-import { api, ApiError, tokenStore } from './client'
+import { api, ApiError, SessionExpired, tokenStore } from './client'
 
 describe('api client', () => {
   it('stores the token on login and sends it afterwards', async () => {
@@ -35,5 +35,26 @@ describe('api client', () => {
     const init = fetch.mock.calls[0][1]!
     expect(init.body).toBeInstanceOf(FormData)
     expect(new Headers(init.headers).has('Content-Type')).toBe(false)
+  })
+
+  describe('Cloudflare Access session expired (API redirects to its PIN page)', () => {
+    afterEach(() => vi.unstubAllGlobals())
+
+    it('sends the whole page through /api/reauth and keeps the app token', async () => {
+      tokenStore.set('abc')
+      const assign = vi.fn()
+      vi.stubGlobal('location', { ...window.location, pathname: '/meals/3', search: '?x=1', assign })
+      const fetch = mockFetch(() => ({ type: 'opaqueredirect', status: 0, ok: false }) as Response)
+
+      await expect(api.login('t@example.com', 'secret')).rejects.toBeInstanceOf(SessionExpired)
+      expect(fetch.mock.calls[0][1]?.redirect).toBe('manual')
+      expect(assign).toHaveBeenCalledWith('/api/reauth?next=%2Fmeals%2F3%3Fx%3D1')
+      expect(tokenStore.get()).toBe('abc')
+    })
+
+    it('says there is no connection instead of the browser message when offline', async () => {
+      vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new TypeError('Load failed'))))
+      await expect(api.me()).rejects.toThrow("Can't reach Food Buddy. Check your connection and try again.")
+    })
   })
 })
