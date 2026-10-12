@@ -1,0 +1,54 @@
+name,emoji,category,shelf_days,aliases,ref,description,kcal,protein,carbs,fat,fiber,sugar
+Mascarpone,🧀,Dairy,10,,19584,"Mascarpone cheese, from cow's milk",385,4.38,4.0,39.0,0.0,4.0
+Buffalo mozzarella,🧀,Dairy,5,"mozzarella di bufala,mozzarella di bufala campana",19591,"Mozzarella cheese, from buffala's milk",260.0,14.5,0.24,22.3,0.0,0.0
+Grana Padano,🧀,Dairy,60,grana,12123,"Grana Padano cheese, from cow's milk",396.0,34.1,0.0,29.2,0.0,0.0
+Gorgonzola,🧀,Dairy,21,blue cheese,12524,"Gorgonzola cheese, from cow's milk",312.0,19.0,0.0,26.4,0.0,0.0
+Provolone,🧀,Dairy,30,,12716,"Provolone cheese, from cow's milk",340.0,25.6,0.0,26.6,0.0,0.0
+Fontina,🧀,Dairy,30,,12121,"Fontina cheese, from cow's milk",381.0,25.6,0.0,31.1,0.0,0.0
+Asiago,🧀,Dairy,30,,12761,"Asiago cheese, from cow's milk",356.0,32.1,0.0,25.6,0.0,0.0
+Emmental,🧀,Dairy,30,"emmentaler,swiss cheese",12115,"Emmental cheese, from cow's milk",373.0,27.9,0.0,28.8,0.0,0.0
+Brie,🧀,Dairy,14,,12020,"Brie cheese, from cow's milk",297.0,17.3,0.0,25.5,0.0,0.0
+Camembert,🧀,Dairy,14,,12001,"Camembert cheese, from cow's milk",280.0,19.5,0.0,22.5,0.0,0.0
+Creme fraiche,🥛,Dairy,14,"crème fraîche,thick cream",19410,"Thick cream 30% fat, refrigerated",304.0,3.0,2.8,30.7,0.0,2.66
+Quark,🥣,Dairy,10,,19501,"Quark, plain or fruit (average)",87.7,7.1,5.68,4.31,0.0048,5.0
+Kefir,🥛,Dairy,14,,19865,Kefir,62,3.19,4.5,3.5,0.0,3.62
+Oat milk,🥛,Dairy,10,"oat drink,oat-based drink,plant milk",18905,"Oat-based drink, plain, prepacked",42.6,0.0,7.8,1.1,0.0,5.0
+Soy milk,🥛,Dairy,10,"soy drink,soya milk,soya drink",18900,"Soy drink, plain, prepacked",37.1,3.31,0.7,2.07,0.6,0.0
+Almond milk,🥛,Dairy,10,almond drink,18107,"Almond drink not sweet, not fortified, prepacked",36.3,1.06,0.68,3.2,0.0,0.0
+Prosciutto,🍖,Meat,14,"prosciutto crudo,parma ham,cured ham,dry-cured ham,serrano ham,speck",28844,Parma dry-cured ham,248.0,27.2,0.3,15.4,0.0,0.3
+Mortadella,🍖,Meat,10,,30789,Mortadella,305.0,15.0,1.4,26.7,0.0,0.0
+Bresaola,🍖,Meat,14,,28503,Bresaola,165.0,31.6,0.0,4.3,0.0,0.0
+Pancetta,🥓,Meat,14,,28858,"Pancetta, dried",342.0,20.2,0.75,28.8,0.0,0.43
+Lardons,🥓,Meat,7,lardoons,28504,"Lardoons, cooked",324.0,23.8,2.0,24.5,0.0,0.0
+Sea bream,🐟,Meat,2,"gilthead bream,orata,dorade",27031,"Gilthead seabream, roasted/baked",148.0,23.6,0.0,5.9,0.0,0.0
+Hake,🐟,Meat,2,merluzzo,26120,"European hake, braised",112.0,21.2,0.0,3.0,0.0,0.0
+Octopus,🐙,Meat,2,polpo,10079,"Octopus, common, cooked",156.0,29.8,4.4,2.08,0.0,0.0
+Clams,🦪,Meat,2,"clam,vongole",10027,"Clam, boiled/cooked in water",99.2,16.2,5.33,1.48,0.0,0.0
+Egg pasta,🍝,Pantry,30,"tagliatelle,fettuccine,pappardelle,fresh pasta",9816,"Fresh egg pasta, cooked, unsalted",168.0,5.76,32.0,1.3,1.5,0.0
+Cheese ravioli,🥟,Dairy,5,"ravioli,tortellini,filled pasta,stuffed pasta",25149,"Fresh pasta, stuffed with cheese (e.g. ravioli), cooked",226.0,10.0,26.8,8.3,1.9,4.4
+Meat ravioli,🥟,Dairy,5,"meat tortellini,tortellini with meat",25158,"Fresh pasta, stuffed with meat (e.g. bolognese-style ravioli), prepacked, cooked",174.0,6.94,25.1,4.65,2.15,1.0
+Gnocchi,🥔,Dairy,30,potato gnocchi,25510,"Gnocchi, from potato, cooked",177.0,5.01,33.6,2.05,2.0,1.1
+Polenta,🌽,Pantry,365,cooked polenta,9615,"Polenta or maize semolina, cooked, unsalted",77.5,1.38,16.9,0.0,1.6,0.1
+Red lentils,🫘,Pantry,365,red lentil,20589,"Lentil, pink or red, boiled/cooked in water",123,10.6,15.0,0.5,8.2,0.26
+Grissini,🥖,Pantry,90,breadsticks,7525,Grissini or bread stick,433.0,12.7,65.3,11.8,5.16,2.06
+Pizza base,🍕,Dairy,5,"pizza dough,pizza crust",96778,"Pizza base, cooked",324.0,7.75,55.3,7.1,2.5,3.3
+Brioche,🍞,Pantry,5,,7741,Brioche,401.0,11.3,46.0,19.1,0.0,5.7
+Pizza margherita,🍕,Pantry,2,"pizza,margherita",25404,"Pizza, cheese and tomato or Margherita pizza, prepacked",227.0,8.93,29.6,7.64,1.67,2.72
+Lasagna,🍝,Dairy,3,"lasagne,cannelloni,lasagne bolognese",25081,Lasagna or cannelloni with meat (bolognese sauce),134.0,6.29,13.5,5.72,1.91,2.84
+Spaghetti bolognese,🍝,Pantry,2,"pasta bolognese,tagliatelle bolognese",25085,"Bolognese-style pasta (spaghetti, tagliatelle…)",116.0,5.32,13.6,4.07,1.9,2.64
+Spaghetti carbonara,🍝,Pantry,2,"carbonara,pasta carbonara",25135,"Carbonara-style pasta (spaghetti, tagliatelle…)",161.0,5.91,14.2,8.7,1.18,1.79
+Risotto,🍚,Pantry,2,risotto with parmesan,25189,"Risotto, w cheeses, prepacked",195.0,5.65,30.9,5.16,0.7,0.58
+Minestrone,🍲,Pantry,3,vegetable soup,25916,"Soup, minestrone, prepacked, to be reheated",48.8,1.2,5.6,2.0,1.8,1.7
+Bolognese sauce,🍅,Pantry,4,"ragu,ragù,meat sauce,bolognese",11114,"Tomato sauce, with meat or Bolognese sauce, prepacked",94,4.22,7.27,4.81,2.29,4.74
+Red pesto,🍅,Pantry,14,"pesto rosso,sun-dried tomato pesto",11210,"Sauce, pesto rosso, prepacked",305,4.8,8.58,27.0,4.15,2.75
+Tzatziki,🥣,Dairy,5,,19863,"Tzatziki, from yogurt, prepacked",138,6.19,3.8,10.9,0.0,2.7
+Guacamole,🥑,Dairy,3,,25620,"Guacamole, prepacked",192,2.18,5.85,16.5,5.65,2.65
+Falafel,🧆,Dairy,3,,25571,Falafel,252.0,8.25,18.7,14.4,7.7,1.4
+Tempeh,🫘,Dairy,10,,20917,Tempeh,157.0,16.1,7.89,4.7,6.2,0.24
+Seitan,🌾,Dairy,10,,25598,Seitan,134.0,20.6,6.74,2.5,0.9,0.81
+Tiramisu,🍰,Dairy,3,tiramisù,19698,"Tiramisu, prepacked",241.0,4.25,30.4,9.8,1.2,19.5
+Panna cotta,🍮,Dairy,4,,19685,"Panna cotta, refrigerated",198.0,2.74,14.9,13.0,0.0,14.7
+Cappuccino,☕,Pantry,1,"latte,caffe latte,caffè latte,coffee with milk,flat white",18151,"Coffee with milk or white coffee or cappuccino, instant coffee or not, without sugar, ready-to-drink",21.5,1.39,2.31,0.76,0.0,2.31
+Apple juice,🧃,Pantry,7,,2074,"Apple juice, pure juice",48.9,0.17,11.4,0.14,0.23,10.9
+Cola,🥤,Pantry,180,"coke,coca-cola",18018,"Cola, with sugar",41.8,0.093,10.2,0.062,0.0,10.2
+Cocoa powder,🍫,Pantry,365,"cocoa,unsweetened cocoa",18100,"Cocoa powder, without sugar, powder, instant",387.0,22.4,11.6,20.6,29.5,0.9

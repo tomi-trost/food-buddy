@@ -6,6 +6,8 @@ Heuristic, in order:
    phrase ("grilled chicken breast" → "Chicken breast", word_similarity ≥ 0.8) or the strings
    are close overall (similarity ≥ 0.5). Sharing one word ("mystery sauce" / "soy sauce") is not
    enough: no match beats a wrong match, the user picks the ingredient instead.
+   Ties go to the term closest to the whole phrase ("ground black pepper": "black pepper" beats
+   "pepper"), then to the shorter name.
 """
 
 import re
@@ -21,14 +23,14 @@ MIN_SIMILARITY = 0.5
 
 _FUZZY = text(
     """
-    SELECT id, greatest(sim, wsim) AS score FROM (
+    SELECT id, greatest(sim, wsim) AS score, sim FROM (
         SELECT i.id, length(i.name) AS len,
                similarity(t.term, :q) AS sim, word_similarity(t.term, :q) AS wsim
         FROM ingredient i
         CROSS JOIN LATERAL unnest(array_append(i.aliases, lower(i.name))) AS t(term)
     ) s
     WHERE wsim >= :min_wsim OR sim >= :min_sim
-    ORDER BY score DESC, len
+    ORDER BY score DESC, sim DESC, len
     LIMIT 1
     """
 )

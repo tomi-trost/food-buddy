@@ -1,0 +1,220 @@
+# Common ingredients and foods → one USDA SR Legacy row each (public domain, CC0).
+# name | emoji | category (Meat/Produce/Dairy/Pantry) | shelf days | aliases (comma) | USDA description
+# Weights on a plate are as eaten, so grains, pasta, legumes and meat use cooked values.
+# Rebuild app/nutrition/data/usda_catalog.csv: python scripts/build_catalog.py usda <SR Legacy CSV dir>
+# European/Italian foods USDA lacks are in ciqual_catalog.txt.
+
+## Vegetables
+Zucchini | 🥒 | Produce | 7 | courgette, courgettes, zucchinis, zucchini slices, sauteed zucchini, grilled zucchini | Squash, summer, zucchini, includes skin, raw
+Eggplant | 🍆 | Produce | 7 | aubergine, eggplants | Eggplant, raw
+Bell pepper | 🫑 | Produce | 10 | red pepper, red bell pepper, sweet pepper, capsicum | Peppers, sweet, red, raw
+Green bell pepper | 🫑 | Produce | 10 | green pepper | Peppers, sweet, green, raw
+Yellow bell pepper | 🫑 | Produce | 10 | yellow pepper | Peppers, sweet, yellow, raw
+Chili pepper | 🌶️ | Produce | 10 | chili, chilli, hot pepper, red chili, chili flakes | Peppers, hot chili, red, raw
+Carrot | 🥕 | Produce | 21 | carrots, grated carrot | Carrots, raw
+Cucumber | 🥒 | Produce | 7 | cucumbers | Cucumber, with peel, raw
+Lettuce | 🥬 | Produce | 5 | salad, green salad, mixed greens, salad leaves, romaine | Lettuce, cos or romaine, raw
+Iceberg lettuce | 🥬 | Produce | 7 | iceberg | Lettuce, iceberg (includes crisphead types), raw
+Arugula | 🥬 | Produce | 4 | rocket, rucola | Arugula, raw
+Kale | 🥬 | Produce | 5 | | Kale, raw
+Cabbage | 🥬 | Produce | 14 | white cabbage | Cabbage, raw
+Red cabbage | 🥬 | Produce | 14 | purple cabbage | Cabbage, red, raw
+Cauliflower | 🥦 | Produce | 7 | | Cauliflower, raw
+Green beans | 🫛 | Produce | 5 | string beans | Beans, snap, green, raw
+Peas | 🫛 | Produce | 180 | green peas, frozen peas | Peas, green, frozen, cooked, boiled, drained, without salt
+Sweet corn | 🌽 | Produce | 5 | corn, corn kernels | Corn, sweet, yellow, cooked, boiled, drained, without salt
+Mushrooms | 🍄 | Produce | 5 | mushroom, button mushrooms, champignons | Mushrooms, white, raw
+Garlic | 🧄 | Produce | 60 | garlic clove, garlic cloves, minced garlic | Garlic, raw
+Red onion | 🧅 | Produce | 30 | red onions | Onions, raw
+Spring onion | 🧅 | Produce | 7 | scallion, scallions, green onion, green onions | Onions, spring or scallions (includes tops and bulb), raw
+Leek | 🥬 | Produce | 10 | leeks | Leeks, (bulb and lower leaf-portion), raw
+Celery | 🥬 | Produce | 14 | | Celery, raw
+Asparagus | 🥬 | Produce | 4 | | Asparagus, raw
+Beetroot | 🥗 | Produce | 14 | beet, beets | Beets, cooked, boiled, drained
+Sweet potato | 🍠 | Produce | 21 | sweet potatoes, yam | Sweet potato, cooked, baked in skin, flesh, without salt
+Butternut squash | 🎃 | Produce | 30 | pumpkin, squash, winter squash | Squash, winter, butternut, raw
+Brussels sprouts | 🥬 | Produce | 7 | | Brussels sprouts, raw
+Cherry tomatoes | 🍅 | Produce | 7 | cherry tomato | Tomatoes, red, ripe, raw, year round average
+Sun-dried tomatoes | 🍅 | Pantry | 180 | dried tomatoes | Tomatoes, sun-dried, packed in oil, drained
+Tomato paste | 🥫 | Pantry | 180 | tomato puree, concentrated tomato | Tomato products, canned, paste, without salt added (Includes foods for USDA's Food Distribution Program)
+Olives | 🫒 | Pantry | 90 | olive, black olives, green olives | Olives, ripe, canned (small-extra large)
+Capers | 🫒 | Pantry | 180 | | Capers, canned
+Radish | 🥕 | Produce | 10 | radishes | Radishes, raw
+Fennel | 🥬 | Produce | 7 | | Fennel, bulb, raw
+Artichoke | 🥬 | Produce | 5 | artichokes | Artichokes, (globe or french), cooked, boiled, drained, without salt
+Bok choy | 🥬 | Produce | 5 | pak choi | Cabbage, chinese (pak-choi), raw
+Bean sprouts | 🌱 | Produce | 3 | | Mung beans, mature seeds, sprouted, raw
+Ginger | 🫚 | Produce | 21 | fresh ginger | Ginger root, raw
+Basil | 🌿 | Produce | 5 | fresh basil, basil leaves | Basil, fresh
+Parsley | 🌿 | Produce | 7 | fresh parsley | Parsley, fresh
+Coriander | 🌿 | Produce | 5 | cilantro | Coriander (cilantro) leaves, raw
+Mint | 🌿 | Produce | 5 | fresh mint | Spearmint, fresh
+Rosemary | 🌿 | Produce | 10 | | Rosemary, fresh
+Dill | 🌿 | Produce | 5 | | Dill weed, fresh
+Mixed vegetables | 🥗 | Produce | 180 | vegetables, frozen vegetables, veggies | Vegetables, mixed, frozen, cooked, boiled, drained, without salt
+
+## Fruit
+Apple | 🍎 | Produce | 30 | apples | Apples, raw, with skin (Includes foods for USDA's Food Distribution Program)
+Pear | 🍐 | Produce | 10 | pears | Pears, raw
+Orange | 🍊 | Produce | 21 | oranges | Oranges, raw, all commercial varieties
+Mandarin | 🍊 | Produce | 14 | clementine, tangerine | Tangerines, (mandarin oranges), raw
+Lemon | 🍋 | Produce | 21 | lemons, lemon juice | Lemons, raw, without peel
+Lime | 🍋 | Produce | 21 | limes, lime juice | Limes, raw
+Strawberries | 🍓 | Produce | 4 | strawberry | Strawberries, raw
+Blueberries | 🫐 | Produce | 7 | blueberry | Blueberries, raw
+Raspberries | 🫐 | Produce | 3 | raspberry | Raspberries, raw
+Grapes | 🍇 | Produce | 7 | grape | Grapes, red or green (European type, such as Thompson seedless), raw
+Kiwi | 🥝 | Produce | 14 | kiwis, kiwifruit | Kiwifruit, green, raw
+Mango | 🥭 | Produce | 5 | | Mangos, raw
+Pineapple | 🍍 | Produce | 5 | | Pineapple, raw, all varieties
+Peach | 🍑 | Produce | 5 | peaches, nectarine | Peaches, yellow, raw
+Apricot | 🍑 | Produce | 5 | apricots | Apricots, raw
+Plum | 🍑 | Produce | 5 | plums | Plums, raw
+Cherries | 🍒 | Produce | 5 | cherry | Cherries, sweet, raw
+Watermelon | 🍉 | Produce | 7 | | Watermelon, raw
+Melon | 🍈 | Produce | 7 | cantaloupe | Melons, cantaloupe, raw
+Figs | 🫐 | Produce | 3 | fig | Figs, raw
+Pomegranate | 🍎 | Produce | 30 | pomegranate seeds | Pomegranates, raw
+Dates | 🌴 | Pantry | 180 | date, medjool dates | Dates, medjool
+Raisins | 🍇 | Pantry | 180 | | Raisins, dark, seedless (Includes foods for USDA's Food Distribution Program)
+Dried apricots | 🍑 | Pantry | 180 | | Apricots, dried, sulfured, uncooked
+Coconut | 🥥 | Pantry | 180 | desiccated coconut, coconut flakes | Nuts, coconut meat, dried (desiccated), not sweetened
+
+## Grains, pasta, bread
+Penne | 🍝 | Pantry | 365 | fusilli, rigatoni, farfalle, macaroni, short pasta, linguine | Pasta, cooked, enriched, without added salt
+Whole wheat pasta | 🍝 | Pantry | 365 | wholegrain pasta, whole grain pasta | Pasta, whole-wheat, cooked (Includes foods for USDA's Food Distribution Program)
+Egg noodles | 🍜 | Pantry | 365 | noodles | Noodles, egg, cooked, enriched, with added salt
+Rice noodles | 🍜 | Pantry | 365 | | Rice noodles, cooked
+Brown rice | 🍚 | Pantry | 180 | | Rice, brown, long-grain, cooked (Includes foods for USDA's Food Distribution Program)
+Basmati rice | 🍚 | Pantry | 365 | jasmine rice | Rice, white, long-grain, regular, enriched, cooked
+Risotto rice | 🍚 | Pantry | 365 | arborio | Rice, white, medium-grain, enriched, cooked
+Couscous | 🍚 | Pantry | 365 | | Couscous, cooked
+Quinoa | 🍚 | Pantry | 365 | | Quinoa, cooked
+Bulgur | 🍚 | Pantry | 365 | | Bulgur, cooked
+Barley | 🌾 | Pantry | 365 | pearl barley | Barley, pearled, cooked
+White bread | 🍞 | Pantry | 5 | toast, toast bread, sandwich bread | Bread, white, commercially prepared (includes soft bread crumbs)
+Whole wheat bread | 🍞 | Pantry | 5 | wholegrain bread, brown bread | Bread, whole-wheat, commercially prepared
+Rye bread | 🍞 | Pantry | 7 | | Bread, rye
+Baguette | 🥖 | Pantry | 2 | french bread | Bread, french or vienna (includes sourdough)
+Pita | 🫓 | Pantry | 7 | pita bread | Bread, pita, white, enriched
+Tortilla | 🫓 | Pantry | 14 | wrap, tortillas, flour tortilla | Tortillas, ready-to-bake or -fry, flour, refrigerated
+Bread roll | 🥯 | Pantry | 3 | roll, bun, burger bun | Rolls, hamburger or hotdog, plain
+Croissant | 🥐 | Pantry | 3 | | Croissants, butter
+Focaccia | 🫓 | Pantry | 3 | | Focaccia, Italian flatbread, plain
+Breadcrumbs | 🍞 | Pantry | 180 | | Bread, crumbs, dry, grated, plain
+Crackers | 🍘 | Pantry | 180 | | Crackers, standard snack-type, regular
+Granola | 🥣 | Pantry | 180 | muesli | Cereals ready-to-eat, granola, homemade
+Cornflakes | 🥣 | Pantry | 180 | cereal, breakfast cereal | Cereals ready-to-eat, RALSTON Corn Flakes
+Flour | 🌾 | Pantry | 365 | wheat flour, all-purpose flour | Wheat flour, white, all-purpose, enriched, bleached
+Puff pastry | 🥐 | Dairy | 30 | | Puff pastry, frozen, ready-to-bake
+
+## Legumes, nuts, seeds
+Black beans | 🫘 | Pantry | 365 | | Beans, black, mature seeds, cooked, boiled, without salt
+Kidney beans | 🫘 | Pantry | 365 | red beans | Beans, kidney, red, mature seeds, cooked, boiled, without salt
+White beans | 🫘 | Pantry | 365 | cannellini, cannellini beans, beans, butter beans | Beans, white, mature seeds, cooked, boiled, without salt
+Baked beans | 🫘 | Pantry | 365 | | Beans, baked, canned, plain or vegetarian
+Edamame | 🫛 | Produce | 180 | | Edamame, frozen, prepared
+Tofu | 🧈 | Dairy | 10 | | Tofu, firm, prepared with calcium sulfate and magnesium chloride (nigari)
+Hummus | 🫘 | Dairy | 7 | houmous | Hummus, commercial
+Almonds | 🌰 | Pantry | 180 | almond | Nuts, almonds
+Walnuts | 🌰 | Pantry | 180 | walnut | Nuts, walnuts, english
+Hazelnuts | 🌰 | Pantry | 180 | hazelnut | Nuts, hazelnuts or filberts
+Cashews | 🌰 | Pantry | 180 | cashew | Nuts, cashew nuts, raw
+Pine nuts | 🌰 | Pantry | 90 | pignoli | Nuts, pine nuts, dried
+Pistachios | 🌰 | Pantry | 180 | pistachio | Nuts, pistachio nuts, raw
+Peanuts | 🥜 | Pantry | 180 | peanut | Peanuts, all types, dry-roasted, without salt
+Peanut butter | 🥜 | Pantry | 180 | | Peanut butter, smooth style, without salt
+Sunflower seeds | 🌻 | Pantry | 180 | | Seeds, sunflower seed kernels, dried
+Pumpkin seeds | 🎃 | Pantry | 180 | | Seeds, pumpkin and squash seed kernels, dried
+Chia seeds | 🌱 | Pantry | 365 | chia | Seeds, chia seeds, dried
+Flax seeds | 🌱 | Pantry | 365 | linseed, flaxseed | Seeds, flaxseed
+Sesame seeds | 🌱 | Pantry | 365 | sesame | Seeds, sesame seeds, whole, dried
+Tahini | 🫙 | Pantry | 180 | sesame paste | Seeds, sesame butter, tahini, from roasted and toasted kernels (most common type)
+
+## Meat and fish
+Chicken thigh | 🍗 | Meat | 3 | chicken thighs | Chicken, broilers or fryers, thigh, meat only, cooked, roasted
+Roast chicken | 🍗 | Meat | 3 | chicken leg, whole chicken | Chicken, broilers or fryers, meat and skin, cooked, roasted
+Turkey breast | 🦃 | Meat | 3 | turkey | Turkey, whole, breast, meat only, cooked, roasted
+Beef steak | 🥩 | Meat | 3 | steak, beef, sirloin | Beef, top sirloin, steak, separable lean and fat, trimmed to 1/8" fat, choice, cooked, broiled
+Pork chop | 🥩 | Meat | 3 | pork, pork loin | Pork, fresh, loin, center loin (chops), bone-in, separable lean and fat, cooked, broiled
+Ground pork | 🥩 | Meat | 2 | pork mince, minced pork | Pork, fresh, ground, cooked
+Bacon | 🥓 | Meat | 7 | streaky bacon | Pork, cured, bacon, pre-sliced, cooked, pan-fried
+Ham | 🍖 | Meat | 7 | cooked ham, prosciutto cotto | Ham, sliced, regular (approximately 11% fat)
+Salami | 🍖 | Meat | 30 | | Salami, Italian, pork
+Sausage | 🌭 | Meat | 3 | sausages, bratwurst | Sausage, Italian, pork, mild, cooked, pan-fried
+Hot dog | 🌭 | Meat | 7 | frankfurter, wurstel | Frankfurter, beef, unheated
+Lamb | 🥩 | Meat | 3 | lamb chop | Lamb, composite of trimmed retail cuts, separable lean and fat, trimmed to 1/4" fat, choice, cooked
+Tuna | 🐟 | Pantry | 365 | canned tuna, tuna in water | Fish, tuna, light, canned in water, without salt, drained solids
+Tuna steak | 🐟 | Meat | 2 | fresh tuna | Fish, tuna, fresh, yellowfin, raw
+Cod | 🐟 | Meat | 2 | white fish | Fish, cod, Atlantic, cooked, dry heat
+Sea bass | 🐟 | Meat | 2 | branzino, seabass, spigola | Fish, sea bass, mixed species, cooked, dry heat
+Trout | 🐟 | Meat | 2 | | Fish, trout, rainbow, farmed, cooked, dry heat
+Smoked salmon | 🐟 | Meat | 7 | lox | Fish, salmon, chinook, smoked
+Shrimp | 🦐 | Meat | 2 | prawns, prawn, shrimps | Crustaceans, shrimp, cooked
+Mussels | 🦪 | Meat | 2 | | Mollusks, mussel, blue, cooked, moist heat
+Squid | 🦑 | Meat | 2 | calamari | Mollusks, squid, mixed species, raw
+Sardines | 🐟 | Pantry | 365 | | Fish, sardine, Atlantic, canned in oil, drained solids with bone
+Anchovies | 🐟 | Pantry | 180 | anchovy | Fish, anchovy, european, canned in oil, drained solids
+
+## Dairy and eggs
+Butter | 🧈 | Dairy | 30 | | Butter, without salt
+Mozzarella | 🧀 | Dairy | 7 | fresh mozzarella, fior di latte | Cheese, mozzarella, whole milk
+Cheddar | 🧀 | Dairy | 30 | cheese, grated cheese, sliced cheese | Cheese, cheddar (Includes foods for USDA's Food Distribution Program)
+Feta | 🧀 | Dairy | 14 | feta cheese | Cheese, feta
+Pecorino | 🧀 | Dairy | 60 | pecorino romano, pecorino cheese, romano | Cheese, romano
+Ricotta | 🧀 | Dairy | 7 | | Cheese, ricotta, whole milk
+Goat cheese | 🧀 | Dairy | 14 | | Cheese, goat, soft type
+Gouda | 🧀 | Dairy | 30 | edam | Cheese, gouda
+Cream cheese | 🧀 | Dairy | 14 | philadelphia | Cheese, cream
+Cottage cheese | 🧀 | Dairy | 7 | | Cheese, cottage, lowfat, 2% milkfat
+Greek yogurt | 🥣 | Dairy | 14 | skyr | Yogurt, Greek, plain, whole milk
+Yogurt | 🥣 | Dairy | 14 | plain yogurt, natural yogurt, yoghurt | Yogurt, plain, whole milk
+Sour cream | 🥛 | Dairy | 14 | | Cream, sour, cultured
+Skim milk | 🥛 | Dairy | 7 | low-fat milk | Milk, nonfat, fluid, with added vitamin A and vitamin D (fat free or skim)
+Egg whites | 🥚 | Dairy | 4 | egg white | Egg, white, raw, fresh
+
+## Fats, sauces, condiments
+Pesto | 🌿 | Pantry | 14 | basil pesto, pesto sauce, pesto genovese | Sauce, pesto, ready-to-serve, refrigerated
+Tomato sauce | 🍅 | Pantry | 7 | marinara, passata, pasta sauce, sugo | Sauce, pasta, spaghetti/marinara, ready-to-serve
+Mayonnaise | 🫙 | Pantry | 60 | mayo | Salad dressing, mayonnaise, regular
+Ketchup | 🍅 | Pantry | 180 | | Catsup
+Mustard | 🫙 | Pantry | 365 | dijon mustard | Mustard, prepared, yellow
+Vinaigrette | 🫙 | Pantry | 60 | salad dressing, dressing | Salad dressing, italian dressing, commercial, regular
+Balsamic vinegar | 🫙 | Pantry | 365 | balsamic, vinegar | Vinegar, balsamic
+Sunflower oil | 🫙 | Pantry | 365 | vegetable oil, canola oil, rapeseed oil | Oil, sunflower, linoleic, (approx. 65%)
+Coconut milk | 🥥 | Pantry | 365 | | Nuts, coconut milk, canned (liquid expressed from grated meat and water)
+Honey | 🍯 | Pantry | 365 | | Honey
+Maple syrup | 🍁 | Pantry | 365 | | Syrups, maple
+Jam | 🍓 | Pantry | 180 | jelly, marmalade | Jams and preserves
+Nutella | 🍫 | Pantry | 180 | chocolate spread, hazelnut spread | Chocolate-flavored hazelnut spread
+Sugar | 🧂 | Pantry | 365 | | Sugars, granulated
+Salt | 🧂 | Pantry | 3650 | sea salt | Salt, table
+Black pepper | 🧂 | Pantry | 365 | pepper powder, ground pepper | Spices, pepper, black
+Paprika | 🧂 | Pantry | 365 | | Spices, paprika
+Cinnamon | 🧂 | Pantry | 365 | | Spices, cinnamon, ground
+Curry paste | 🫙 | Pantry | 180 | curry powder | Spices, curry powder
+Oregano | 🌿 | Pantry | 365 | dried oregano, italian herbs | Spices, oregano, dried
+Stock | 🍲 | Pantry | 3 | broth, vegetable broth, chicken broth, bouillon | Soup, chicken broth, ready-to-serve
+Hot sauce | 🌶️ | Pantry | 365 | sriracha, tabasco | Sauce, hot chile, sriracha
+Teriyaki sauce | 🫙 | Pantry | 365 | | Sauce, teriyaki, ready-to-serve
+BBQ sauce | 🫙 | Pantry | 180 | barbecue sauce | Sauce, barbecue
+
+## Sweets, snacks, drinks
+Dark chocolate | 🍫 | Pantry | 365 | chocolate | Chocolate, dark, 70-85% cacao solids
+Milk chocolate | 🍫 | Pantry | 365 | | Candies, milk chocolate
+Ice cream | 🍨 | Dairy | 90 | gelato | Ice creams, vanilla
+Cookies | 🍪 | Pantry | 90 | biscuits, cookie | Cookies, chocolate chip, commercially prepared, regular, higher fat, enriched
+Cake | 🍰 | Pantry | 4 | sponge cake | Cake, pound, commercially prepared, butter (includes fresh and frozen)
+Chips | 🥔 | Pantry | 90 | crisps, potato chips | Snacks, potato chips, plain, salted
+Popcorn | 🍿 | Pantry | 90 | | Snacks, popcorn, air-popped
+French fries | 🍟 | Pantry | 180 | fries, chips (fries) | Potatoes, french fried, all types, salt not added in processing, frozen, oven-heated
+Orange juice | 🧃 | Dairy | 7 | juice | Orange juice, raw (Includes foods for USDA's Food Distribution Program)
+Coffee | ☕ | Pantry | 1 | espresso | Beverages, coffee, brewed, prepared with tap water
+Beer | 🍺 | Pantry | 180 | | Alcoholic beverage, beer, regular, all
+Wine | 🍷 | Pantry | 365 | red wine, white wine | Alcoholic beverage, wine, table, red
+
+## Dishes (when the model names the whole thing)
+Omelette | 🍳 | Dairy | 1 | omelet, scrambled eggs | Egg, whole, cooked, scrambled
+Pancakes | 🥞 | Pantry | 2 | pancake, crepes | Pancakes, plain, prepared from recipe
+Hamburger | 🍔 | Meat | 1 | burger, cheeseburger | Fast foods, hamburger; single, regular patty; plain
+Mashed potatoes | 🥔 | Produce | 3 | mash, potato puree | Potatoes, mashed, home-prepared, whole milk and butter added

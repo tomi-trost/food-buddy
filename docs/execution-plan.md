@@ -95,7 +95,8 @@ Shared conventions for all sections:
 
 ## M4 — Nutrition data
 
-- [ ] Import USDA FoodData Central (Foundation + SR Legacy), Ciqual; aliases; fiber + sugar
+- [x] Curated catalog of ~250 common foods from USDA SR Legacy + Ciqual with aliases, fiber + sugar; unmatched names logged (2026-10-12, decision 0021)
+- [ ] Import the rest of USDA FoodData Central (Foundation + SR Legacy) and Ciqual; aliases
 - [ ] Open Food Facts barcode lookup endpoint (cached)
 - [ ] Matching quality tests on a fixed list of model outputs → expected ingredients
 

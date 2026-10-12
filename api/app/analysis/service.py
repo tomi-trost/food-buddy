@@ -11,6 +11,7 @@ from app.analysis.schemas import AnalysisItem, AnalysisResult, MatchedIngredient
 from app.nutrition.macros import total
 from app.nutrition.matching import match_ingredient
 from app.nutrition.schemas import IngredientOut, NutrientsOut
+from app.nutrition.unmatched import record_unmatched
 from app.snacks.schemas import LabelAnswer, SnackPhotoAnswer, SnackResult
 from app.vision.providers import AllProvidersFailed, VisionChain, image_message
 from app.vision.schemas import MealAnalysis
@@ -47,6 +48,7 @@ async def ground(session: AsyncSession, analysis: MealAnalysis) -> AnalysisResul
                 nutrients=NutrientsOut(**nutrients.rounded()),
             )
         )
+    await record_unmatched(session, [i.name for i in items if i.ingredient is None], analysis.dish)
     return AnalysisResult(
         dish=analysis.dish,
         meal_type=analysis.meal_type,

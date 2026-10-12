@@ -1,4 +1,6 @@
-from sqlalchemy import ARRAY, Float, Integer, String, Text, UniqueConstraint
+from datetime import datetime
+
+from sqlalchemy import ARRAY, DateTime, Float, Integer, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base
@@ -41,3 +43,19 @@ class Ingredient(Base):
             fiber=self.fiber,
             sugar=self.sugar,
         )
+
+
+class UnmatchedIngredient(Base):
+    """A name from the vision model that matched no ingredient (normalized); grows the catalog."""
+
+    __tablename__ = "unmatched_ingredient"
+
+    name: Mapped[str] = mapped_column(String(200), primary_key=True)
+    seen: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
+    last_dish: Mapped[str] = mapped_column(String(200), default="", server_default="")
+    first_seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    last_seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )

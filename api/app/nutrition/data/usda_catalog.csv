@@ -1,0 +1,198 @@
+name,emoji,category,shelf_days,aliases,ref,description,kcal,protein,carbs,fat,fiber,sugar
+Zucchini,🥒,Produce,7,"courgette,courgettes,zucchinis,zucchini slices,sauteed zucchini,grilled zucchini",169291,"Squash, summer, zucchini, includes skin, raw",17.0,1.21,3.11,0.32,1.0,2.5
+Eggplant,🍆,Produce,7,"aubergine,eggplants",169228,"Eggplant, raw",25.0,0.98,5.88,0.18,3.0,3.53
+Bell pepper,🫑,Produce,10,"red pepper,red bell pepper,sweet pepper,capsicum",170108,"Peppers, sweet, red, raw",26.0,0.99,6.03,0.3,2.1,4.2
+Green bell pepper,🫑,Produce,10,green pepper,170427,"Peppers, sweet, green, raw",20.0,0.86,4.64,0.17,1.7,2.4
+Yellow bell pepper,🫑,Produce,10,yellow pepper,169383,"Peppers, sweet, yellow, raw",27.0,1.0,6.32,0.21,0.9,0.0
+Chili pepper,🌶️,Produce,10,"chili,chilli,hot pepper,red chili,chili flakes",170106,"Peppers, hot chili, red, raw",40.0,1.87,8.81,0.44,1.5,5.3
+Carrot,🥕,Produce,21,"carrots,grated carrot",170393,"Carrots, raw",41.0,0.93,9.58,0.24,2.8,4.74
+Cucumber,🥒,Produce,7,cucumbers,168409,"Cucumber, with peel, raw",15.0,0.65,3.63,0.11,0.5,1.67
+Lettuce,🥬,Produce,5,"salad,green salad,mixed greens,salad leaves,romaine",169247,"Lettuce, cos or romaine, raw",17.0,1.23,3.29,0.3,2.1,1.19
+Iceberg lettuce,🥬,Produce,7,iceberg,169248,"Lettuce, iceberg (includes crisphead types), raw",14.0,0.9,2.97,0.14,1.2,1.97
+Arugula,🥬,Produce,4,"rocket,rucola",169387,"Arugula, raw",25.0,2.58,3.65,0.66,1.6,2.05
+Kale,🥬,Produce,5,,168421,"Kale, raw",35.0,2.92,4.42,1.49,4.1,0.99
+Cabbage,🥬,Produce,14,white cabbage,169975,"Cabbage, raw",25.0,1.28,5.8,0.1,2.5,3.2
+Red cabbage,🥬,Produce,14,purple cabbage,169977,"Cabbage, red, raw",31.0,1.43,7.37,0.16,2.1,3.83
+Cauliflower,🥦,Produce,7,,169986,"Cauliflower, raw",25.0,1.92,4.97,0.28,2.0,1.91
+Green beans,🫛,Produce,5,string beans,169961,"Beans, snap, green, raw",31.0,1.83,6.97,0.22,2.7,3.26
+Peas,🫛,Produce,180,"green peas,frozen peas",170017,"Peas, green, frozen, cooked, boiled, drained, without salt",78.0,5.15,14.26,0.27,4.5,4.4
+Sweet corn,🌽,Produce,5,"corn,corn kernels",169999,"Corn, sweet, yellow, cooked, boiled, drained, without salt",96.0,3.41,20.98,1.5,2.4,4.54
+Mushrooms,🍄,Produce,5,"mushroom,button mushrooms,champignons",169251,"Mushrooms, white, raw",22.0,3.09,3.26,0.34,1.0,1.98
+Garlic,🧄,Produce,60,"garlic clove,garlic cloves,minced garlic",169230,"Garlic, raw",149.0,6.36,33.06,0.5,2.1,1.0
+Red onion,🧅,Produce,30,red onions,170000,"Onions, raw",40.0,1.1,9.34,0.1,1.7,4.24
+Spring onion,🧅,Produce,7,"scallion,scallions,green onion,green onions",170005,"Onions, spring or scallions (includes tops and bulb), raw",32.0,1.83,7.34,0.19,2.6,2.33
+Leek,🥬,Produce,10,leeks,169246,"Leeks, (bulb and lower leaf-portion), raw",61.0,1.5,14.15,0.3,1.8,3.9
+Celery,🥬,Produce,14,,169988,"Celery, raw",14.0,0.69,2.97,0.17,1.6,1.34
+Asparagus,🥬,Produce,4,,168389,"Asparagus, raw",20.0,2.2,3.88,0.12,2.1,1.88
+Beetroot,🥗,Produce,14,"beet,beets",169146,"Beets, cooked, boiled, drained",44.0,1.68,9.96,0.18,2.0,7.96
+Sweet potato,🍠,Produce,21,"sweet potatoes,yam",168483,"Sweet potato, cooked, baked in skin, flesh, without salt",90.0,2.01,20.71,0.15,3.3,6.48
+Butternut squash,🎃,Produce,30,"pumpkin,squash,winter squash",169295,"Squash, winter, butternut, raw",45.0,1.0,11.69,0.1,2.0,2.2
+Brussels sprouts,🥬,Produce,7,,170383,"Brussels sprouts, raw",43.0,3.38,8.95,0.3,3.8,2.2
+Cherry tomatoes,🍅,Produce,7,cherry tomato,170457,"Tomatoes, red, ripe, raw, year round average",18.0,0.88,3.89,0.2,1.2,2.63
+Sun-dried tomatoes,🍅,Pantry,180,dried tomatoes,169384,"Tomatoes, sun-dried, packed in oil, drained",213.0,5.06,23.33,14.08,5.8,0.0
+Tomato paste,🥫,Pantry,180,"tomato puree,concentrated tomato",170459,"Tomato products, canned, paste, without salt added (Includes foods for USDA's Food Distribution Program)",82.0,4.32,18.91,0.47,4.1,12.18
+Olives,🫒,Pantry,90,"olive,black olives,green olives",169094,"Olives, ripe, canned (small-extra large)",116.0,0.84,6.04,10.9,1.6,0.0
+Capers,🫒,Pantry,180,,172238,"Capers, canned",23.0,2.36,4.89,0.86,3.2,0.41
+Radish,🥕,Produce,10,radishes,169276,"Radishes, raw",16.0,0.68,3.4,0.1,1.6,1.86
+Fennel,🥬,Produce,7,,169385,"Fennel, bulb, raw",31.0,1.24,7.3,0.2,3.1,3.93
+Artichoke,🥬,Produce,5,artichokes,168386,"Artichokes, (globe or french), cooked, boiled, drained, without salt",53.0,2.89,11.95,0.34,5.7,0.99
+Bok choy,🥬,Produce,5,pak choi,170390,"Cabbage, chinese (pak-choi), raw",13.0,1.5,2.18,0.2,1.0,1.18
+Bean sprouts,🌱,Produce,3,,169957,"Mung beans, mature seeds, sprouted, raw",30.0,3.04,5.94,0.18,1.8,4.13
+Ginger,🫚,Produce,21,fresh ginger,169231,"Ginger root, raw",80.0,1.82,17.77,0.75,2.0,1.7
+Basil,🌿,Produce,5,"fresh basil,basil leaves",172232,"Basil, fresh",23.0,3.15,2.65,0.64,1.6,0.3
+Parsley,🌿,Produce,7,fresh parsley,170416,"Parsley, fresh",36.0,2.97,6.33,0.79,3.3,0.85
+Coriander,🌿,Produce,5,cilantro,169997,"Coriander (cilantro) leaves, raw",23.0,2.13,3.67,0.52,2.8,0.87
+Mint,🌿,Produce,5,fresh mint,173475,"Spearmint, fresh",44.0,3.29,8.41,0.73,6.8,0.0
+Rosemary,🌿,Produce,10,,173473,"Rosemary, fresh",131.0,3.31,20.7,5.86,14.1,0.0
+Dill,🌿,Produce,5,,172233,"Dill weed, fresh",43.0,3.46,7.02,1.12,2.1,0.0
+Mixed vegetables,🥗,Produce,180,"vegetables,frozen vegetables,veggies",170472,"Vegetables, mixed, frozen, cooked, boiled, drained, without salt",65.0,2.86,13.09,0.15,4.4,3.12
+Apple,🍎,Produce,30,apples,171688,"Apples, raw, with skin (Includes foods for USDA's Food Distribution Program)",52.0,0.26,13.81,0.17,2.4,10.39
+Pear,🍐,Produce,10,pears,169118,"Pears, raw",57.0,0.36,15.23,0.14,3.1,9.75
+Orange,🍊,Produce,21,oranges,169097,"Oranges, raw, all commercial varieties",47.0,0.94,11.75,0.12,2.4,9.35
+Mandarin,🍊,Produce,14,"clementine,tangerine",169105,"Tangerines, (mandarin oranges), raw",53.0,0.81,13.34,0.31,1.8,10.58
+Lemon,🍋,Produce,21,"lemons,lemon juice",167746,"Lemons, raw, without peel",29.0,1.1,9.32,0.3,2.8,2.5
+Lime,🍋,Produce,21,"limes,lime juice",168155,"Limes, raw",30.0,0.7,10.54,0.2,2.8,1.69
+Strawberries,🍓,Produce,4,strawberry,167762,"Strawberries, raw",32.0,0.67,7.68,0.3,2.0,4.89
+Blueberries,🫐,Produce,7,blueberry,171711,"Blueberries, raw",57.0,0.74,14.49,0.33,2.4,9.96
+Raspberries,🫐,Produce,3,raspberry,167755,"Raspberries, raw",52.0,1.2,11.94,0.65,6.5,4.42
+Grapes,🍇,Produce,7,grape,174683,"Grapes, red or green (European type, such as Thompson seedless), raw",69.0,0.72,18.1,0.16,0.9,15.48
+Kiwi,🥝,Produce,14,"kiwis,kiwifruit",168153,"Kiwifruit, green, raw",61.0,1.14,14.66,0.52,3.0,8.99
+Mango,🥭,Produce,5,,169910,"Mangos, raw",60.0,0.82,14.98,0.38,1.6,13.66
+Pineapple,🍍,Produce,5,,169124,"Pineapple, raw, all varieties",50.0,0.54,13.12,0.12,1.4,9.85
+Peach,🍑,Produce,5,"peaches,nectarine",169928,"Peaches, yellow, raw",39.0,0.91,9.54,0.25,1.5,8.39
+Apricot,🍑,Produce,5,apricots,171697,"Apricots, raw",48.0,1.4,11.12,0.39,2.0,9.24
+Plum,🍑,Produce,5,plums,169949,"Plums, raw",46.0,0.7,11.42,0.28,1.4,9.92
+Cherries,🍒,Produce,5,cherry,171719,"Cherries, sweet, raw",63.0,1.06,16.01,0.2,2.1,12.82
+Watermelon,🍉,Produce,7,,167765,"Watermelon, raw",30.0,0.61,7.55,0.15,0.4,6.2
+Melon,🍈,Produce,7,cantaloupe,169092,"Melons, cantaloupe, raw",34.0,0.84,8.16,0.19,0.9,7.86
+Figs,🫐,Produce,3,fig,173021,"Figs, raw",74.0,0.75,19.18,0.3,2.9,16.26
+Pomegranate,🍎,Produce,30,pomegranate seeds,169134,"Pomegranates, raw",83.0,1.67,18.7,1.17,4.0,13.67
+Dates,🌴,Pantry,180,"date,medjool dates",168191,"Dates, medjool",277.0,1.81,74.97,0.15,6.7,66.47
+Raisins,🍇,Pantry,180,,168165,"Raisins, dark, seedless (Includes foods for USDA's Food Distribution Program)",299.0,3.3,79.32,0.25,4.5,65.18
+Dried apricots,🍑,Pantry,180,,173941,"Apricots, dried, sulfured, uncooked",241.0,3.39,62.64,0.51,7.3,53.44
+Coconut,🥥,Pantry,180,"desiccated coconut,coconut flakes",170170,"Nuts, coconut meat, dried (desiccated), not sweetened",660.0,6.88,23.65,64.53,16.3,7.35
+Penne,🍝,Pantry,365,"fusilli,rigatoni,farfalle,macaroni,short pasta,linguine",169737,"Pasta, cooked, enriched, without added salt",158.0,5.8,30.86,0.93,1.8,0.56
+Whole wheat pasta,🍝,Pantry,365,"wholegrain pasta,whole grain pasta",168910,"Pasta, whole-wheat, cooked (Includes foods for USDA's Food Distribution Program)",149.0,5.99,30.07,1.71,3.9,0.75
+Egg noodles,🍜,Pantry,365,noodles,168919,"Noodles, egg, cooked, enriched, with added salt",138.0,4.54,25.16,2.07,1.2,0.4
+Rice noodles,🍜,Pantry,365,,168914,"Rice noodles, cooked",108.0,1.79,24.01,0.2,1.0,0.03
+Brown rice,🍚,Pantry,180,,169704,"Rice, brown, long-grain, cooked (Includes foods for USDA's Food Distribution Program)",123.0,2.74,25.58,0.97,1.6,0.24
+Basmati rice,🍚,Pantry,365,jasmine rice,168878,"Rice, white, long-grain, regular, enriched, cooked",130.0,2.69,28.17,0.28,0.4,0.05
+Risotto rice,🍚,Pantry,365,arborio,168880,"Rice, white, medium-grain, enriched, cooked",130.0,2.38,28.59,0.21,0.3,0.0
+Couscous,🍚,Pantry,365,,169700,"Couscous, cooked",112.0,3.79,23.22,0.16,1.4,0.1
+Quinoa,🍚,Pantry,365,,168917,"Quinoa, cooked",120.0,4.4,21.3,1.92,2.8,0.87
+Bulgur,🍚,Pantry,365,,170287,"Bulgur, cooked",83.0,3.08,18.58,0.24,4.5,0.1
+Barley,🌾,Pantry,365,pearl barley,170285,"Barley, pearled, cooked",123.0,2.26,28.22,0.44,3.8,0.28
+White bread,🍞,Pantry,5,"toast,toast bread,sandwich bread",174924,"Bread, white, commercially prepared (includes soft bread crumbs)",266.0,8.85,49.42,3.33,2.7,5.67
+Whole wheat bread,🍞,Pantry,5,"wholegrain bread,brown bread",172688,"Bread, whole-wheat, commercially prepared",252.0,12.45,42.71,3.5,6.0,4.34
+Rye bread,🍞,Pantry,7,,172684,"Bread, rye",259.0,8.5,48.3,3.3,5.8,3.85
+Baguette,🥖,Pantry,2,french bread,172675,"Bread, french or vienna (includes sourdough)",272.0,10.75,51.88,2.42,2.2,4.62
+Pita,🫓,Pantry,7,pita bread,174915,"Bread, pita, white, enriched",275.0,9.1,55.7,1.2,2.2,1.3
+Tortilla,🫓,Pantry,14,"wrap,tortillas,flour tortilla",175037,"Tortillas, ready-to-bake or -fry, flour, refrigerated",306.0,8.2,49.38,7.99,3.5,3.71
+Bread roll,🥯,Pantry,3,"roll,bun,burger bun",172796,"Rolls, hamburger or hotdog, plain",279.0,9.77,50.12,3.91,1.8,7.28
+Croissant,🥐,Pantry,3,,174987,"Croissants, butter",406.0,8.2,45.8,21.0,2.6,11.26
+Focaccia,🫓,Pantry,3,,167945,"Focaccia, Italian flatbread, plain",249.0,8.77,35.82,7.89,1.8,1.75
+Breadcrumbs,🍞,Pantry,180,,174928,"Bread, crumbs, dry, grated, plain",395.0,13.35,71.98,5.3,4.5,6.2
+Crackers,🍘,Pantry,180,,174982,"Crackers, standard snack-type, regular",510.0,6.64,61.3,26.43,2.3,8.18
+Granola,🥣,Pantry,180,muesli,171646,"Cereals ready-to-eat, granola, homemade",489.0,13.67,53.88,24.31,8.9,19.8
+Cornflakes,🥣,Pantry,180,"cereal,breakfast cereal",174648,"Cereals ready-to-eat, RALSTON Corn Flakes",384.0,5.9,88.01,0.91,2.7,7.84
+Flour,🌾,Pantry,365,"wheat flour,all-purpose flour",168894,"Wheat flour, white, all-purpose, enriched, bleached",364.0,10.33,76.31,0.98,2.7,0.27
+Puff pastry,🥐,Dairy,30,,172790,"Puff pastry, frozen, ready-to-bake",551.0,7.3,45.1,38.1,1.5,0.74
+Black beans,🫘,Pantry,365,,173735,"Beans, black, mature seeds, cooked, boiled, without salt",132.0,8.86,23.71,0.54,8.7,0.32
+Kidney beans,🫘,Pantry,365,red beans,175194,"Beans, kidney, red, mature seeds, cooked, boiled, without salt",127.0,8.67,22.8,0.5,7.4,0.32
+White beans,🫘,Pantry,365,"cannellini,cannellini beans,beans,butter beans",175203,"Beans, white, mature seeds, cooked, boiled, without salt",139.0,9.73,25.09,0.35,6.3,0.34
+Baked beans,🫘,Pantry,365,,175182,"Beans, baked, canned, plain or vegetarian",94.0,4.75,21.14,0.37,4.1,7.96
+Edamame,🫛,Produce,180,,168411,"Edamame, frozen, prepared",121.0,11.91,8.91,5.2,5.2,2.18
+Tofu,🧈,Dairy,10,,172448,"Tofu, firm, prepared with calcium sulfate and magnesium chloride (nigari)",78.0,9.04,2.85,4.17,0.9,0.6
+Hummus,🫘,Dairy,7,houmous,174289,"Hummus, commercial",237.0,7.78,15.0,17.82,5.5,0.62
+Almonds,🌰,Pantry,180,almond,170567,"Nuts, almonds",579.0,21.15,21.55,49.93,12.5,4.35
+Walnuts,🌰,Pantry,180,walnut,170187,"Nuts, walnuts, english",654.0,15.23,13.71,65.21,6.7,2.61
+Hazelnuts,🌰,Pantry,180,hazelnut,170581,"Nuts, hazelnuts or filberts",628.0,14.95,16.7,60.75,9.7,4.34
+Cashews,🌰,Pantry,180,cashew,170162,"Nuts, cashew nuts, raw",553.0,18.22,30.19,43.85,3.3,5.91
+Pine nuts,🌰,Pantry,90,pignoli,170591,"Nuts, pine nuts, dried",673.0,13.69,13.08,68.37,3.7,3.59
+Pistachios,🌰,Pantry,180,pistachio,170184,"Nuts, pistachio nuts, raw",560.0,20.16,27.17,45.32,10.6,7.66
+Peanuts,🥜,Pantry,180,peanut,173806,"Peanuts, all types, dry-roasted, without salt",587.0,24.35,21.26,49.66,8.4,4.9
+Peanut butter,🥜,Pantry,180,,172470,"Peanut butter, smooth style, without salt",598.0,22.21,22.31,51.36,5.0,10.49
+Sunflower seeds,🌻,Pantry,180,,170562,"Seeds, sunflower seed kernels, dried",584.0,20.78,20.0,51.46,8.6,2.62
+Pumpkin seeds,🎃,Pantry,180,,170556,"Seeds, pumpkin and squash seed kernels, dried",559.0,30.23,10.71,49.05,6.0,1.4
+Chia seeds,🌱,Pantry,365,chia,170554,"Seeds, chia seeds, dried",486.0,16.54,42.12,30.74,34.4,0.0
+Flax seeds,🌱,Pantry,365,"linseed,flaxseed",169414,"Seeds, flaxseed",534.0,18.29,28.88,42.16,27.3,1.55
+Sesame seeds,🌱,Pantry,365,sesame,170150,"Seeds, sesame seeds, whole, dried",573.0,17.73,23.45,49.67,11.8,0.3
+Tahini,🫙,Pantry,180,sesame paste,170189,"Seeds, sesame butter, tahini, from roasted and toasted kernels (most common type)",595.0,17.0,21.19,53.76,9.3,0.49
+Chicken thigh,🍗,Meat,3,chicken thighs,172388,"Chicken, broilers or fryers, thigh, meat only, cooked, roasted",179.0,24.76,0.0,8.15,0.0,0.0
+Roast chicken,🍗,Meat,3,"chicken leg,whole chicken",171450,"Chicken, broilers or fryers, meat and skin, cooked, roasted",239.0,27.3,0.0,13.6,0.0,0.0
+Turkey breast,🦃,Meat,3,turkey,171496,"Turkey, whole, breast, meat only, cooked, roasted",147.0,30.13,0.0,2.08,0.0,0.0
+Beef steak,🥩,Meat,3,"steak,beef,sirloin",168729,"Beef, top sirloin, steak, separable lean and fat, trimmed to 1/8"" fat, choice, cooked, broiled",257.0,26.8,0.0,15.75,0.0,0.0
+Pork chop,🥩,Meat,3,"pork,pork loin",167827,"Pork, fresh, loin, center loin (chops), bone-in, separable lean and fat, cooked, broiled",209.0,25.61,0.0,11.06,0.0,0.0
+Ground pork,🥩,Meat,2,"pork mince,minced pork",167903,"Pork, fresh, ground, cooked",297.0,25.69,0.0,20.77,0.0,0.0
+Bacon,🥓,Meat,7,streaky bacon,168322,"Pork, cured, bacon, pre-sliced, cooked, pan-fried",468.0,33.92,1.7,35.09,0.0,0.0
+Ham,🍖,Meat,7,"cooked ham,prosciutto cotto",173864,"Ham, sliced, regular (approximately 11% fat)",164.0,16.6,3.63,8.8,1.3,1.0
+Salami,🍖,Meat,30,,174603,"Salami, Italian, pork",425.0,21.7,1.2,37.0,0.0,1.2
+Sausage,🌭,Meat,3,"sausages,bratwurst",174586,"Sausage, Italian, pork, mild, cooked, pan-fried",324.0,18.4,1.86,26.4,0.0,1.42
+Hot dog,🌭,Meat,7,"frankfurter,wurstel",173862,"Frankfurter, beef, unheated",315.0,11.69,2.97,28.1,0.0,1.17
+Lamb,🥩,Meat,3,lamb chop,172480,"Lamb, composite of trimmed retail cuts, separable lean and fat, trimmed to 1/4"" fat, choice, cooked",294.0,24.52,0.0,20.94,0.0,0.0
+Tuna,🐟,Pantry,365,"canned tuna,tuna in water",171986,"Fish, tuna, light, canned in water, without salt, drained solids",116.0,25.51,0.0,0.82,0.0,0.0
+Tuna steak,🐟,Meat,2,fresh tuna,175159,"Fish, tuna, fresh, yellowfin, raw",109.0,24.4,0.0,0.49,0.0,0.0
+Cod,🐟,Meat,2,white fish,171956,"Fish, cod, Atlantic, cooked, dry heat",105.0,22.83,0.0,0.86,0.0,0.0
+Sea bass,🐟,Meat,2,"branzino,seabass,spigola",173694,"Fish, sea bass, mixed species, cooked, dry heat",124.0,23.63,0.0,2.56,0.0,0.0
+Trout,🐟,Meat,2,,173718,"Fish, trout, rainbow, farmed, cooked, dry heat",168.0,23.8,0.0,7.38,0.0,0.0
+Smoked salmon,🐟,Meat,7,lox,173687,"Fish, salmon, chinook, smoked",117.0,18.28,0.0,4.32,0.0,0.0
+Shrimp,🦐,Meat,2,"prawns,prawn,shrimps",175180,"Crustaceans, shrimp, cooked",99.0,23.98,0.2,0.28,0.0,0.0
+Mussels,🦪,Meat,2,,174217,"Mollusks, mussel, blue, cooked, moist heat",172.0,23.8,7.39,4.48,0.0,0.0
+Squid,🦑,Meat,2,calamari,174223,"Mollusks, squid, mixed species, raw",92.0,15.58,3.08,1.38,0.0,0.0
+Sardines,🐟,Pantry,365,,175139,"Fish, sardine, Atlantic, canned in oil, drained solids with bone",208.0,24.62,0.0,11.45,0.0,0.0
+Anchovies,🐟,Pantry,180,anchovy,174183,"Fish, anchovy, european, canned in oil, drained solids",210.0,28.89,0.0,9.71,0.0,0.0
+Butter,🧈,Dairy,30,,173430,"Butter, without salt",717.0,0.85,0.06,81.11,0.0,0.06
+Mozzarella,🧀,Dairy,7,"fresh mozzarella,fior di latte",170845,"Cheese, mozzarella, whole milk",299.0,22.17,2.4,22.14,0.0,0.0
+Cheddar,🧀,Dairy,30,"cheese,grated cheese,sliced cheese",173414,"Cheese, cheddar (Includes foods for USDA's Food Distribution Program)",403.0,22.87,3.37,33.31,0.0,0.48
+Feta,🧀,Dairy,14,feta cheese,173420,"Cheese, feta",265.0,14.21,3.88,21.49,0.0,0.0
+Pecorino,🧀,Dairy,60,"pecorino romano,pecorino cheese,romano",171249,"Cheese, romano",387.0,31.8,3.63,26.94,0.0,0.73
+Ricotta,🧀,Dairy,7,,170851,"Cheese, ricotta, whole milk",150.0,7.54,7.27,10.18,0.0,0.27
+Goat cheese,🧀,Dairy,14,,173435,"Cheese, goat, soft type",264.0,18.52,0.0,21.08,0.0,0.0
+Gouda,🧀,Dairy,30,edam,171241,"Cheese, gouda",356.0,24.94,2.22,27.44,0.0,2.22
+Cream cheese,🧀,Dairy,14,philadelphia,173418,"Cheese, cream",350.0,6.15,5.52,34.44,0.0,3.76
+Cottage cheese,🧀,Dairy,7,,172182,"Cheese, cottage, lowfat, 2% milkfat",81.0,10.45,4.76,2.27,0.0,4.0
+Greek yogurt,🥣,Dairy,14,skyr,171304,"Yogurt, Greek, plain, whole milk",97.0,9.0,3.98,5.0,0.0,4.0
+Yogurt,🥣,Dairy,14,"plain yogurt,natural yogurt,yoghurt",171284,"Yogurt, plain, whole milk",61.0,3.47,4.66,3.25,0.0,4.66
+Sour cream,🥛,Dairy,14,,171257,"Cream, sour, cultured",198.0,2.44,4.63,19.35,0.0,3.41
+Skim milk,🥛,Dairy,7,low-fat milk,171269,"Milk, nonfat, fluid, with added vitamin A and vitamin D (fat free or skim)",34.0,3.37,4.96,0.08,0.0,5.09
+Egg whites,🥚,Dairy,4,egg white,172183,"Egg, white, raw, fresh",52.0,10.9,0.73,0.17,0.0,0.71
+Pesto,🌿,Pantry,14,"basil pesto,pesto sauce,pesto genovese",171579,"Sauce, pesto, ready-to-serve, refrigerated",418.0,9.83,10.09,37.6,1.8,6.33
+Tomato sauce,🍅,Pantry,7,"marinara,passata,pasta sauce,sugo",171192,"Sauce, pasta, spaghetti/marinara, ready-to-serve",50.0,1.39,7.43,1.61,1.8,4.91
+Mayonnaise,🫙,Pantry,60,mayo,171009,"Salad dressing, mayonnaise, regular",680.0,0.96,0.57,74.85,0.0,0.57
+Ketchup,🍅,Pantry,180,,168556,Catsup,101.0,1.04,27.4,0.1,0.3,21.27
+Mustard,🫙,Pantry,365,dijon mustard,172234,"Mustard, prepared, yellow",60.0,3.74,5.83,3.34,4.0,0.92
+Vinaigrette,🫙,Pantry,60,"salad dressing,dressing",171019,"Salad dressing, italian dressing, commercial, regular",240.0,0.41,12.12,21.12,0.0,10.77
+Balsamic vinegar,🫙,Pantry,365,"balsamic,vinegar",172241,"Vinegar, balsamic",88.0,0.49,17.03,0.0,0.0,14.95
+Sunflower oil,🫙,Pantry,365,"vegetable oil,canola oil,rapeseed oil",171025,"Oil, sunflower, linoleic, (approx. 65%)",884.0,0.0,0.0,100.0,0.0,0.0
+Coconut milk,🥥,Pantry,365,,170173,"Nuts, coconut milk, canned (liquid expressed from grated meat and water)",197.0,2.02,2.81,21.33,0.0,0.0
+Honey,🍯,Pantry,365,,169640,Honey,304.0,0.3,82.4,0.0,0.2,82.12
+Maple syrup,🍁,Pantry,365,,169661,"Syrups, maple",260.0,0.04,67.04,0.06,0.0,60.46
+Jam,🍓,Pantry,180,"jelly,marmalade",169641,Jams and preserves,278.0,0.37,68.86,0.07,1.1,48.5
+Nutella,🍫,Pantry,180,"chocolate spread,hazelnut spread",168000,Chocolate-flavored hazelnut spread,539.0,5.41,62.36,29.73,5.4,54.05
+Sugar,🧂,Pantry,365,,169655,"Sugars, granulated",387.0,0.0,99.98,0.0,0.0,99.8
+Salt,🧂,Pantry,3650,sea salt,173468,"Salt, table",0.0,0.0,0.0,0.0,0.0,0.0
+Black pepper,🧂,Pantry,365,"pepper powder,ground pepper",170931,"Spices, pepper, black",251.0,10.39,63.95,3.26,25.3,0.64
+Paprika,🧂,Pantry,365,,171329,"Spices, paprika",282.0,14.14,53.99,12.89,34.9,10.34
+Cinnamon,🧂,Pantry,365,,171320,"Spices, cinnamon, ground",247.0,3.99,80.59,1.24,53.1,2.17
+Curry paste,🫙,Pantry,180,curry powder,170924,"Spices, curry powder",325.0,14.29,55.83,14.01,53.2,2.76
+Oregano,🌿,Pantry,365,"dried oregano,italian herbs",171328,"Spices, oregano, dried",265.0,9.0,68.92,4.28,42.5,4.09
+Stock,🍲,Pantry,3,"broth,vegetable broth,chicken broth,bouillon",174536,"Soup, chicken broth, ready-to-serve",6.0,0.64,0.44,0.21,0.0,0.43
+Hot sauce,🌶️,Pantry,365,"sriracha,tabasco",171186,"Sauce, hot chile, sriracha",93.0,1.93,19.16,0.93,2.2,15.11
+Teriyaki sauce,🫙,Pantry,365,,171167,"Sauce, teriyaki, ready-to-serve",89.0,5.93,15.56,0.02,0.1,14.1
+BBQ sauce,🫙,Pantry,180,barbecue sauce,174523,"Sauce, barbecue",172.0,0.82,40.77,0.63,0.9,33.24
+Dark chocolate,🍫,Pantry,365,chocolate,170273,"Chocolate, dark, 70-85% cacao solids",598.0,7.79,45.9,42.63,10.9,23.99
+Milk chocolate,🍫,Pantry,365,,167587,"Candies, milk chocolate",535.0,7.65,59.4,29.66,3.4,51.5
+Ice cream,🍨,Dairy,90,gelato,167575,"Ice creams, vanilla",207.0,3.5,23.6,11.0,0.7,21.22
+Cookies,🍪,Pantry,90,"biscuits,cookie",172716,"Cookies, chocolate chip, commercially prepared, regular, higher fat, enriched",492.0,5.1,65.36,24.72,2.0,32.9
+Cake,🍰,Pantry,4,sponge cake,172704,"Cake, pound, commercially prepared, butter (includes fresh and frozen)",353.0,5.0,53.64,13.96,0.6,33.36
+Chips,🥔,Pantry,90,"crisps,potato chips",169677,"Snacks, potato chips, plain, salted",532.0,6.39,53.83,33.98,3.1,0.33
+Popcorn,🍿,Pantry,90,,167959,"Snacks, popcorn, air-popped",387.0,12.94,77.78,4.54,14.5,0.87
+French fries,🍟,Pantry,180,"fries,chips (fries)",170118,"Potatoes, french fried, all types, salt not added in processing, frozen, oven-heated",168.0,2.66,28.71,5.22,2.6,0.28
+Orange juice,🧃,Dairy,7,juice,169098,"Orange juice, raw (Includes foods for USDA's Food Distribution Program)",45.0,0.7,10.4,0.2,0.2,8.4
+Coffee,☕,Pantry,1,espresso,171890,"Beverages, coffee, brewed, prepared with tap water",1.0,0.12,0.0,0.02,0.0,0.0
+Beer,🍺,Pantry,180,,168746,"Alcoholic beverage, beer, regular, all",43.0,0.46,3.55,0.0,0.0,0.0
+Wine,🍷,Pantry,365,"red wine,white wine",173190,"Alcoholic beverage, wine, table, red",85.0,0.07,2.61,0.0,0.0,0.62
+Omelette,🍳,Dairy,1,"omelet,scrambled eggs",172187,"Egg, whole, cooked, scrambled",149.0,9.99,1.61,10.98,0.0,1.39
+Pancakes,🥞,Pantry,2,"pancake,crepes",175009,"Pancakes, plain, prepared from recipe",227.0,6.4,28.3,9.7,0.0,0.0
+Hamburger,🍔,Meat,1,"burger,cheeseburger",170693,"Fast foods, hamburger; single, regular patty; plain",297.0,16.52,31.5,12.01,1.7,4.88
+Mashed potatoes,🥔,Produce,3,"mash,potato puree",168555,"Potatoes, mashed, home-prepared, whole milk and butter added",113.0,1.86,16.81,4.22,1.5,1.43

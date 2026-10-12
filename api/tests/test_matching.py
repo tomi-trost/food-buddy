@@ -61,3 +61,19 @@ async def test_seed_carries_mock_metadata(seeded):
     assert ing.location == "pantry"
     chicken = (await match_ingredient(seeded, "chicken breast")).ingredient
     assert chicken.location == "fridge"
+
+
+async def test_tie_goes_to_the_closest_term_not_the_shortest_name(session):
+    from app.nutrition.models import Ingredient
+
+    macros = dict(kcal=0, protein=0, carbs=0, fat=0)
+    session.add_all(
+        [
+            Ingredient(name="Pepper", source="custom", **macros),
+            Ingredient(name="Black pepper", source="custom", **macros),
+        ]
+    )
+    await session.commit()
+    # both names appear whole in the phrase (word_similarity 1.0)
+    match = await match_ingredient(session, "ground black pepper")
+    assert match.ingredient.name == "Black pepper"

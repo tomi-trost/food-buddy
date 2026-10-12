@@ -1,10 +1,12 @@
-"""Seed the ingredient table with the mock's ingredient list (until USDA/Ciqual import lands).
+"""Seed the ingredient table: the mock's list plus the USDA and Ciqual catalogs of common foods.
 
-Run: python -m app.nutrition.seed
+Run: python -m app.nutrition.seed (the api container does this on every start; idempotent).
 """
 
 import asyncio
+import csv
 from dataclasses import asdict, dataclass, field
+from pathlib import Path
 
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -128,14 +130,46 @@ MOCK_INGREDIENTS = [
         0,
         0.15,
         400,
-        ["tomato sauce", "chopped tomatoes"],
+        ["chopped tomatoes", "tinned tomatoes"],
     ),
     SeedIngredient("Banana", "🍌", "Produce", 89, 1.1, 23, 0.3, 2.6, 12, 0.2, 5),
 ]
 
 
+# Hand-picked common foods: USDA SR Legacy (public domain) and ANSES-CIQUAL 2020 (Etalab open
+# licence) for European/Italian ones. Built by scripts/build_catalog.py from scripts/*_catalog.txt.
+CATALOG_DIR = Path(__file__).parent / "data"
+CATALOG_SOURCES = ("usda", "ciqual")
+NUMBERS = ("kcal", "protein", "carbs", "fat", "fiber", "sugar")
+
+
+def catalog(source: str) -> list[dict]:
+    with open(CATALOG_DIR / f"{source}_catalog.csv", newline="", encoding="utf-8") as f:
+        return [
+            {
+                "name": r["name"],
+                "emoji": r["emoji"],
+                "category": r["category"],
+                "shelf_days": int(r["shelf_days"]),
+                "aliases": [a for a in r["aliases"].split(",") if a],
+                **{k: float(r[k]) for k in NUMBERS},
+                "price_per_100g": 0,  # unknown until someone enters a price
+                "source": source,
+            }
+            for r in csv.DictReader(f)
+        ]
+
+
 async def seed_mock(session: AsyncSession) -> None:
-    rows = [asdict(i) | {"source": "mock"} for i in MOCK_INGREDIENTS]
+    await _upsert(session, [asdict(i) | {"source": "mock"} for i in MOCK_INGREDIENTS])
+
+
+async def seed_catalog(session: AsyncSession) -> None:
+    for source in CATALOG_SOURCES:
+        await _upsert(session, catalog(source))
+
+
+async def _upsert(session: AsyncSession, rows: list[dict]) -> None:
     stmt = insert(Ingredient).values(rows)
     updatable = {k for k in rows[0] if k not in ("name", "source")}
     stmt = stmt.on_conflict_do_update(
@@ -148,6 +182,7 @@ async def seed_mock(session: AsyncSession) -> None:
 async def _main() -> None:
     async with SessionLocal() as session:
         await seed_mock(session)
+        await seed_catalog(session)
 
 
 if __name__ == "__main__":
