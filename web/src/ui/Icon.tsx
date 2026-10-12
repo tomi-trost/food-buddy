@@ -13,6 +13,7 @@ const PATHS = {
   grid: '<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/>',
   sort: '<path d="M4 7h16M7 12h10M10 17h4"/>',
   camera: '<path d="M4 8h3l2-3h6l2 3h3v12H4z"/><circle cx="12" cy="13" r="3.5"/>',
+  edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
   back: '<path d="M15 5l-7 7 7 7"/>',
   chev: '<path d="M9 5l7 7-7 7"/>',

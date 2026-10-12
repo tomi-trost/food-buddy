@@ -79,8 +79,9 @@ describe('MealPage', () => {
     expect(screen.getByTestId('macro-kcal')).toHaveTextContent('552')
     expect(screen.getByText(/^Left us hungry\. Try \+50 g/)).toBeInTheDocument()
 
+    expect(within(screen.getByLabelText('Your rating')).getByText('Not rated yet')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Ratings' }))
-    expect(screen.getByText('Not rated yet')).toBeInTheDocument()
+    expect(screen.getAllByText('Not rated yet')).toHaveLength(2) // my card on top and in the tab
     expect(screen.getByText(/Make again: yes · Worth the effort: maybe · Filling: left us hungry/)).toBeInTheDocument()
   })
 
@@ -106,19 +107,20 @@ describe('MealPage', () => {
       return jsonResponse(rated)
     })
     renderMeal()
-    fireEvent.click(await screen.findByRole('button', { name: 'Ratings' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Edit' }))
+    const card = await screen.findByLabelText('Your rating')
+    expect(within(card).getByRole('img', { name: '4 of 5 stars' })).toBeInTheDocument()
+    fireEvent.click(within(card).getByRole('button', { name: 'Change' }))
     fireEvent.click(within(screen.getByRole('dialog', { name: 'Rate meal' })).getByRole('button', { name: 'Remove my rating' }))
     expect(await screen.findByText('Rating removed')).toBeInTheDocument()
     expect(fetch.mock.calls.find(([, i]) => i?.method === 'DELETE')![0]).toBe('/api/meals/3/rating')
-    expect(screen.getByText('Not rated yet')).toBeInTheDocument()
+    expect(within(screen.getByLabelText('Your rating')).getByText('Not rated yet')).toBeInTheDocument()
   })
 
   it('offers no removal before I rated', async () => {
     mealApi()
     renderMeal()
-    fireEvent.click(await screen.findByRole('button', { name: 'Ratings' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Rate' }))
+    fireEvent.click(within(await screen.findByLabelText('Your rating')).getByRole('button', { name: 'Rate' }))
+    expect(screen.getByRole('dialog', { name: 'Rate meal' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Remove my rating' })).not.toBeInTheDocument()
   })
 

@@ -68,6 +68,20 @@ export function MealPage() {
             <div><b>{ago(m.last_cooked, today)}</b><small>last cooked</small></div>
             <div><b>{m.score !== null ? Math.round(m.score * 10) / 10 : '–'}</b><small>avg rating</small></div>
           </div>
+          {(() => {
+            const mine = m.ratings.find((r) => r.user_id === me.id)?.rating
+            return (
+              <div className="card row" style={{ marginTop: 14 }} aria-label="Your rating">
+                <div className="sp">
+                  <h3>Your rating</h3>
+                  {mine
+                    ? <div className="row" style={{ gap: 6, marginTop: 4 }}><Stars value={mine.taste} size={18} /><span className="sub">{mine.taste}</span></div>
+                    : <div className="sub">Not rated yet</div>}
+                </div>
+                <button className="btn sm ghost" onClick={() => setRating(true)}>{mine ? 'Change' : 'Rate'}</button>
+              </div>
+            )
+          })()}
           <div style={{ marginTop: 14 }}>
             <Toggle<Tab> label="Meal sections" value={tab} onChange={setTab}
               options={[{ value: 'recipe', label: 'Recipe' }, { value: 'nutrition', label: 'Nutrition' }, { value: 'ratings', label: 'Ratings' }]} />
@@ -125,7 +139,6 @@ export function MealPage() {
                 <div className="row">
                   <Avatar name={r.name} color={r.color} size={34} />
                   <h3 className="sp">{isMe ? 'You' : r.name}</h3>
-                  {isMe && <button className="btn sm ghost" onClick={() => setRating(true)}>{r.rating ? 'Edit' : 'Rate'}</button>}
                 </div>
                 {r.rating ? (
                   <>

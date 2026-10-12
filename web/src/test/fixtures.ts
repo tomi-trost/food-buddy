@@ -1,4 +1,4 @@
-import type { AnalysisJob, Ingredient, Me, Meal, MealCard, MemberInsights, Nutrients, Plan, Reward, Shopping } from '../api/types'
+import type { AnalysisJob, Ingredient, Me, Meal, MealCard, LogEntry, MemberInsights, Nutrients, Plan, Reward, Shopping } from '../api/types'
 
 export const me = (over: Partial<Me> = {}): Me => ({
   id: 1,
@@ -130,4 +130,10 @@ export const memberInsights = (over: Partial<MemberInsights> = {}): MemberInsigh
 
 export const reward = (over: Partial<Reward> = {}): Reward => ({
   user_id: 1, name: 'Tomi', color: '#b9532f', treat_free_days: 3, earned: 1, used: 0, available: 1, progress: 1, per: 2, ...over,
+})
+
+export const logEntry = (over: Partial<LogEntry> = {}): LogEntry => ({
+  id: 1, meal_type: 'lunch', name: 'Chicken rice bowl', emoji: '🍚', kind: 'meal', snack_kind: null, is_reward: false,
+  meal_id: 3, nutrients: n(551.7, 51.9, 56, 9.9, 0.8, 0), logged_at: '2026-10-04T12:30:00', servings: 1, per: null, per_unit: null,
+  ...over,
 })

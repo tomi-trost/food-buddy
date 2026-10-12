@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
+import { Link } from 'react-router'
 import { api } from '../api/client'
 import type { LogEntry, Me } from '../api/types'
 import { todayISO } from '../lib/dates'
@@ -34,11 +35,13 @@ export function SnacksCard({ me, entries }: { me: Me; entries: LogEntry[] }) {
       <h2>Snacks</h2>
       <div className="card">
         <div className="row">
-          <span style={{ color: 'var(--sg)', display: 'flex' }}><Icon name="cube" size={26} /></span>
-          <div className="sp">
-            <h3>{snacks} snack{snacks === 1 ? '' : 's'} today · {Math.round(sugar)} g treat sugar</h3>
-            <div className="sub">{over ? `Over your ${goal} g goal` : `Treat sugar goal ${goal} g`}</div>
-          </div>
+          <Link to="/insights?tab=snacks" className="row sp" style={{ textDecoration: 'none', color: 'inherit' }} aria-label="Snack insights">
+            <span style={{ color: 'var(--sg)', display: 'flex' }}><Icon name="cube" size={26} /></span>
+            <div className="sp">
+              <h3>{snacks} snack{snacks === 1 ? '' : 's'} today · {Math.round(sugar)} g treat sugar</h3>
+              <div className="sub">{over ? `Over your ${goal} g goal` : `Treat sugar goal ${goal} g`}</div>
+            </div>
+          </Link>
           <button className="btn sm ghost" onClick={() => setLogging(true)}><Icon name="plus" size={16} /> Log</button>
         </div>
         <div style={{ marginTop: 10 }}>

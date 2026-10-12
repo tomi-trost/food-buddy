@@ -3,14 +3,14 @@ import { Route } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { tokenStore } from '../api/client'
 import type { LogEntry } from '../api/types'
-import { analysisJob, me, memberInsights, reward } from '../test/fixtures'
+import { analysisJob, logEntry, me, memberInsights, reward } from '../test/fixtures'
 import { jsonResponse, mockFetch, renderAt } from '../test/utils'
 import { SnackPage } from '../pages/SnackPage'
 import { SnacksCard } from './SnacksCard'
 import { SnacksInsights } from './SnacksInsights'
 
 const n = (kcal: number, sugar: number) => ({ kcal, protein: 2, carbs: 19, fat: 6, fiber: 0.5, sugar })
-const cookie: LogEntry = { id: 9, meal_type: 'snack', name: 'Cookie', emoji: '🍪', kind: 'snack', snack_kind: 'sweet', is_reward: false, meal_id: null, nutrients: n(140, 10) }
+const cookie: LogEntry = logEntry({ id: 9, meal_type: 'snack', name: 'Cookie', emoji: '🍪', kind: 'snack', snack_kind: 'sweet', meal_id: null, nutrients: n(140, 10), per: 'piece', per_unit: n(140, 10) })
 const catalog = [{ key: 'cookie', name: 'Cookie', emoji: '🍪', kind: 'sweet', per_unit: n(140, 10) }, { key: 'chips', name: 'Chips', emoji: '🥔', kind: 'savory', per_unit: n(210, 1) }]
 
 function api(extra: (url: string, init?: RequestInit) => Response | undefined = () => undefined) {
@@ -46,9 +46,35 @@ describe('SnacksCard', () => {
     fireEvent.click(screen.getByRole('button', { name: /Log/ }))
     const sheet = screen.getByRole('dialog', { name: 'Log a snack' })
     fireEvent.click(await within(sheet).findByRole('button', { name: /Chips/ }))
+    expect(fetch.mock.calls.find(([u]) => u === '/api/snacks')).toBeUndefined() // confirm first
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Log snack' }))
     await screen.findByText('Cookie logged · 10 g treat sugar')
     const [, init] = fetch.mock.calls.find(([u]) => u === '/api/snacks')!
     expect(JSON.parse(String(init!.body))).toMatchObject({ name: 'Chips', kind: 'savory', source: 'list', per: 'piece', amount: 1 })
+  })
+
+  it('lets you set the portion and fix the values before logging from the list', async () => {
+    const fetch = api()
+    renderAt('/', <Route path="/" element={<SnacksCard me={me()} entries={[]} />} />)
+    fireEvent.click(screen.getByRole('button', { name: /Log/ }))
+    const sheet = screen.getByRole('dialog', { name: 'Log a snack' })
+    fireEvent.click(await within(sheet).findByRole('button', { name: /Cookie/ }))
+    fireEvent.click(within(sheet).getByLabelText('Less amount')) // half a piece
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Edit values' }))
+    fireEvent.change(within(sheet).getByLabelText('sugar (g)'), { target: { value: '9' } })
+    expect(within(sheet).getByTestId('macro-sugar')).toHaveTextContent('5 g') // 9 × 0.5 = 4.5
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Log snack' }))
+    await screen.findByText(/Cookie logged/)
+    const [, init] = fetch.mock.calls.find(([u]) => u === '/api/snacks')!
+    const body = JSON.parse(String(init!.body))
+    expect(body).toMatchObject({ name: 'Cookie', amount: 0.5 })
+    expect(body.per_unit.sugar).toBe(9)
+  })
+
+  it('links to the snack insights', () => {
+    api()
+    renderAt('/', <Route path="/" element={<SnacksCard me={me()} entries={[]} />} />)
+    expect(screen.getByRole('link', { name: 'Snack insights' })).toHaveAttribute('href', '/insights?tab=snacks')
   })
 
   it('warns when over the sugar goal and shows progress to the next pass', async () => {

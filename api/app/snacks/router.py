@@ -9,7 +9,7 @@ from app.auth.deps import CurrentUser, Session
 from app.auth.service import household_members
 from app.logs.models import FoodLog
 from app.logs.router import is_treat
-from app.nutrition.macros import Nutrients
+from app.logs.service import snack_nutrients
 from app.snacks.catalog import CATALOG, CROISSANT, CatalogItem
 from app.snacks.schemas import SnackIn
 
@@ -47,8 +47,6 @@ async def catalog(_: CurrentUser) -> list[CatalogItem]:
 async def log_snack(body: SnackIn, user: CurrentUser, session: Session) -> LoggedOut:
     if body.analysis_id is not None:
         close(await lock_open_job(session, user, body.analysis_id))
-    factor = body.amount if body.per == "piece" else body.amount / 100
-    nutrients = Nutrients(**body.per_unit.model_dump()).scaled(factor * 100)
     entry = FoodLog(
         household_id=user.household_id,
         user_id=user.id,
@@ -59,8 +57,11 @@ async def log_snack(body: SnackIn, user: CurrentUser, session: Session) -> Logge
         kind="snack",
         snack_kind=body.kind,
         source=body.source,
+        per=body.per,
+        servings=body.amount,
+        per_unit=body.per_unit.model_dump(),
     )
-    entry.set_nutrients(nutrients)
+    entry.set_nutrients(snack_nutrients(entry))
     session.add(entry)
     await session.commit()
     return LoggedOut(
@@ -132,8 +133,11 @@ async def use_reward(body: UseIn, user: CurrentUser, session: Session) -> list[R
         snack_kind="sweet",
         is_reward=True,
         source="reward",
+        per="piece",
+        servings=1,
+        per_unit=CROISSANT.per_unit.model_dump(),
     )
-    entry.set_nutrients(Nutrients(**CROISSANT.per_unit.model_dump()))
+    entry.set_nutrients(snack_nutrients(entry))
     session.add(entry)
     await session.commit()
     return await rewards_for(session, user, body.today)

@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import type { LogEntry } from '../api/types'
 import { isTreat, snackNutrients, treatSugarToday } from './snacks'
+import { logEntry } from '../test/fixtures'
 
 const n = (kcal: number, sugar: number) => ({ kcal, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar })
 const entry = (over: Partial<LogEntry>): LogEntry => ({
-  id: 1, meal_type: 'snack', name: 'x', emoji: '', kind: 'snack', snack_kind: 'sweet', is_reward: false, meal_id: null, nutrients: n(100, 10), ...over,
+  ...logEntry({ meal_type: 'snack', name: 'x', emoji: '', kind: 'snack', snack_kind: 'sweet', meal_id: null, nutrients: n(100, 10) }), ...over,
 })
 
 describe('snacks', () => {

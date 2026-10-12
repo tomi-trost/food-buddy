@@ -1,5 +1,5 @@
 import type {
-  AnalysisJob, CatalogItem, CookIn, Day, Insights, Reward, SnackIn, HouseholdPatch, Ingredient, Me, Meal, MealCard, MealCreate, MealPatch, MealType, MePatch, Plan, PushConfig, PushKind, PlanMode, Rating, RegisterBody, Shopping, StockItem, WizardCell,
+  AnalysisJob, CatalogItem, CookIn, Day, Insights, LogEntry, LogPatch, Reward, SnackIn, HouseholdPatch, Ingredient, Me, Meal, MealCard, MealCreate, MealPatch, MealType, MePatch, Plan, PushConfig, PushKind, PlanMode, Rating, RegisterBody, Shopping, StockItem, WizardCell,
 } from './types'
 
 const TOKEN_KEY = 'fb.token'
@@ -122,6 +122,10 @@ export const api = {
   },
   unrateMeal: (id: number) => json<Meal>(`/meals/${id}/rating`, { method: 'DELETE' }),
   day: (date: string) => json<Day>(`/day?date=${date}`),
+  editLog: (id: number, patch: LogPatch) => json<LogEntry>(`/log/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),
+  async removeLog(id: number) {
+    await request(`/log/${id}`, { method: 'DELETE' })
+  },
   insights: (end: string, days = 7) => json<Insights>(`/insights?end=${end}&days=${days}`),
   snackCatalog: () => json<CatalogItem[]>('/snacks/catalog'),
   logSnack: (body: SnackIn) =>

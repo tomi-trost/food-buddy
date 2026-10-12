@@ -1,6 +1,7 @@
 from datetime import date
 
 from sqlalchemy import Date, Float, ForeignKey, String
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base, TimestampMixin
@@ -24,7 +25,9 @@ class FoodLog(TimestampMixin, Base):
     snack_kind: Mapped[str | None] = mapped_column(String(10))  # sweet|savory|drink
     is_reward: Mapped[bool] = mapped_column(default=False)
     source: Mapped[str] = mapped_column(String(10))  # snap|cook|list|photo|label|reward
-    servings: Mapped[float] = mapped_column(Float, default=1)  # meals: portions eaten
+    servings: Mapped[float] = mapped_column(Float, default=1)  # portions (meals), pieces/g (snacks)
+    per: Mapped[str | None] = mapped_column(String(5))  # snacks: piece | 100g
+    per_unit: Mapped[dict | None] = mapped_column(JSONB)  # snacks: values per piece / per 100 g
     kcal: Mapped[float] = mapped_column(Float, default=0)
     protein: Mapped[float] = mapped_column(Float, default=0)
     carbs: Mapped[float] = mapped_column(Float, default=0)

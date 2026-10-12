@@ -228,7 +228,14 @@ export type LogEntry = {
   is_reward: boolean
   meal_id: number | null
   nutrients: Nutrients
+  logged_at: string // ISO time it was logged: places snacks between the meals
+  servings: number // portions (meals), pieces or grams (snacks)
+  per: 'piece' | '100g' | null // snacks
+  per_unit: Nutrients | null // snacks: values per piece / per 100 g
 }
+
+/** Meals: portions and which meal it was. Snacks: amount and values per unit. */
+export type LogPatch = Partial<{ servings: number; meal_type: MealType; per_unit: Nutrients }>
 
 export type Day = { date: string; totals: Nutrients; entries: LogEntry[] }
 

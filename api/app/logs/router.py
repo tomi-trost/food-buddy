@@ -1,18 +1,22 @@
 from collections import defaultdict
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
+from typing import Literal
 
-from fastapi import APIRouter, Query
-from pydantic import BaseModel
-from sqlalchemy import func, select
+from fastapi import APIRouter, HTTPException, Query, Response, status
+from pydantic import BaseModel, Field
+from sqlalchemy import delete, func, select
 
 from app.auth.deps import CurrentUser, Session
 from app.auth.router import GoalsOut
 from app.auth.service import household_members
 from app.logs.models import FoodLog
-from app.meals.models import Meal
+from app.logs.service import snack_nutrients
+from app.meals.models import CookLog, Meal
+from app.meals.service import per_portion
 from app.nutrition.macros import Nutrients, total
 from app.nutrition.schemas import NutrientsOut
 from app.ratings.models import Rating
+from app.snacks.schemas import NutrientsIn
 
 router = APIRouter(tags=["logs"])
 
@@ -29,6 +33,36 @@ class LogEntry(BaseModel):
     is_reward: bool
     meal_id: int | None
     nutrients: NutrientsOut
+    logged_at: datetime  # when it was logged: places snacks between the meals
+    servings: float  # portions (meals), pieces or grams (snacks)
+    per: str | None  # snacks: piece | 100g
+    per_unit: NutrientsOut | None  # snacks: values per piece / per 100 g
+
+
+class LogPatch(BaseModel):
+    """Meals: portions eaten and which meal it was. Snacks: amount and values per unit."""
+
+    servings: float | None = Field(default=None, gt=0, le=2000)
+    meal_type: Literal["breakfast", "lunch", "dinner"] | None = None
+    per_unit: NutrientsIn | None = None
+
+
+def entry_out(e: FoodLog) -> LogEntry:
+    return LogEntry(
+        id=e.id,
+        meal_type=e.meal_type,
+        name=e.name,
+        emoji=e.emoji,
+        kind=e.kind,
+        snack_kind=e.snack_kind,
+        is_reward=e.is_reward,
+        meal_id=e.meal_id,
+        nutrients=NutrientsOut(**e.nutrients.rounded()),
+        logged_at=e.created_at,
+        servings=e.servings,
+        per=e.per,
+        per_unit=NutrientsOut(**e.per_unit) if e.per_unit else None,
+    )
 
 
 class DayOut(BaseModel):
@@ -72,21 +106,70 @@ async def my_day(user: CurrentUser, session: Session, date: date) -> DayOut:
     return DayOut(
         date=date,
         totals=NutrientsOut(**total(e.nutrients for e in entries).rounded()),
-        entries=[
-            LogEntry(
-                id=e.id,
-                meal_type=e.meal_type,
-                name=e.name,
-                emoji=e.emoji,
-                kind=e.kind,
-                snack_kind=e.snack_kind,
-                is_reward=e.is_reward,
-                meal_id=e.meal_id,
-                nutrients=NutrientsOut(**e.nutrients.rounded()),
-            )
-            for e in entries
-        ],
+        entries=[entry_out(e) for e in entries],
     )
+
+
+async def own_entry(session, user, entry_id: int) -> FoodLog:
+    entry = await session.get(FoodLog, entry_id)
+    if entry is None or entry.user_id != user.id:  # only what I ate, not my partner's
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Entry not found")
+    return entry
+
+
+@router.patch("/log/{entry_id}")
+async def edit_entry(
+    entry_id: int, body: LogPatch, user: CurrentUser, session: Session
+) -> LogEntry:
+    entry = await own_entry(session, user, entry_id)
+    if entry.kind == "meal":
+        if body.per_unit is not None:
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_CONTENT, "A meal's values are edited on the meal"
+            )
+        if body.servings is not None:
+            if body.servings > 10 or body.servings * 2 != int(body.servings * 2):
+                raise HTTPException(
+                    status.HTTP_422_UNPROCESSABLE_CONTENT, "Portions go in halves, up to 10"
+                )
+            meal = await session.get(Meal, entry.meal_id) if entry.meal_id else None
+            # meal deleted but entry kept: scale what was logged
+            per_one = per_portion(meal) if meal else entry.nutrients.scaled(100 / entry.servings)
+            entry.servings = body.servings
+            entry.set_nutrients(per_one.scaled(body.servings * 100))
+        if body.meal_type is not None:
+            entry.meal_type = body.meal_type
+    else:
+        if body.meal_type is not None:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Snacks stay snacks")
+        if body.servings is not None:
+            entry.servings = body.servings
+        if body.per_unit is not None:
+            entry.per_unit = body.per_unit.model_dump()
+        entry.set_nutrients(snack_nutrients(entry))
+    await session.commit()
+    return entry_out(entry)
+
+
+@router.delete("/log/{entry_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_entry(entry_id: int, user: CurrentUser, session: Session) -> Response:
+    """Off the day. A meal stays in the library; its cook count drops by this one."""
+    entry = await own_entry(session, user, entry_id)
+    if entry.meal_id is not None:
+        cook = await session.scalar(
+            select(CookLog.id)
+            .where(
+                CookLog.meal_id == entry.meal_id,
+                CookLog.user_id == user.id,
+                CookLog.cooked_on == entry.eaten_on,
+            )
+            .limit(1)
+        )
+        if cook is not None:
+            await session.execute(delete(CookLog).where(CookLog.id == cook))
+    await session.delete(entry)
+    await session.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/insights")

@@ -3,9 +3,11 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { api } from '../api/client'
 import { useMe } from '../api/hooks'
-import type { MealType, Nutrients, PlanSlot } from '../api/types'
+import type { LogEntry, Nutrients, PlanSlot } from '../api/types'
+import { EntrySheet } from '../day/EntrySheet'
 import { MEAL_TYPE_LABEL, todayISO } from '../lib/dates'
 import { expiryClass } from '../lib/stock'
+import { todayRows } from '../lib/today'
 import { ProgressBar, Ring } from '../ui/charts'
 import { Avatar } from '../ui/Avatar'
 import { Icon } from '../ui/Icon'
@@ -14,7 +16,6 @@ import { Photo } from '../ui/Photo'
 import { SnacksCard } from '../snacks/SnacksCard'
 import { SettingsSheet } from './SettingsSheet'
 
-const TYPES: MealType[] = ['breakfast', 'lunch', 'dinner']
 // Carbs and fat have no personal goal in the mock; it uses these reference amounts.
 const CARBS_REF = 250
 const FAT_REF = 75
@@ -23,6 +24,7 @@ export function HomePage() {
   const me = useMe().data
   const today = todayISO()
   const [settings, setSettings] = useState(false)
+  const [entry, setEntry] = useState<LogEntry | null>(null)
   const day = useQuery({ queryKey: ['day', today], queryFn: () => api.day(today) })
   const plan = useQuery({ queryKey: ['plan'], queryFn: api.plan })
   const meals = useQuery({ queryKey: ['meals'], queryFn: api.meals })
@@ -65,27 +67,41 @@ export function HomePage() {
 
       <h2>Today</h2>
       <div className="card" style={{ padding: '4px 14px' }}>
-        <div className="list">
-          {TYPES.map((t) => {
-            const entries = (day.data?.entries ?? []).filter((e) => e.meal_type === t)
-            return (
-              <div key={t} style={{ alignItems: 'flex-start' }}>
-                <span className="sub" style={{ width: 70, paddingTop: 2, fontWeight: 600 }}>{MEAL_TYPE_LABEL[t]}</span>
-                <div className="sp">
-                  {entries.length ? entries.map((e) => (
-                    <div key={e.id} style={{ marginBottom: 4 }}>
-                      {e.emoji} {e.name} <span className="sub">· {Math.round(e.nutrients.kcal)} kcal</span>
-                    </div>
-                  )) : <span className="sub">Not logged</span>}
-                </div>
-                <Link to={`/snap?type=${t}`} className="icon" style={{ width: 36, height: 36 }} aria-label={`Log ${MEAL_TYPE_LABEL[t]}`}>
-                  <Icon name="plus" size={18} />
-                </Link>
+        <div className="list" aria-label="Today">
+          {todayRows(day.data?.entries ?? []).map((row) => row.kind === 'snack' ? (
+            <button key={`s${row.entry.id}`} className="today-snack" onClick={() => setEntry(row.entry)}>
+              <span className="sub" style={{ width: 70 }}>{row.time}</span>
+              <span className="sp">{row.entry.emoji} {row.entry.name} <span className="sub">· {Math.round(row.entry.nutrients.kcal)} kcal</span></span>
+            </button>
+          ) : (
+            <div key={row.mealType} style={{ alignItems: 'flex-start' }}>
+              <span className="sub" style={{ width: 70, paddingTop: 2, fontWeight: 600 }}>{MEAL_TYPE_LABEL[row.mealType]}</span>
+              <div className="sp">
+                {row.entries.length ? row.entries.map((e) => (
+                  <div key={e.id} className="today-entry">
+                    {e.meal_id ? (
+                      <Link to={`/meals/${e.meal_id}`} className="sp">
+                        {e.emoji} {e.name} <span className="sub">· {Math.round(e.nutrients.kcal)} kcal</span>
+                      </Link>
+                    ) : (
+                      <button className="sp" onClick={() => setEntry(e)}>
+                        {e.emoji} {e.name} <span className="sub">· {Math.round(e.nutrients.kcal)} kcal</span>
+                      </button>
+                    )}
+                    <button className="icon" style={{ width: 32, height: 32 }} aria-label={`Change ${e.name}`} onClick={() => setEntry(e)}>
+                      <Icon name="edit" size={16} />
+                    </button>
+                  </div>
+                )) : <span className="sub">Not logged</span>}
               </div>
-            )
-          })}
+              <Link to={`/snap?type=${row.mealType}`} className="icon" style={{ width: 36, height: 36 }} aria-label={`Log ${MEAL_TYPE_LABEL[row.mealType]}`}>
+                <Icon name="plus" size={18} />
+              </Link>
+            </div>
+          ))}
         </div>
       </div>
+      <EntrySheet entry={entry} onClose={() => setEntry(null)} />
 
       {me && <SnacksCard me={me} entries={day.data?.entries ?? []} />}
 

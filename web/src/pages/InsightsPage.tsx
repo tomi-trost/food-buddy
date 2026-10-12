@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { type CSSProperties, useState } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { api } from '../api/client'
 import { useMe } from '../api/hooks'
 import type { MealCard, MemberInsights } from '../api/types'
@@ -25,7 +25,8 @@ export function InsightsPage() {
   const navigate = useNavigate()
   const me = useMe().data
   const today = todayISO()
-  const [tab, setTab] = useState<Tab>('overview')
+  const [params] = useSearchParams()
+  const [tab, setTab] = useState<Tab>(params.get('tab') === 'snacks' ? 'snacks' : params.get('tab') === 'versus' ? 'versus' : 'overview')
   const [who, setWho] = useState<number | null>(null)
   const insights = useQuery({ queryKey: ['insights', today], queryFn: () => api.insights(today) })
   const meals = useQuery({ queryKey: ['meals'], queryFn: api.meals })

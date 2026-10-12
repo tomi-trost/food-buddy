@@ -3,7 +3,7 @@ import { Route } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { tokenStore } from '../api/client'
 import type { Day } from '../api/types'
-import { card, ING, me, memberInsights, plan, reward } from '../test/fixtures'
+import { card, ING, logEntry, me, memberInsights, plan, reward } from '../test/fixtures'
 import { jsonResponse, mockFetch, renderAt } from '../test/utils'
 import { HomePage } from './HomePage'
 import { InsightsPage } from './InsightsPage'
@@ -14,8 +14,8 @@ const day: Day = {
   date: '2026-10-04',
   totals: n(1030, 59, 104, 40, 16, 9),
   entries: [
-    { id: 1, meal_type: 'breakfast', name: 'Avocado egg toast', emoji: '🥑', kind: 'meal', snack_kind: null, is_reward: false, meal_id: 5, nutrients: n(410, 17, 34, 24, 9, 3) },
-    { id: 2, meal_type: 'lunch', name: 'Chicken rice bowl', emoji: '🍚', kind: 'meal', snack_kind: null, is_reward: false, meal_id: 8, nutrients: n(620, 42, 70, 16, 7, 6) },
+    logEntry({ id: 1, meal_type: 'breakfast', name: 'Avocado egg toast', emoji: '🥑', meal_id: 5, nutrients: n(410, 17, 34, 24, 9, 3), logged_at: '2026-10-04T08:10:00' }),
+    logEntry({ id: 2, meal_type: 'lunch', name: 'Chicken rice bowl', emoji: '🍚', meal_id: 8, nutrients: n(620, 42, 70, 16, 7, 6), logged_at: '2026-10-04T12:40:00' }),
   ],
 }
 
@@ -58,6 +58,69 @@ describe('HomePage', () => {
     expect(screen.getByText(/Avocado egg toast/)).toBeInTheDocument()
     expect(screen.getByText('Not logged')).toBeInTheDocument() // dinner
     expect(screen.getByRole('link', { name: 'Log Dinner' })).toHaveAttribute('href', '/snap?type=dinner')
+  })
+
+  it('lists snacks between the meals by time and edits a meal entry', async () => {
+    const cake = logEntry({
+      id: 3, meal_type: 'snack', kind: 'snack', snack_kind: 'sweet', name: 'Cake slice', emoji: '🍰', meal_id: null,
+      nutrients: n(350, 4, 45, 17, 1, 30), logged_at: '2026-10-04T10:20:00', per: 'piece', per_unit: n(350, 4, 45, 17, 1, 30),
+    })
+    const fetch = mockFetch((url, init) => {
+      if (init?.method === 'PATCH') return jsonResponse(day.entries[1])
+      if (url.startsWith('/api/day')) return jsonResponse({ ...day, entries: [...day.entries, cake] })
+      if (url.startsWith('/api/auth/me')) return jsonResponse(me())
+      return jsonResponse(url.startsWith('/api/meals') || url.startsWith('/api/inventory') || url.startsWith('/api/rewards') ? [] : null)
+    })
+    renderAt('/', <Route path="/" element={<HomePage />} />)
+    const today = await screen.findByLabelText('Today')
+    await within(today).findByText(/Cake slice/)
+    const rows = [...today.children].map((r) => r.textContent!.replace(/\s+/g, ' ').trim())
+    expect(rows[0]).toMatch(/^Breakfast.*Avocado egg toast/)
+    expect(rows[1]).toMatch(/^10:20.*Cake slice · 350 kcal/)
+    expect(rows[2]).toMatch(/^Lunch.*Chicken rice bowl/)
+
+    expect(within(today).getByRole('link', { name: /Chicken rice bowl/ })).toHaveAttribute('href', '/meals/8')
+    fireEvent.click(within(today).getByRole('button', { name: 'Change Chicken rice bowl' }))
+    const sheet = screen.getByRole('dialog', { name: 'What you ate' })
+    expect(within(sheet).getByRole('link', { name: 'Open the meal' })).toHaveAttribute('href', '/meals/8')
+    fireEvent.click(within(sheet).getByLabelText('Less portions eaten'))
+    expect(within(sheet).getByTestId('macro-kcal')).toHaveTextContent('310') // 620 × 0.5
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Dinner' }))
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Save' }))
+    await screen.findByText('Updated')
+    const [url, init] = fetch.mock.calls.find(([, i]) => i?.method === 'PATCH')!
+    expect(url).toBe('/api/log/2')
+    expect(JSON.parse(String(init!.body))).toEqual({ servings: 0.5, meal_type: 'dinner' })
+  })
+
+  it('changes a logged snack\'s amount and values, or removes an entry', async () => {
+    const cake = logEntry({
+      id: 3, meal_type: 'snack', kind: 'snack', snack_kind: 'sweet', name: 'Cake slice', emoji: '🍰', meal_id: null,
+      nutrients: n(350, 4, 45, 17, 1, 30), logged_at: '2026-10-04T10:20:00', per: 'piece', per_unit: n(350, 4, 45, 17, 1, 30),
+    })
+    const fetch = mockFetch((url, init) => {
+      if (init?.method === 'PATCH') return jsonResponse(cake)
+      if (init?.method === 'DELETE') return new Response(null, { status: 204 })
+      if (url.startsWith('/api/day')) return jsonResponse({ ...day, entries: [cake] })
+      if (url.startsWith('/api/auth/me')) return jsonResponse(me())
+      return jsonResponse(url.startsWith('/api/meals') || url.startsWith('/api/inventory') || url.startsWith('/api/rewards') ? [] : null)
+    })
+    renderAt('/', <Route path="/" element={<HomePage />} />)
+    fireEvent.click(await screen.findByRole('button', { name: /Cake slice/ }))
+    let sheet = screen.getByRole('dialog', { name: 'What you ate' })
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Edit values' }))
+    fireEvent.change(within(sheet).getByLabelText('sugar (g)'), { target: { value: '9' } })
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Done' }))
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Save' }))
+    await screen.findByText('Updated')
+    const [, init] = fetch.mock.calls.find(([, i]) => i?.method === 'PATCH')!
+    expect(JSON.parse(String(init!.body))).toEqual({ servings: 1, per_unit: { ...n(350, 4, 45, 17, 1, 30), sugar: 9 } })
+
+    fireEvent.click(screen.getByRole('button', { name: /Cake slice/ }))
+    sheet = screen.getByRole('dialog', { name: 'What you ate' })
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Remove from today' }))
+    await screen.findByText('Cake slice removed from today')
+    expect(fetch.mock.calls.find(([, i]) => i?.method === 'DELETE')![0]).toBe('/api/log/3')
   })
 
   it('suggests planning, rating and using food soon', async () => {
@@ -106,6 +169,12 @@ describe('InsightsPage', () => {
     expect(screen.getByText('3/5')).toBeInTheDocument() // fiber days
     fireEvent.click(screen.getByRole('button', { name: 'Protein push' }))
     expect(screen.getByText('Hit 110 g protein on 5 days')).toBeInTheDocument()
+  })
+
+  it('opens on the tab from the link', async () => {
+    api()
+    renderAt('/insights?tab=snacks', <Route path="/insights" element={<InsightsPage />} />)
+    expect(await screen.findByRole('button', { name: 'Snacks' })).toHaveAttribute('aria-pressed', 'true')
   })
 
   it('asks to invite the partner when alone', async () => {
