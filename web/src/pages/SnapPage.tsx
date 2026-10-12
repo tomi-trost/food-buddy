@@ -1,9 +1,11 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { type ChangeEvent, useId } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { api } from '../api/client'
+import { OPEN_ANALYSES } from '../layout/PendingBanner'
 import { guessMealType } from '../lib/dates'
 import { Icon } from '../ui/Icon'
+import { useToast } from '../ui/Toast'
 
 const TYPES = ['breakfast', 'lunch', 'dinner']
 const KINDS = ['meal', 'snack', 'label'] as const
@@ -20,6 +22,8 @@ const MODE: Record<Kind, { tab: string; title: (type: string) => string; hint: s
 // viewfinder is a big tap target rather than a live preview.
 export function SnapPage() {
   const navigate = useNavigate()
+  const qc = useQueryClient()
+  const toast = useToast()
   const [params, setParams] = useSearchParams()
   const type = TYPES.includes(params.get('type') ?? '') ? params.get('type')! : guessMealType()
   const kind = KINDS.find((k) => k === params.get('kind')) ?? 'meal'
@@ -27,8 +31,15 @@ export function SnapPage() {
   const libraryId = useId()
   const upload = useMutation({
     mutationFn: (file: File) => api.uploadPhoto(file, kind),
-    onSuccess: (job) =>
-      navigate(kind === 'meal' ? `/analysis/${job.id}?type=${type}` : `/snack/${job.id}`, { replace: true }),
+    onSuccess: (job) => {
+      qc.invalidateQueries({ queryKey: OPEN_ANALYSES })
+      if (kind === 'meal') {
+        navigate(`/analysis/${job.id}?type=${type}`, { replace: true }) // rate while it runs
+      } else {
+        navigate('/', { replace: true })
+        toast(`${kind === 'label' ? 'Reading the label' : 'Analyzing your snack'}… it shows up above the tabs when ready`)
+      }
+    },
   })
   const pick = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]

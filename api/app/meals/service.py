@@ -5,7 +5,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.analysis.models import AnalysisJob
+from app.analysis.queue import close, lock_open_job, move_early_ratings
 from app.auth.models import User
 from app.auth.service import household_members
 from app.inventory.service import deduct, mark_used_up
@@ -202,11 +202,8 @@ async def post_meal(session: AsyncSession, user: User, body: MealCreate) -> Meal
 
     analysis = None
     if body.analysis_id is not None:
-        analysis = await session.get(AnalysisJob, body.analysis_id)
-        if analysis is None or analysis.household_id != user.household_id:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, "Analysis not found")
-        if analysis.meal_id is not None:
-            raise HTTPException(status.HTTP_409_CONFLICT, "This photo was already posted")
+        # Locked: if both of us confirm the same photo, the second one gets 409
+        analysis = await lock_open_job(session, user, body.analysis_id)
 
     plate = {i.ingredient_id: i.grams for i in body.items}
     recipe = {k: g * body.portions for k, g in plate.items()}
@@ -252,7 +249,8 @@ async def post_meal(session: AsyncSession, user: User, body: MealCreate) -> Meal
     await deduct(session, user.household_id, recipe)
     await mark_used_up(session, user.household_id, body.used_up)
     if analysis:
-        analysis.meal_id = meal.id
+        close(analysis, meal_id=meal.id)
+        await move_early_ratings(session, analysis, meal.id)
     await session.commit()
     return meal
 

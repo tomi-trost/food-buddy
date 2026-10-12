@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useNavigate } from 'react-router'
 import { Icon, type IconName } from '../ui/Icon'
+import { PendingBanner } from './PendingBanner'
 
 const TABS: { to: string; label: string; icon: IconName }[] = [
   { to: '/', label: 'Home', icon: 'home' },
@@ -23,6 +24,7 @@ export function AppLayout() {
     <div className="app">
       <main className="screen">
         <Outlet />
+        <PendingBanner />
       </main>
       <nav className="tabbar" aria-label="Main">
         <Tab {...TABS[0]} />

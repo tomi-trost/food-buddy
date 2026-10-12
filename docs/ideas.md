@@ -36,3 +36,4 @@ Status: idea · planned · done · dropped
 | 2026-10-05 | Service worker serves the previous app version until reload; show an "update available" prompt | idea |
 | 2026-10-05 | Edit a meal's ingredients and steps after posting | idea |
 
+| 2026-10-12 | Taste stars: drag/slide a finger across the stars to set the rating (half-step snapping), tapping alone is fiddly on the phone | idea |

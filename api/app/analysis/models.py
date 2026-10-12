@@ -1,6 +1,7 @@
 from datetime import datetime
+from decimal import Decimal
 
-from sqlalchemy import DateTime, ForeignKey, String, Text
+from sqlalchemy import DateTime, ForeignKey, Numeric, SmallInteger, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -27,3 +28,21 @@ class AnalysisJob(TimestampMixin, Base):
     error: Mapped[str | None] = mapped_column(Text)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     meal_id: Mapped[int | None] = mapped_column(ForeignKey("meal.id", ondelete="SET NULL"))
+    # Set once the photo is posted as a meal, logged as a snack, or discarded. Until then
+    # the household sees it in the "to check" banner.
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class AnalysisRating(Base):
+    """A rating given while the photo is still being analyzed; moves onto the meal on post."""
+
+    __tablename__ = "analysis_rating"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    job_id: Mapped[int] = mapped_column(ForeignKey("analysis_job.id", ondelete="CASCADE"))
+    user_id: Mapped[int] = mapped_column(ForeignKey("app_user.id", ondelete="CASCADE"))
+    taste: Mapped[Decimal] = mapped_column(Numeric(2, 1))
+    again: Mapped[int] = mapped_column(SmallInteger)
+    effort: Mapped[int] = mapped_column(SmallInteger)
+    fill: Mapped[str] = mapped_column(String(10), default="right")
+    note: Mapped[str | None] = mapped_column(Text)

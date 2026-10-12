@@ -69,7 +69,7 @@ describe('SnapPage', () => {
     renderAt('/snap?type=lunch', (
       <>
         <Route path="/snap" element={<SnapPage />} />
-        <Route path="/snack/:id" element={<p>snack page</p>} />
+        <Route path="/" element={<p>home</p>} />
       </>
     ))
     expect(screen.getByRole('heading', { name: 'Snap your lunch' })).toBeInTheDocument()
@@ -78,7 +78,9 @@ describe('SnapPage', () => {
     expect(screen.getByRole('heading', { name: 'Scan a nutrition label' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Label' })).toHaveAttribute('aria-pressed', 'true')
     fireEvent.change(screen.getByLabelText('Take photo'), { target: { files: [new File(['x'], 'l.jpg', { type: 'image/jpeg' })] } })
-    expect(await screen.findByText('snack page')).toBeInTheDocument()
+    // labels and snacks run in the background: back home, the banner picks it up
+    expect(await screen.findByText('home')).toBeInTheDocument()
+    expect(screen.getByText(/Reading the label… it shows up above the tabs/)).toBeInTheDocument()
     expect((fetch.mock.calls[0][1]!.body as FormData).get('kind')).toBe('label')
   })
 

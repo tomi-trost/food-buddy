@@ -2,31 +2,70 @@ from typing import Literal
 
 from fastapi import APIRouter, Form, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
+from sqlalchemy import select
 
-from app.analysis.models import AnalysisJob
+from app.analysis.models import AnalysisJob, AnalysisRating
 from app.analysis.photos import InvalidPhoto, normalize_photo, save_photo
-from app.analysis.schemas import AnalysisJobOut
+from app.analysis.queue import close, drop_early_ratings, lock_job, lock_open_job
+from app.analysis.schemas import AnalysisJobOut, JobBy
 from app.analysis.tasks import analyze_photo
 from app.auth.deps import CurrentUser, Session
+from app.auth.models import User
 from app.config import get_settings
+from app.meals.schemas import RatingIn
 
 router = APIRouter(prefix="/analyses", tags=["analysis"])
 
 
-def to_out(job: AnalysisJob) -> AnalysisJobOut:
-    meal = job.kind == "meal"
-    return AnalysisJobOut(
-        id=job.id,
-        kind=job.kind,
-        status=job.status,
-        photo_url=f"/api/analyses/{job.id}/photo",
-        provider=job.provider,
-        result=job.result if meal else None,
-        snack=None if meal else job.result,
-        error=job.error,
-        created_at=job.created_at,
-        finished_at=job.finished_at,
-    )
+async def jobs_out(session: Session, user: User, jobs: list[AnalysisJob]) -> list[AnalysisJobOut]:
+    ids = [j.id for j in jobs]
+    names = {
+        u.id: u.name
+        for u in await session.scalars(select(User).where(User.id.in_({j.user_id for j in jobs})))
+    }
+    mine = {
+        r.job_id: r
+        for r in await session.scalars(
+            select(AnalysisRating).where(
+                AnalysisRating.job_id.in_(ids), AnalysisRating.user_id == user.id
+            )
+        )
+    }
+    out = []
+    for job in jobs:
+        meal = job.kind == "meal"
+        rating = mine.get(job.id)
+        out.append(
+            AnalysisJobOut(
+                id=job.id,
+                by=JobBy(id=job.user_id, name=names.get(job.user_id, "")),
+                kind=job.kind,
+                status=job.status,
+                photo_url=f"/api/analyses/{job.id}/photo",
+                provider=job.provider,
+                result=job.result if meal else None,
+                snack=None if meal else job.result,
+                error=job.error,
+                created_at=job.created_at,
+                finished_at=job.finished_at,
+                closed=job.closed_at is not None,
+                meal_id=job.meal_id,
+                my_rating=RatingIn(
+                    taste=float(rating.taste),
+                    again=rating.again,
+                    effort=rating.effort,
+                    fill=rating.fill,
+                    note=rating.note,
+                )
+                if rating
+                else None,
+            )
+        )
+    return out
+
+
+async def job_out(session: Session, user: User, job: AnalysisJob) -> AnalysisJobOut:
+    return (await jobs_out(session, user, [job]))[0]
 
 
 async def get_own_job(session: Session, user: CurrentUser, job_id: int) -> AnalysisJob:
@@ -63,12 +102,69 @@ async def create_analysis(
     await session.commit()
     await session.refresh(job)
     await analyze_photo.defer_async(job_id=job.id)
-    return to_out(job)
+    return await job_out(session, user, job)
+
+
+@router.get("/open")
+async def open_analyses(user: CurrentUser, session: Session) -> list[AnalysisJobOut]:
+    """The household's photos still to check (running, ready or failed), oldest first."""
+    jobs = await session.scalars(
+        select(AnalysisJob)
+        .where(AnalysisJob.household_id == user.household_id, AnalysisJob.closed_at.is_(None))
+        .order_by(AnalysisJob.created_at, AnalysisJob.id)
+    )
+    return await jobs_out(session, user, list(jobs))
 
 
 @router.get("/{job_id}")
 async def get_analysis(job_id: int, user: CurrentUser, session: Session) -> AnalysisJobOut:
-    return to_out(await get_own_job(session, user, job_id))
+    return await job_out(session, user, await get_own_job(session, user, job_id))
+
+
+@router.put("/{job_id}/rating")
+async def rate_early(
+    job_id: int, body: RatingIn, user: CurrentUser, session: Session
+) -> AnalysisJobOut:
+    """Rate while the model is still working; the rating moves onto the meal when posted."""
+    job = await lock_open_job(session, user, job_id)
+    if job.kind != "meal":
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Only meals are rated")
+    rating = await session.scalar(
+        select(AnalysisRating).where(
+            AnalysisRating.job_id == job.id, AnalysisRating.user_id == user.id
+        )
+    )
+    if rating is None:
+        rating = AnalysisRating(job_id=job.id, user_id=user.id)
+        session.add(rating)
+    rating.taste, rating.again, rating.effort = body.taste, body.again, body.effort
+    rating.fill, rating.note = body.fill, body.note
+    await session.commit()
+    return await job_out(session, user, job)
+
+
+@router.post("/{job_id}/discard")
+async def discard_analysis(job_id: int, user: CurrentUser, session: Session) -> AnalysisJobOut:
+    job = await lock_job(session, user, job_id)
+    if job.meal_id is not None:
+        raise HTTPException(status.HTTP_409_CONFLICT, "This photo was already posted")
+    if job.closed_at is None:
+        close(job)
+        await drop_early_ratings(session, job)
+        await session.commit()
+    return await job_out(session, user, job)
+
+
+@router.post("/{job_id}/retry", status_code=status.HTTP_202_ACCEPTED)
+async def retry_analysis(job_id: int, user: CurrentUser, session: Session) -> AnalysisJobOut:
+    job = await lock_open_job(session, user, job_id)
+    if job.status != "failed":
+        raise HTTPException(status.HTTP_409_CONFLICT, "Only a failed analysis can be retried")
+    job.status, job.error, job.finished_at = "queued", None, None
+    job.raw = job.result = None
+    await session.commit()
+    await analyze_photo.defer_async(job_id=job.id)
+    return await job_out(session, user, job)
 
 
 @router.get("/{job_id}/photo", response_class=FileResponse)

@@ -65,6 +65,8 @@ async def run_analysis(
         raise LookupError(f"AnalysisJob {job_id} not found")
     if job.status not in ("queued", "running"):
         return job  # already processed (e.g. job retried after success)
+    if job.closed_at is not None:
+        return job  # discarded while waiting: don't spend minutes of CPU on it
 
     job.status = "running"
     await session.commit()

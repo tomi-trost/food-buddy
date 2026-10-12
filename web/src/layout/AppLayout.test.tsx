@@ -1,7 +1,7 @@
 import { fireEvent, screen } from '@testing-library/react'
 import { Route } from 'react-router'
-import { describe, expect, it } from 'vitest'
-import { renderAt } from '../test/utils'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { jsonResponse, mockFetch, renderAt } from '../test/utils'
 import { AppLayout } from './AppLayout'
 
 const routes = (
@@ -13,6 +13,10 @@ const routes = (
     <Route path="snap" element={<p>snap page</p>} />
   </>
 )
+
+beforeEach(() => {
+  mockFetch((url) => jsonResponse(url === '/api/analyses/open' ? [] : { id: 1 }))
+})
 
 describe('AppLayout', () => {
   it('highlights the active tab and navigates', () => {

@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy import select
 
+from app.analysis.queue import close, lock_open_job
 from app.auth.deps import CurrentUser, Session
 from app.auth.service import household_members
 from app.logs.models import FoodLog
@@ -44,6 +45,8 @@ async def catalog(_: CurrentUser) -> list[CatalogItem]:
 
 @router.post("/snacks", status_code=status.HTTP_201_CREATED)
 async def log_snack(body: SnackIn, user: CurrentUser, session: Session) -> LoggedOut:
+    if body.analysis_id is not None:
+        close(await lock_open_job(session, user, body.analysis_id))
     factor = body.amount if body.per == "piece" else body.amount / 100
     nutrients = Nutrients(**body.per_unit.model_dump()).scaled(factor * 100)
     entry = FoodLog(

@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
-import { api } from '../api/client'
-import type { SnackKind, SnackResult } from '../api/types'
+import { api, ApiError } from '../api/client'
+import type { AnalysisJob, SnackKind, SnackResult } from '../api/types'
+import { OPEN_ANALYSES } from '../layout/PendingBanner'
 import { todayISO } from '../lib/dates'
 import { amountStep, KIND_LABEL, snackNutrients } from '../lib/snacks'
 import { Icon } from '../ui/Icon'
@@ -17,17 +18,45 @@ const EMOJI: Record<SnackKind, string> = { sweet: '🍪', savory: '🥨', drink:
 export function SnackPage() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
+  const toast = useToast()
+  const qc = useQueryClient()
   const job = useQuery({
     queryKey: ['analysis', id],
     queryFn: () => api.analysis(id),
     refetchInterval: (q) => (q.state.data?.status === 'done' || q.state.data?.status === 'failed' ? false : 2000),
   })
+  const update = (updated: AnalysisJob) => {
+    qc.setQueryData(['analysis', id], updated)
+    qc.invalidateQueries({ queryKey: OPEN_ANALYSES })
+  }
+  const retry = useMutation({ mutationFn: () => api.retryAnalysis(Number(id)), onSuccess: update })
+  const discard = useMutation({
+    mutationFn: () => api.discardAnalysis(Number(id)),
+    onSuccess: (updated) => {
+      update(updated)
+      navigate('/', { replace: true })
+      toast('Photo discarded')
+    },
+  })
   const label = job.data?.kind === 'label'
   const close = <button className="icon" aria-label="Close" onClick={() => navigate('/')}><Icon name="close" /></button>
 
-  if (job.data?.status === 'done' && job.data.snack) {
-    return <SnackForm photoUrl={job.data.photo_url} label={label} initial={job.data.snack} close={close} />
+  if (job.data?.closed) {
+    return (
+      <>
+        <div className="top">{close}<span /><span style={{ width: 44 }} /></div>
+        <section className="card">
+          <h3>Already done</h3>
+          <p className="sub">This photo was already logged or discarded.</p>
+          <Link to="/" className="btn">Back home</Link>
+        </section>
+      </>
+    )
   }
+  if (job.data?.status === 'done' && job.data.snack) {
+    return <SnackForm analysisId={job.data.id} photoUrl={job.data.photo_url} label={label} initial={job.data.snack} close={close} />
+  }
+  const error = job.error ?? retry.error ?? discard.error
   return (
     <>
       <div className="top">{close}<span className="sub">{label ? 'Reading label…' : 'Identifying snack…'}</span><span style={{ width: 44 }} /></div>
@@ -35,21 +64,37 @@ export function SnackPage() {
         <section className="card">
           <h3>Couldn't read this photo</h3>
           <p className="sub">{job.data.error}</p>
-          <Link to="/" className="btn">Back home</Link>
+          <button className="btn" disabled={retry.isPending} onClick={() => retry.mutate()}>Try again</button>
+          <Link to="/" className="btn ghost" style={{ marginTop: 8 }}>Back home</Link>
         </section>
       ) : (
-        <div role="status" aria-label={label ? 'Reading label' : 'Identifying snack'}>
-          <div className="shimmer" style={{ height: 120 }} />
-          <div className="shimmer" style={{ width: '60%', height: 26 }} />
-          <div className="shimmer" />
-        </div>
+        <>
+          <div role="status" aria-label={label ? 'Reading label' : 'Identifying snack'}>
+            <div className="shimmer" style={{ height: 120 }} />
+            <div className="shimmer" style={{ width: '60%', height: 26 }} />
+            <div className="shimmer" />
+            <p className="sub">This takes a few minutes. It shows up above the tabs when it's ready.</p>
+          </div>
+          <button className="btn ghost" onClick={() => navigate('/')}>Check it later</button>
+        </>
       )}
-      {job.isError && <p className="error" role="alert">{job.error.message}</p>}
+      {error && <p className="error" role="alert">{error.message}</p>}
+      {job.data && (
+        <button className="textbtn" style={{ marginTop: 12 }} disabled={discard.isPending} onClick={() => discard.mutate()}>
+          Discard this photo
+        </button>
+      )}
     </>
   )
 }
 
-function SnackForm({ photoUrl, label, initial, close }: { photoUrl: string; label: boolean; initial: SnackResult; close: React.ReactNode }) {
+function SnackForm({ analysisId, photoUrl, label, initial, close }: {
+  analysisId: number
+  photoUrl: string
+  label: boolean
+  initial: SnackResult
+  close: React.ReactNode
+}) {
   const navigate = useNavigate()
   const qc = useQueryClient()
   const toast = useToast()
@@ -63,12 +108,18 @@ function SnackForm({ photoUrl, label, initial, close }: { photoUrl: string; labe
       api.logSnack({
         eaten_on: todayISO(), name: snack.name, emoji: EMOJI[snack.kind], kind: snack.kind,
         source: label ? 'label' : 'photo', per: snack.per, amount: snack.amount, per_unit: snack.per_unit,
+        analysis_id: analysisId,
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['day'] })
       qc.invalidateQueries({ queryKey: ['insights'] })
+      qc.invalidateQueries({ queryKey: OPEN_ANALYSES })
       navigate('/', { replace: true })
       toast('Snack logged')
+    },
+    // Logged by the other person meanwhile: reload the job, the page then says so
+    onError: (error) => {
+      if (error instanceof ApiError && error.status === 409) qc.invalidateQueries({ queryKey: ['analysis', String(analysisId)] })
     },
   })
 

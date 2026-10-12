@@ -61,3 +61,4 @@ class SnackIn(BaseModel):
     per: Literal["piece", "100g"]
     amount: float = Field(gt=0, le=2000)
     per_unit: NutrientsIn
+    analysis_id: int | None = None  # the photo/label this came from; closes it

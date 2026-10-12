@@ -83,6 +83,11 @@ export const api = {
     return json<AnalysisJob>('/analyses', { method: 'POST', body: form })
   },
   analysis: (id: number | string) => json<AnalysisJob>(`/analyses/${id}`),
+  openAnalyses: () => json<AnalysisJob[]>('/analyses/open'),
+  rateAnalysis: (id: number, rating: Rating) =>
+    json<AnalysisJob>(`/analyses/${id}/rating`, { method: 'PUT', body: JSON.stringify(rating) }),
+  discardAnalysis: (id: number) => json<AnalysisJob>(`/analyses/${id}/discard`, { method: 'POST' }),
+  retryAnalysis: (id: number) => json<AnalysisJob>(`/analyses/${id}/retry`, { method: 'POST' }),
   searchIngredients: (q: string, limit = 30) =>
     json<Ingredient[]>(`/ingredients?${new URLSearchParams({ q, limit: String(limit) })}`),
   createMeal: (body: MealCreate) => json<Meal>('/meals', { method: 'POST', body: JSON.stringify(body) }),

@@ -111,6 +111,7 @@ export type SnackResult = {
 
 export type AnalysisJob = {
   id: number
+  by: { id: number; name: string } // who took the photo
   kind: 'meal' | 'snack' | 'label'
   status: 'queued' | 'running' | 'done' | 'failed'
   photo_url: string
@@ -120,6 +121,9 @@ export type AnalysisJob = {
   error: string | null
   created_at: string
   finished_at: string | null
+  closed: boolean // posted, logged or discarded
+  meal_id: number | null
+  my_rating: Rating | null // given while the photo was still being analyzed
 }
 
 export type Member = { id: number; name: string; color: string }
@@ -235,6 +239,7 @@ export type SnackIn = {
   per: 'piece' | '100g'
   amount: number
   per_unit: Nutrients
+  analysis_id?: number
 }
 
 export type Reward = {
