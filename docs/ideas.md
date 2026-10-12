@@ -38,3 +38,11 @@ Status: idea · planned · done · dropped
 
 | 2026-10-12 | Taste stars: drag/slide a finger across the stars to set the rating (half-step snapping), tapping alone is fiddly on the phone | done (2026-10-12) |
 | 2026-10-12 | Edit the macro values the model read (kcal, carbs, protein, fat, fiber, sugar): label scan shows them read-only, so a misread number can't be fixed. Meals: macros come from the matched ingredients (grams/ingredients are editable), but a manual per-ingredient or total override may be wanted too | done 2026-10-12: snacks + labels (Edit values), meals (per-portion override on the check screen and the edit page) |
+| 2026-10-12 | "Login failed" in Safari while a private tab works: Cloudflare Access session expired, the cached app shell never passed Access again | done 2026-10-12 (`/api/reauth` full-page round trip) |
+| 2026-10-12 | Suggest what I ate to my partner as their meal, accept or refuse | done 2026-10-12 (Home "You too?" card + push) |
+| 2026-10-12 | Today's "+" per meal: add an existing meal instead of a photo | done 2026-10-12 (picker sheet; cooked now / already made, portions) |
+| 2026-10-12 | Meals list: log a meal as cooked for breakfast/lunch/dinner straight from its card | done 2026-10-12 |
+| 2026-10-12 | Save photographed snacks (home-made tiramisu) and find them under Meals → Snacks | done 2026-10-12 (saved snacks with photo, shared in the household) |
+| 2026-10-12 | Add a meal or snack by typing its name; the model estimates ingredients/values | done 2026-10-12 (no photo yet: shows the emoji) |
+| 2026-10-12 | Picture for typed meals (stock photo or generated) | idea (no image model on the VM; Openverse/Wikimedia lookup would be the free option) |
+| 2026-10-12 | Push texts say "photo" for typed dishes too ("Couldn't analyze the photo") | idea |

@@ -87,11 +87,20 @@ Shared conventions for all sections:
 - [x] Backups: nightly `pg_dump` + photos with restic → Backblaze B2 bucket `food-buddy-backups` (0020, `deploy/backup.sh`, systemd timer ~03:30 UTC). Private bucket, "Keep only the last version", Caps & Alerts at $0, bucket-only app key in `/etc/food-buddy/backup.env`; restic password in Tomi's Passwords app. First backup + `restore-test` passed 2026-10-12. Later: Jetson pulls a second copy
 - [ ] Optional: Uptime Kuma on the Pi 3
 
+## M2b — After the first days of real use (2026-10-12)
+
+- [x] Login fix: an expired Cloudflare Access session made every API call fail with "Load failed" (the service worker's cached shell never passed Access again); the client now detects Access' redirect and goes through `/api/reauth`, which Access intercepts with its PIN page and then sends back
+- [x] Log an existing meal: Today's "+" opens a picker (snap or one of our meals, slot's type first); meal cards have a log button; the cook sheet has portions eaten and "cooked it now" vs "already made" (leftovers / partner cooked: no second stock deduction, source `leftover`)
+- [x] Saved snacks: "Save to our snacks" when logging a snack (photo kept), "Our snacks" in the snack sheet, Meals → Snacks tab; one per name per household, edit/remove (`saved_snack`, 0013)
+- [x] Type it instead: meals and snacks from a typed name (`POST /api/analyses/text`), same job, check screen and push; text prompts with portion anchors (0014). ~4 s on the Mac vs ~1 min expected on the VM (no image encoding)
+- [x] "You too?": a meal one of us logs is suggested to the other (Home card + `shared` push); accepting logs it without touching stock (`meal_suggestion`, 0015)
+
 ## M3 — Model benchmark (`eval/`)
 
-- [ ] Script running every provider over a Nutrition5k subset + our weighed meals; metrics: ingredient P/R, kcal/macro % error, JSON validity, latency, RAM
-- [ ] Compare Qwen3-VL 2B/4B, Qwen2.5-VL 3B, Gemma 4 small, food-analysis LoRA on Oracle
-- [ ] Pick default model + prompt; accept 0018
+- [x] Script running every provider over a Nutrition5k subset + our weighed meals; metrics: ingredient P/R, kcal/macro % error, JSON validity, latency, RAM (`api/benchmark/`, `eval/README.md`, 2026-10-12)
+- [x] First comparison 2026-10-12 (`eval/results/2026-10-12.md`): Qwen3-VL 2B/4B, Qwen2.5-VL 3B on 40 Nutrition5k plates + 2 of ours. **Kept `qwen3-vl:4b-instruct` + prompt v1** (kcal error 26%, ~184 s per photo on the VM). Gemma 3 4B didn't download; no Gemma 4 / food LoRA on Ollama yet
+- [ ] **Second comparison once ~20–30 household plates are weighed and labelled** (weigh before posting): re-check 4B v1 vs v2 (portion hints, removes the +24% bias but worse protein/fat), add Gemma; pick the prompt from our own food
+- [ ] Accept 0018 after the second comparison
 
 ## M4 — Nutrition data
 

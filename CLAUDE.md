@@ -21,7 +21,9 @@ M2 is mostly done (2026-10-11): the stack runs on the Oracle A1 VM `food-buddy` 
 
 **Deploys:** every push to `main` goes live automatically once CI passes (CI `deploy` job → `deploy/deploy.sh` on the VM via a deploy-only key). Manual SSH: `ssh food-buddy` (Mac `~/.ssh/config` entry with `UseKeychain yes`; the key's passphrase is in the macOS Keychain, so no `ssh-add` needed).
 
-**Smoke test status (2026-10-12):** Snap redesign + "Choose from library" + iPhone zoom fix are live; first real analysis worked end to end (pasta with zucchini). Still to check on the iPhone: camera opens from the shutter, no zoom/sideways scroll, partner registers with the invite code, Add to Home Screen.
+**Smoke test (done 2026-10-12):** snap, library, camera, zoom, partner registration with the invite code and Add to Home Screen all work on the iPhone.
+
+**After first use (2026-10-12, `docs/execution-plan.md` → M2b):** login fix for expired Cloudflare Access sessions (`/api/reauth`); log an existing meal from Today's "+" or a meal card (portions, "cooked now" vs "already made" = no second stock deduction); saved snacks (Meals → Snacks); "Type it" on Snap (`POST /api/analyses/text`, same check screen); "You too?" suggestions of the other one's logged meals (Home card + `shared` push).
 
 **Analysis speed (measured 2026-10-12, pasta photo, qwen3-vl:4b-instruct on 2 cores):** 1280 px → 234 s (1,328 prompt tokens); 896 px → 202 s; 768 px → 202 s (both 1,164 tokens: Ollama scales small images up to ~1,030 image tokens). Same answer at all sizes. `vision_max_px` = 896 (model copy only; stored photo stays 1280). Remaining time ≈ 140 s image encoding + 65 s for ~250 output tokens. Smaller models checked 2026-10-12 (3 real photos: pasta, overnight oats, biscotti label): `qwen3-vl:2b-instruct` ~40% faster and read the label exactly, but invented ingredients (garlic, butter, "spoon") with a flat 0.95 confidence; `qwen2.5vl:3b` slower and missed chia, called biscotti savory; `gemma3:4b` mixed up label columns (kcal 169 = kJ per biscuit). **Kept `qwen3-vl:4b-instruct`** (best meal answers, label right via the per-biscuit column). Other speedups: shorter answer schema, llama.cpp `--image-max-tokens`. **Ingredients:** 23 mock rows + ~250 hand-picked USDA/Ciqual rows (decision 0021; add foods in `api/scripts/{usda,ciqual}_catalog.txt`, rebuild with `scripts/build_catalog.py`, loaded on API start). What's missing: `docker compose exec api python -m app.nutrition.unmatched` on the VM.
 
@@ -31,7 +33,33 @@ M2 is mostly done (2026-10-11): the stack runs on the Oracle A1 VM `food-buddy` 
 
 **Backups (live 2026-10-12):** nightly restic → Backblaze B2 (`deploy/backup.sh`, decision 0020), timer ~03:30 UTC; logs: `sudo journalctl -u food-buddy-backup`. Restore drill: `sudo /opt/food-buddy/deploy/backup.sh restore-test`. The restic password is in Tomi's Passwords app; without it the backups are unreadable.
 
-Then: M3 (model benchmark), M4 (USDA/Ciqual import). Family members later: add their emails to the Access policy; they can register their own household. Parked questions: license, subdomain, confirming 0017. Vision models must be **instruct** tags (e.g. `qwen3-vl:4b-instruct`); the plain `qwen3-vl:2b` thinks and returns empty content. After rebuilding the web image locally, clear the PWA service worker in the browser (it serves the old bundle until reload).
+Then: M4 (USDA/Ciqual import); M3's second comparison when enough of our plates are weighed. Family members later: add their emails to the Access policy; they can register their own household. Parked questions: license, subdomain, confirming 0017. Vision models must be **instruct** tags (e.g. `qwen3-vl:4b-instruct`); the plain `qwen3-vl:2b` thinks and returns empty content. After rebuilding the web image locally, clear the PWA service worker in the browser (it serves the old bundle until reload).
+
+**Backlog to go through next (listed 2026-10-12):**
+- Open from the plan (`docs/execution-plan.md`):
+  - M3 second comparison once ~20–30 household plates are weighed and labelled (weigh before posting, `python -m benchmark.household`): 4B v1 vs v2, add Gemma (first run 2026-10-12 kept `qwen3-vl:4b-instruct` + v1, `eval/results/2026-10-12.md`)
+  - M4: full USDA + Ciqual import with aliases (now ~250 hand-picked); Open Food Facts barcode lookup; matching tests on fixed model outputs
+  - "Approve the plan" push (other four kinds live)
+  - Refresh tokens + login rate limit
+  - Client-side photo resize before upload; HEIC check on iPhone
+  - API types generated from OpenAPI
+  - Capacitor Android APK
+  - Offline write queue, failover drill, self-hosting docs, go public (license undecided)
+  - Optional: Uptime Kuma on the Pi
+- Ideas, not scheduled (`docs/ideas.md`):
+  - Remember corrected label products (correcting values is done)
+  - Edit a meal's recipe steps (ingredients/portions/cost/nutrition already editable)
+  - Undo after posting a meal
+  - "Update available" prompt (service worker serves the old bundle until reopen)
+  - Barcode scan for snacks
+  - Household portion priors learned from corrections (e.g. our rice ≈ 180 g) fed into the prompt
+  - Plan: variety (no same breakfast all week), choose meal-prep day, who cooks each meal
+  - Sensible default buy quantities per ingredient (instead of 250 g)
+  - Price source for cost estimates
+  - AI meal variations ("make it vegetarian") and similar-tasting healthier swaps
+  - Fullness feedback adjusting portions
+  - Sweets story: craving triggers, weekly treat budget, treat-free streaks
+  - Weekly challenge history in Versus
 
 ## Testing (required)
 - Every feature or bug fix ships with tests in the same change: backend in `api/tests/` (pytest), web in `web/src/**/*.test.ts(x)` (Vitest + Testing Library).
