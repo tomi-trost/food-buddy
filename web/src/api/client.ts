@@ -76,10 +76,12 @@ export const api = {
   updateMe: (patch: MePatch) => json<Me>('/auth/me', { method: 'PATCH', body: JSON.stringify(patch) }),
   updateHousehold: (patch: HouseholdPatch) =>
     json<Me>('/household', { method: 'PATCH', body: JSON.stringify(patch) }),
-  uploadPhoto(file: File, kind: 'meal' | 'snack' | 'label' = 'meal') {
+  uploadPhoto(file: File, kind: 'meal' | 'snack' | 'label' = 'meal', meal?: { type: MealType | null; saveOnly: boolean }) {
     const form = new FormData()
     form.append('photo', file)
     form.append('kind', kind)
+    if (meal?.type) form.append('meal_type', meal.type)
+    if (meal?.saveOnly) form.append('save_only', 'true')
     return json<AnalysisJob>('/analyses', { method: 'POST', body: form })
   },
   analysis: (id: number | string) => json<AnalysisJob>(`/analyses/${id}`),

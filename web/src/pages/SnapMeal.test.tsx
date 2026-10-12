@@ -91,4 +91,45 @@ describe('SnapPage', () => {
     expect(targets).toHaveLength(2)
     expect(screen.getByText('Tap to take a photo').closest('label')).toBe(targets[0])
   })
+
+  it('sends the chosen meal type with the photo', async () => {
+    const fetch = mockFetch(() => jsonResponse({ id: 9, status: 'queued' }, 202))
+    renderAt('/snap?type=lunch', (
+      <>
+        <Route path="/snap" element={<SnapPage />} />
+        <Route path="/analysis/:id" element={<p>analysis page</p>} />
+      </>
+    ))
+    expect(screen.getByRole('button', { name: 'Lunch' })).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(screen.getByRole('button', { name: 'Dinner' }))
+    expect(screen.getByRole('heading', { name: 'Snap your dinner' })).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('Take photo'), { target: { files: [new File(['x'], 'p.jpg', { type: 'image/jpeg' })] } })
+    await screen.findByText('analysis page')
+    const form = fetch.mock.calls[0][1]!.body as FormData
+    expect(form.get('meal_type')).toBe('dinner')
+    expect(form.get('save_only')).toBeNull()
+  })
+
+  it('saves a meal for later without a meal type', async () => {
+    const fetch = mockFetch(() => jsonResponse({ id: 9, status: 'queued' }, 202))
+    renderAt('/snap', (
+      <>
+        <Route path="/snap" element={<SnapPage />} />
+        <Route path="/analysis/:id" element={<p>analysis page</p>} />
+      </>
+    ))
+    fireEvent.click(screen.getByRole('button', { name: 'For later' }))
+    expect(screen.getByRole('heading', { name: 'Save a meal for later' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Dinner' })).toHaveAttribute('aria-pressed', 'false')
+    fireEvent.change(screen.getByLabelText('Choose from library'), { target: { files: [new File(['x'], 'old.jpg', { type: 'image/jpeg' })] } })
+    await screen.findByText('analysis page')
+    const form = fetch.mock.calls[0][1]!.body as FormData
+    expect(form.get('save_only')).toBe('true')
+    expect(form.get('meal_type')).toBeNull()
+  })
+
+  it('hides the meal choice for snacks and labels', () => {
+    renderAt('/snap?kind=snack', <Route path="/snap" element={<SnapPage />} />)
+    expect(screen.queryByRole('group', { name: 'Which meal is it?' })).not.toBeInTheDocument()
+  })
 })

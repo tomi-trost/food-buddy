@@ -25,7 +25,8 @@ class MealCreate(BaseModel):
 
     name: str = Field(min_length=1, max_length=120)
     meal_type: MealType
-    eaten_on: date
+    eaten: bool = True  # False = save for later: library only, no log/stock/reminder
+    eaten_on: date | None = None  # required when eaten
     prep_minutes: int = Field(ge=1, le=600)
     portions: int = Field(ge=1, le=20, description="portions made; recipe = plate × portions")
     servings_eaten: float = Field(gt=0, le=10)
@@ -43,6 +44,10 @@ class MealCreate(BaseModel):
             raise ValueError("Each ingredient may appear only once")
         if not set(self.used_up) <= set(ids):
             raise ValueError("used_up must only contain ingredients of this meal")
+        if self.eaten and self.eaten_on is None:
+            raise ValueError("eaten_on is required for a meal that was eaten")
+        if not self.eaten and self.used_up:
+            raise ValueError("A meal saved for later can't use up ingredients")
         return self
 
 
@@ -50,7 +55,8 @@ class CookIn(BaseModel):
     """ "I cooked this again": one portion eaten by the current user."""
 
     meal_type: MealType
-    eaten_on: date
+    eaten: bool = True  # False = save for later: library only, no log/stock/reminder
+    eaten_on: date | None = None  # required when eaten
     used_up: list[int] = Field(default_factory=list)
 
 

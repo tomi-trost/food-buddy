@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import DateTime, ForeignKey, Numeric, SmallInteger, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Numeric, SmallInteger, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -31,6 +31,10 @@ class AnalysisJob(TimestampMixin, Base):
     # Set once the photo is posted as a meal, logged as a snack, or discarded. Until then
     # the household sees it in the "to check" banner.
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Chosen on the Snap screen (meals only): breakfast|lunch|dinner, and "for later" = save
+    # the meal to the library without logging it as eaten
+    meal_type: Mapped[str | None] = mapped_column(String(10))
+    save_only: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
 class AnalysisRating(Base):

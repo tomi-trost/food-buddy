@@ -8,6 +8,7 @@ import { byWeight, type PlateItem } from './plate'
 export type DetailsState = {
   name: string
   mealType: MealType
+  eaten: boolean // false = save for later (library only)
   prepMinutes: number
   portions: number
   cost: number
@@ -28,6 +29,17 @@ export function Details({ items, state, set, onPost, posting, error }: {
   return (
     <>
       <h1 style={{ marginBottom: 12 }}>Meal details</h1>
+      <Toggle<'eaten' | 'later'>
+        label="Did you eat it?"
+        value={state.eaten ? 'eaten' : 'later'}
+        onChange={(v) => set({ eaten: v === 'eaten' })}
+        options={[{ value: 'eaten', label: 'Ate it today' }, { value: 'later', label: 'Save for later' }]}
+      />
+      {!state.eaten && (
+        <p className="sub" style={{ marginTop: -4 }}>
+          Goes to your meals for planning. Not counted as eaten, and your ingredients stay as they are.
+        </p>
+      )}
       <label className="field" style={{ marginBottom: 14 }}>
         Dish name
         <input value={state.name} maxLength={120} onChange={(e) => set({ name: e.target.value })} />
@@ -62,7 +74,7 @@ export function Details({ items, state, set, onPost, posting, error }: {
         </div>
         <div className="chip" style={{ marginTop: 12 }}>= {perPortion.toFixed(2)} € per portion</div>
       </div>
-      <div className="card">
+      {state.eaten && <div className="card">
         <h3>Used up an ingredient?</h3>
         <div className="sub" style={{ margin: '2px 0 10px' }}>
           Tap anything you finished. It leaves your ingredients and goes on your shopping list.
@@ -79,17 +91,17 @@ export function Details({ items, state, set, onPost, posting, error }: {
             )
           })}
         </div>
-      </div>
+      </div>}
       <div className="card">
         <h3>Auto recipe</h3>
         <ol style={{ paddingLeft: 20, lineHeight: 1.5, fontSize: 14 }}>
           {templateSteps(byWeight(items), state.prepMinutes, state.portions).map((s) => <li key={s}>{s}</li>)}
         </ol>
-        <div className="sub">A fuller recipe is written in the background after you post.</div>
+        <div className="sub">A fuller recipe is written in the background after you {state.eaten ? 'post' : 'save'}.</div>
       </div>
       {error && <p className="error" role="alert">{error}</p>}
       <button className="btn" disabled={posting || !state.name.trim()} onClick={onPost}>
-        {posting ? 'Posting…' : 'Post meal'}
+        {state.eaten ? (posting ? 'Posting…' : 'Post meal') : posting ? 'Saving…' : 'Save meal'}
       </button>
     </>
   )

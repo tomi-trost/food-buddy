@@ -228,26 +228,27 @@ async def post_meal(session: AsyncSession, user: User, body: MealCreate) -> Meal
     session.add(meal)
     await session.flush()
 
-    session.add(CookLog(meal_id=meal.id, user_id=user.id, cooked_on=body.eaten_on))
-    eaten = total(found[k].per100.scaled(g) for k, g in plate.items()).scaled(
-        body.servings_eaten * 100
-    )
-    log = FoodLog(
-        household_id=user.household_id,
-        user_id=user.id,
-        eaten_on=body.eaten_on,
-        meal_type=body.meal_type,
-        name=meal.name,
-        emoji=meal.emoji,
-        meal_id=meal.id,
-        kind="meal",
-        source="snap",
-    )
-    log.set_nutrients(eaten)
-    session.add(log)
+    if body.eaten:  # saved for later: only the recipe goes into the library
+        session.add(CookLog(meal_id=meal.id, user_id=user.id, cooked_on=body.eaten_on))
+        eaten = total(found[k].per100.scaled(g) for k, g in plate.items()).scaled(
+            body.servings_eaten * 100
+        )
+        log = FoodLog(
+            household_id=user.household_id,
+            user_id=user.id,
+            eaten_on=body.eaten_on,
+            meal_type=body.meal_type,
+            name=meal.name,
+            emoji=meal.emoji,
+            meal_id=meal.id,
+            kind="meal",
+            source="snap",
+        )
+        log.set_nutrients(eaten)
+        session.add(log)
 
-    await deduct(session, user.household_id, recipe)
-    await mark_used_up(session, user.household_id, body.used_up)
+        await deduct(session, user.household_id, recipe)
+        await mark_used_up(session, user.household_id, body.used_up)
     if analysis:
         close(analysis, meal_id=meal.id)
         await move_early_ratings(session, analysis, meal.id)

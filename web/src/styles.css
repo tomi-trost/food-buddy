@@ -181,6 +181,10 @@ svg text { fill: var(--ink2); font-size: 11px; }
 .cam-modes { display: flex; justify-content: center; gap: 4px; }
 .cam-modes button { min-height: 36px; padding: 0 16px; border-radius: 18px; font-size: 14px; font-weight: 600; color: rgba(255, 255, 255, 0.6); }
 .cam-modes button[aria-pressed='true'] { background: rgba(255, 255, 255, 0.16); color: #fff; }
+/* Which meal: chips under the mode switcher (Meal mode only) */
+.cam-types { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.cam-types button { min-height: 44px; border-radius: 12px; font-size: 13px; font-weight: 600; color: rgba(255, 255, 255, 0.75); border: 1px solid rgba(255, 255, 255, 0.18); }
+.cam-types button[aria-pressed='true'] { background: #fff; color: #12100e; border-color: #fff; }
 .cam-bar { display: grid; grid-template-columns: 1fr 84px 1fr; align-items: center; }
 .cam-lib { justify-self: start; display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: rgba(255, 255, 255, 0.85); cursor: pointer; padding-left: 12px; }
 .cam-lib-tile { width: 48px; height: 48px; border-radius: 12px; border: 2px solid rgba(255, 255, 255, 0.85); display: grid; place-items: center; background: rgba(255, 255, 255, 0.1); }

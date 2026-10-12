@@ -260,3 +260,45 @@ describe('waiting in the background', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('This photo was discarded')
   })
 })
+
+describe('meal type and save for later', () => {
+  async function toDetails() {
+    fireEvent.click(await screen.findByRole('button', { name: /mystery sauce/ }))
+    fireEvent.click(screen.getByText('Remove “mystery sauce”'))
+    fireEvent.click(screen.getByRole('button', { name: 'Looks right' }))
+  }
+
+  it('starts with the meal type chosen on the Snap screen', async () => {
+    api((url) => (isJob(url) ? jsonResponse({ ...doneJob(), meal_type: 'breakfast' }) : undefined))
+    render('/analysis/5')
+    await toDetails()
+    expect(screen.getByRole('button', { name: 'Breakfast' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Ate it today' })).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('saves a "for later" photo to the library without logging it', async () => {
+    const fetch = api((url) => (isJob(url) ? jsonResponse({ ...doneJob(), save_only: true }) : undefined))
+    render('/analysis/5')
+    await toDetails()
+    expect(screen.getByRole('button', { name: 'Save for later' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.queryByText('Used up an ingredient?')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Save meal' }))
+
+    expect(await screen.findByTestId('at')).toHaveTextContent(/^\/meals\/42$/) // no rating prompt
+    expect(screen.getByText('Saved to your meals for later')).toBeInTheDocument()
+    const [, init] = fetch.mock.calls.find(([url]) => url === '/api/meals')!
+    expect(JSON.parse(String(init!.body))).toMatchObject({ eaten: false, eaten_on: null, used_up: [] })
+  })
+
+  it('can switch to "save for later" in the details step', async () => {
+    const fetch = api()
+    render()
+    await toDetails()
+    fireEvent.click(screen.getByRole('button', { name: 'Save for later' }))
+    expect(screen.getByText(/Not counted as eaten/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Save meal' }))
+    await screen.findByTestId('at')
+    const [, init] = fetch.mock.calls.find(([url]) => url === '/api/meals')!
+    expect(JSON.parse(String(init!.body)).eaten).toBe(false)
+  })
+})

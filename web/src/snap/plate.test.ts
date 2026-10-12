@@ -32,11 +32,20 @@ describe('plate', () => {
   it('orders recipe names by weight and builds the request', () => {
     expect(byWeight(items())).toEqual(['Rice (cooked)', 'Chicken breast'])
     const body = toMealCreate({
-      items: items(), name: '  Bowl ', mealType: 'dinner', eatenOn: '2026-10-04', prepMinutes: 20,
+      items: items(), name: '  Bowl ', mealType: 'dinner', eaten: true, eatenOn: '2026-10-04', prepMinutes: 20,
       portions: 2, servingsEaten: 1, cost: null, usedUp: [2, 99], analysisId: 5,
     })
     expect(body.name).toBe('Bowl')
     expect(body.items).toEqual([{ ingredient_id: 1, grams: 150 }, { ingredient_id: 2, grams: 200 }])
     expect(body.used_up).toEqual([2]) // unknown ids dropped
+    expect(body).toMatchObject({ eaten: true, eaten_on: '2026-10-04' })
+  })
+
+  it('saves for later without a date or used-up ingredients', () => {
+    const body = toMealCreate({
+      items: items(), name: 'Bowl', mealType: 'lunch', eaten: false, eatenOn: '2026-10-04', prepMinutes: 20,
+      portions: 2, servingsEaten: 1, cost: null, usedUp: [2], analysisId: 5,
+    })
+    expect(body).toMatchObject({ eaten: false, eaten_on: null, used_up: [] })
   })
 })

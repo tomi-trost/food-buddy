@@ -59,7 +59,7 @@ export function AnalysisPage() {
   if (job.data?.status === 'done' && job.data.result && !job.data.closed) {
     return (
       <SnapFlow analysisId={job.data.id} photoUrl={job.data.photo_url} result={job.data.result}
-        rated={!!job.data.my_rating} close={close} />
+        rated={!!job.data.my_rating} chosenType={job.data.meal_type} saveOnly={job.data.save_only} close={close} />
     )
   }
 
@@ -144,11 +144,13 @@ function Waiting({ job }: { job: AnalysisJob }) {
   )
 }
 
-function SnapFlow({ analysisId, photoUrl, result, rated, close }: {
+function SnapFlow({ analysisId, photoUrl, result, rated, chosenType, saveOnly, close }: {
   analysisId: number
   photoUrl: string
   result: AnalysisResult
   rated: boolean // rated while waiting: the rating is already on the meal
+  chosenType: MealType | null // picked on the Snap screen
+  saveOnly: boolean // "For later" on the Snap screen
   close: React.ReactNode
 }) {
   const navigate = useNavigate()
@@ -161,7 +163,9 @@ function SnapFlow({ analysisId, photoUrl, result, rated, close }: {
   const typeParam = params.get('type') as MealType | null
   const [details, setDetails] = useState<DetailsState>(() => ({
     name: result.dish.charAt(0).toUpperCase() + result.dish.slice(1),
-    mealType: typeParam && TYPES.includes(typeParam) ? typeParam : (result.meal_type === 'snack' ? 'lunch' : result.meal_type),
+    mealType: chosenType
+      ?? (typeParam && TYPES.includes(typeParam) ? typeParam : (result.meal_type === 'snack' ? 'lunch' : result.meal_type)),
+    eaten: !saveOnly,
     prepMinutes: 30,
     portions: 2,
     cost: 0,
@@ -178,7 +182,7 @@ function SnapFlow({ analysisId, photoUrl, result, rated, close }: {
     mutationFn: () =>
       api.createMeal(
         toMealCreate({
-          items, name: details.name, mealType: details.mealType, eatenOn: todayISO(),
+          items, name: details.name, mealType: details.mealType, eaten: details.eaten, eatenOn: todayISO(),
           prepMinutes: details.prepMinutes, portions: details.portions, servingsEaten: servings,
           cost: costTouched ? details.cost : null, usedUp: details.usedUp, analysisId,
         }),
@@ -188,6 +192,11 @@ function SnapFlow({ analysisId, photoUrl, result, rated, close }: {
       qc.invalidateQueries({ queryKey: ['day'] })
       qc.invalidateQueries({ queryKey: ['inventory'] })
       qc.invalidateQueries({ queryKey: OPEN_ANALYSES })
+      if (!details.eaten) {
+        navigate(`/meals/${meal.id}`, { replace: true })
+        toast('Saved to your meals for later')
+        return
+      }
       navigate(`/meals/${meal.id}${rated ? '' : '?rate=1'}`, { replace: true })
       toast('Posted. Ingredients and shopping list updated.')
     },

@@ -80,7 +80,8 @@ export type CookIn = { meal_type: MealType; eaten_on: string; used_up: number[] 
 export type MealCreate = {
   name: string
   meal_type: MealType
-  eaten_on: string
+  eaten: boolean // false = save for later: library only, not logged
+  eaten_on: string | null
   prep_minutes: number
   portions: number
   servings_eaten: number
@@ -122,6 +123,8 @@ export type AnalysisJob = {
   created_at: string
   finished_at: string | null
   closed: boolean // posted, logged or discarded
+  meal_type: MealType | null // chosen on the Snap screen
+  save_only: boolean // "for later": not eaten now
   meal_id: number | null
   my_rating: Rating | null // given while the photo was still being analyzed
 }

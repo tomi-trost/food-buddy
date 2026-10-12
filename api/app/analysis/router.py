@@ -49,6 +49,8 @@ async def jobs_out(session: Session, user: User, jobs: list[AnalysisJob]) -> lis
                 created_at=job.created_at,
                 finished_at=job.finished_at,
                 closed=job.closed_at is not None,
+                meal_type=job.meal_type,
+                save_only=job.save_only,
                 meal_id=job.meal_id,
                 my_rating=RatingIn(
                     taste=float(rating.taste),
@@ -81,6 +83,8 @@ async def create_analysis(
     user: CurrentUser,
     session: Session,
     kind: Literal["meal", "snack", "label"] = Form(default="meal"),
+    meal_type: Literal["breakfast", "lunch", "dinner"] | None = Form(default=None),
+    save_only: bool = Form(default=False),
 ) -> AnalysisJobOut:
     settings = get_settings()
     max_bytes = settings.max_upload_mb * 1024 * 1024
@@ -97,6 +101,8 @@ async def create_analysis(
         user_id=user.id,
         photo_path=save_photo(settings.photo_dir, user.household_id, jpeg),
         kind=kind,
+        meal_type=meal_type if kind == "meal" else None,
+        save_only=save_only and kind == "meal",
     )
     session.add(job)
     await session.commit()

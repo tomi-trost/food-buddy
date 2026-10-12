@@ -51,6 +51,7 @@ export function toMealCreate(args: {
   items: PlateItem[]
   name: string
   mealType: MealType
+  eaten: boolean
   eatenOn: string
   prepMinutes: number
   portions: number
@@ -63,13 +64,15 @@ export function toMealCreate(args: {
   return {
     name: args.name.trim(),
     meal_type: args.mealType,
-    eaten_on: args.eatenOn,
+    eaten: args.eaten,
+    eaten_on: args.eaten ? args.eatenOn : null,
     prep_minutes: args.prepMinutes,
     portions: args.portions,
     servings_eaten: args.servingsEaten,
     cost: args.cost,
     items: resolved.map((i) => ({ ingredient_id: i.ingredient!.id, grams: i.grams })),
-    used_up: args.usedUp.filter((id) => resolved.some((i) => i.ingredient!.id === id)),
+    // saved for later: nothing was cooked, so nothing can be used up
+    used_up: args.eaten ? args.usedUp.filter((id) => resolved.some((i) => i.ingredient!.id === id)) : [],
     analysis_id: args.analysisId,
   }
 }

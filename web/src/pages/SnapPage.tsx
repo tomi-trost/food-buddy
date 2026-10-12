@@ -3,16 +3,17 @@ import { type ChangeEvent, useId } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { api } from '../api/client'
 import { OPEN_ANALYSES } from '../layout/PendingBanner'
-import { guessMealType } from '../lib/dates'
+import type { MealType } from '../api/types'
+import { guessMealType, MEAL_TYPE_LABEL } from '../lib/dates'
 import { Icon } from '../ui/Icon'
 import { useToast } from '../ui/Toast'
 
-const TYPES = ['breakfast', 'lunch', 'dinner']
+const TYPES: MealType[] = ['breakfast', 'lunch', 'dinner']
 const KINDS = ['meal', 'snack', 'label'] as const
 type Kind = (typeof KINDS)[number]
 
-const MODE: Record<Kind, { tab: string; title: (type: string) => string; hint: string }> = {
-  meal: { tab: 'Meal', title: (type) => `Snap your ${type}`, hint: 'From above, whole plate in view' },
+const MODE: Record<Kind, { tab: string; title: (type: string | null) => string; hint: string }> = {
+  meal: { tab: 'Meal', title: (type) => (type ? `Snap your ${type}` : 'Save a meal for later'), hint: 'From above, whole plate in view' },
   snack: { tab: 'Snack', title: () => 'Snap your snack', hint: 'Fill the frame with the snack' },
   label: { tab: 'Label', title: () => 'Scan a nutrition label', hint: 'Flat and well lit, whole table in view' },
 }
@@ -25,16 +26,18 @@ export function SnapPage() {
   const qc = useQueryClient()
   const toast = useToast()
   const [params, setParams] = useSearchParams()
-  const type = TYPES.includes(params.get('type') ?? '') ? params.get('type')! : guessMealType()
+  const forLater = params.get('save') === '1' // a meal for the library, not eaten now
+  const picked = TYPES.find((t) => t === params.get('type'))
+  const type: MealType | null = forLater ? null : (picked ?? guessMealType())
   const kind = KINDS.find((k) => k === params.get('kind')) ?? 'meal'
   const cameraId = useId()
   const libraryId = useId()
   const upload = useMutation({
-    mutationFn: (file: File) => api.uploadPhoto(file, kind),
+    mutationFn: (file: File) => api.uploadPhoto(file, kind, kind === 'meal' ? { type, saveOnly: forLater } : undefined),
     onSuccess: (job) => {
       qc.invalidateQueries({ queryKey: OPEN_ANALYSES })
       if (kind === 'meal') {
-        navigate(`/analysis/${job.id}?type=${type}`, { replace: true }) // rate while it runs
+        navigate(`/analysis/${job.id}`, { replace: true }) // rate while it runs; the job keeps the type
       } else {
         navigate('/', { replace: true })
         toast(`${kind === 'label' ? 'Reading the label' : 'Analyzing your snack'}… it shows up above the tabs when ready`)
@@ -52,6 +55,17 @@ export function SnapPage() {
     else next.set('kind', k)
     setParams(next, { replace: true })
     upload.reset()
+  }
+  const setMeal = (t: MealType | 'later') => {
+    const next = new URLSearchParams(params)
+    if (t === 'later') {
+      next.set('save', '1')
+      next.delete('type')
+    } else {
+      next.delete('save')
+      next.set('type', t)
+    }
+    setParams(next, { replace: true })
   }
   const mode = MODE[kind]
   const busy = upload.isPending
@@ -89,6 +103,15 @@ export function SnapPage() {
           <button key={k} aria-pressed={k === kind} disabled={busy} onClick={() => setKind(k)}>{MODE[k].tab}</button>
         ))}
       </div>
+
+      {kind === 'meal' && (
+        <div className="cam-types" role="group" aria-label="Which meal is it?">
+          {TYPES.map((t) => (
+            <button key={t} aria-pressed={t === type} disabled={busy} onClick={() => setMeal(t)}>{MEAL_TYPE_LABEL[t]}</button>
+          ))}
+          <button aria-pressed={forLater} disabled={busy} onClick={() => setMeal('later')}>For later</button>
+        </div>
+      )}
 
       <div className="cam-bar">
         <label htmlFor={libraryId} className="cam-lib" aria-disabled={busy}>
