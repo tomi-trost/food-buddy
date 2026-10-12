@@ -9,6 +9,7 @@ from app.analysis.service import run_analysis
 from app.config import get_settings
 from app.db import SessionLocal
 from app.jobs import jobs_app
+from app.push.tasks import notify_ready
 from app.vision.providers import chain_from_settings
 
 log = logging.getLogger(__name__)
@@ -20,7 +21,7 @@ async def analyze_photo(job_id: int) -> None:
     try:
         async with httpx.AsyncClient() as client, SessionLocal() as session:
             chain = chain_from_settings(settings, client)
-            await run_analysis(
+            job = await run_analysis(
                 session, job_id, chain, settings.photo_dir, vision_max_px=settings.vision_max_px
             )
     except Exception:
@@ -38,3 +39,5 @@ async def analyze_photo(job_id: int) -> None:
             )
             await session.commit()
         raise
+    if job.status in ("done", "failed"):
+        await notify_ready.defer_async(job_id=job_id)

@@ -1,5 +1,5 @@
 import type {
-  AnalysisJob, CatalogItem, CookIn, Day, Insights, Reward, SnackIn, HouseholdPatch, Ingredient, Me, Meal, MealCard, MealCreate, MealPatch, MealType, MePatch, Plan, PlanMode, Rating, RegisterBody, Shopping, StockItem, WizardCell,
+  AnalysisJob, CatalogItem, CookIn, Day, Insights, Reward, SnackIn, HouseholdPatch, Ingredient, Me, Meal, MealCard, MealCreate, MealPatch, MealType, MePatch, Plan, PushConfig, PushKind, PlanMode, Rating, RegisterBody, Shopping, StockItem, WizardCell,
 } from './types'
 
 const TOKEN_KEY = 'fb.token'
@@ -84,6 +84,15 @@ export const api = {
   },
   analysis: (id: number | string) => json<AnalysisJob>(`/analyses/${id}`),
   openAnalyses: () => json<AnalysisJob[]>('/analyses/open'),
+  pushConfig: () => json<PushConfig>('/push'),
+  pushSubscribe: async (subscription: PushSubscriptionJSON) => {
+    await request('/push/subscription', { method: 'PUT', body: JSON.stringify(subscription) })
+  },
+  pushUnsubscribe: async (endpoint: string) => {
+    await request('/push/unsubscribe', { method: 'POST', body: JSON.stringify({ endpoint }) })
+  },
+  pushPrefs: (off: PushKind[]) => json<PushConfig>('/push/prefs', { method: 'PUT', body: JSON.stringify({ off }) }),
+  pushTest: () => json<{ sent: number }>('/push/test', { method: 'POST' }),
   rateAnalysis: (id: number, rating: Rating) =>
     json<AnalysisJob>(`/analyses/${id}/rating`, { method: 'PUT', body: JSON.stringify(rating) }),
   discardAnalysis: (id: number) => json<AnalysisJob>(`/analyses/${id}/discard`, { method: 'POST' }),

@@ -14,6 +14,8 @@ from app.meals.service import (
     update_meal,
 )
 from app.meals.tasks import generate_recipe
+from app.push.notify import RATE_AFTER_MIN
+from app.push.tasks import notify_partner_rated, remind_rate
 
 router = APIRouter(prefix="/meals", tags=["meals"])
 
@@ -27,6 +29,9 @@ async def list_meals(user: CurrentUser, session: Session) -> list[MealCard]:
 async def create_meal(body: MealCreate, user: CurrentUser, session: Session) -> MealOut:
     meal = await post_meal(session, user, body)
     await generate_recipe.defer_async(meal_id=meal.id)
+    await remind_rate.configure(schedule_in={"minutes": RATE_AFTER_MIN}).defer_async(
+        meal_id=meal.id
+    )
     return await meal_out(session, user, meal)
 
 
@@ -46,6 +51,7 @@ async def patch_meal(meal_id: int, body: MealPatch, user: CurrentUser, session: 
 async def rate_meal(meal_id: int, body: RatingIn, user: CurrentUser, session: Session) -> MealOut:
     meal = await get_own_meal(session, user, meal_id)
     await save_rating(session, user, meal, body)
+    await notify_partner_rated.defer_async(meal_id=meal.id, rater_id=user.id)
     return await meal_out(session, user, meal)
 
 

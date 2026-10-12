@@ -42,11 +42,17 @@ services:
       retries: 12
       start_period: 20s
 
-  worker:
+  worker: # photo analysis + recipes: one at a time, each takes minutes on the CPU
     <<: *api
-    command: procrastinate --app=app.jobs.jobs_app worker
+    command: procrastinate --app=app.jobs.jobs_app worker --queues vision
     depends_on:
       api: { condition: service_healthy } # api runs the migrations
+
+  notifier: # push notifications: own worker so they never wait behind an analysis
+    <<: *api
+    command: procrastinate --app=app.jobs.jobs_app worker --queues push --concurrency 4
+    depends_on:
+      api: { condition: service_healthy }
 
   caddy:
     image: ${WEB_IMAGE:-ghcr.io/tomi-trost/food-buddy-web:latest}

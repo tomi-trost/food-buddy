@@ -1,4 +1,6 @@
+import { useEffect } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router'
+import { syncPush } from '../lib/push'
 import { Icon, type IconName } from '../ui/Icon'
 import { PendingBanner } from './PendingBanner'
 
@@ -20,6 +22,9 @@ function Tab({ to, label, icon }: (typeof TABS)[number]) {
 
 export function AppLayout() {
   const navigate = useNavigate()
+  useEffect(() => {
+    syncPush().catch(() => {}) // best effort: keeps this phone's subscription current
+  }, [])
   return (
     <div className="app">
       <main className="screen">

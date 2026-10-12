@@ -29,6 +29,11 @@ class Settings(BaseSettings):
     # images up to the same ~1,030 image tokens, so going below 896 gains nothing.
     vision_max_px: int = Field(default=896, gt=0)
 
+    # Web Push. Off unless both are set; key from `python -m app.push.keys` (base64url, raw
+    # 32-byte P-256 private key). Subject: contact for the push services (mailto: or https:).
+    vapid_private_key: str | None = None
+    vapid_subject: str | None = None
+
     # Tried in order; set as JSON, e.g.
     # VISION_PROVIDERS='[{"name":"local","url":"http://ollama:11434/v1","model":"qwen3-vl:4b-instruct"}]'
     vision_providers: list[VisionProviderConfig] = [

@@ -101,7 +101,7 @@ Shared conventions for all sections:
 
 ## M5 — Hardening & extras
 
-- [ ] Web Push (VAPID): "analysis ready", "partner rated", "approve the plan"
+- [ ] Web Push (VAPID): built 2026-10-12 (moved up from M5) with "ready to check", "rate after eating" (90 min), "partner rated", daily reminder (18:00 UTC); per-kind switches in Settings; own `notifier` worker on the `push` queue. Still to do: "approve the plan"
 - [ ] Refresh tokens; rate limit on login
 - [ ] Client-side photo resize before upload (saves mobile data); HEIC check on iPhone
 - [ ] API types generated from OpenAPI

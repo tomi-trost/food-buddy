@@ -253,3 +253,6 @@ export type Reward = {
   progress: number
   per: number
 }
+
+export type PushKind = 'ready' | 'rate' | 'partner' | 'daily'
+export type PushConfig = { enabled: boolean; public_key: string | null; off: PushKind[] }

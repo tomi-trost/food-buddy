@@ -65,7 +65,7 @@ async def test_post_meal_scales_recipe_and_logs_what_was_eaten(client, auth, see
     assert meal["per_portion"]["kcal"] == 551.7
     assert meal["steps"][0] == "Prep: wash and chop rice (cooked), chicken breast, olive oil."
     assert meal["steps_source"] == "template"
-    assert [j["task_name"] for j in queue.jobs.values()] == ["generate_recipe"]
+    assert [j["task_name"] for j in queue.jobs.values()] == ["generate_recipe", "remind_rate"]
 
     log = (await seeded.scalars(select(FoodLog))).one()
     assert (log.meal_type, log.eaten_on, log.source, log.kind) == ("lunch", TODAY, "snap", "meal")

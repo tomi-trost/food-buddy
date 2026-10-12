@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import ARRAY, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base, TimestampMixin
@@ -25,6 +25,8 @@ class User(TimestampMixin, Base):
     name: Mapped[str] = mapped_column(String(80))
     password_hash: Mapped[str] = mapped_column(String(255))
     color: Mapped[str] = mapped_column(String(9), default="#b9532f")
+    # Push notification kinds this person turned off (ready|rate|partner|daily)
+    notify_off: Mapped[list[str]] = mapped_column(ARRAY(String(10)), default=list)
     goal_kcal: Mapped[int] = mapped_column(default=2200)
     goal_protein: Mapped[int] = mapped_column(default=110)
     goal_fiber: Mapped[int] = mapped_column(default=30)

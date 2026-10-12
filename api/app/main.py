@@ -12,6 +12,7 @@ from app.logs.router import router as logs_router
 from app.meals.router import router as meals_router
 from app.nutrition.router import router as nutrition_router
 from app.plan.router import router as plan_router
+from app.push.router import router as push_router
 from app.shopping.router import router as shopping_router
 from app.snacks.router import router as snacks_router
 
@@ -38,6 +39,7 @@ async def health(session: Session) -> dict[str, str]:
 api.include_router(auth_router)
 api.include_router(analysis_router)
 api.include_router(meals_router)
+api.include_router(push_router)
 api.include_router(nutrition_router)
 api.include_router(inventory_router)
 api.include_router(plan_router)

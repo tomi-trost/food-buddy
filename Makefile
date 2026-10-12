@@ -14,7 +14,7 @@ db:               ## Postgres on localhost:5433
 api: db           ## API with reload on :8000 (migrates + seeds first)
 	cd api && $(BIN)/alembic upgrade head && $(BIN)/python -m app.nutrition.seed && $(BIN)/uvicorn app.main:app --reload
 
-worker: db        ## background worker (vision jobs)
+worker: db        ## background worker (all queues: vision + push)
 	cd api && $(BIN)/procrastinate --app=app.jobs.jobs_app worker
 
 web:              ## Vite dev server on :5173 (proxies /api to :8000)
