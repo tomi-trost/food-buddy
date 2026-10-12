@@ -43,5 +43,5 @@ target-version = "py312"
 select = ["E", "F", "I", "UP", "B", "ASYNC"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["app", "tests"]
+known-first-party = ["app", "benchmark", "tests"]
 known-third-party = ["alembic"]
