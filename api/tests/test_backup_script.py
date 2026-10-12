@@ -207,3 +207,9 @@ def test_unknown_command_is_rejected(run):
     result, calls = run("delete-everything")
     assert result.returncode == 2
     assert "usage" in result.stderr
+
+
+def test_systemd_unit_gives_restic_a_persistent_cache():
+    unit = (SCRIPT.parent / "systemd" / "food-buddy-backup.service").read_text()
+    assert "CacheDirectory=food-buddy-backup" in unit
+    assert "Environment=RESTIC_CACHE_DIR=/var/cache/food-buddy-backup" in unit

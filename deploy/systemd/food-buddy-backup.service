@@ -7,5 +7,8 @@ ConditionPathExists=/etc/food-buddy/backup.env
 [Service]
 Type=oneshot
 ExecStart=/opt/food-buddy/deploy/backup.sh
+# Without a local cache restic re-downloads its index from B2 every night (uses free egress)
+CacheDirectory=food-buddy-backup
+Environment=RESTIC_CACHE_DIR=/var/cache/food-buddy-backup
 Nice=10
 IOSchedulingClass=idle
