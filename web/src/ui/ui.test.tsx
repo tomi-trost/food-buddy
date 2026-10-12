@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { useState } from 'react'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Sheet } from './Sheet'
 import { starAt, Stars } from './Stars'
 import { Stepper } from './Stepper'
@@ -83,6 +83,79 @@ describe('Stars', () => {
     render(<Stars value={3.5} />)
     expect(screen.getByRole('img', { name: '3.5 of 5 stars' })).toBeInTheDocument()
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
+  })
+})
+
+let now = 0
+
+/** Touch at ys[0], move through the rest, lift `ms` later. */
+function swipe(el: Element, ys: number[], ms = 400) {
+  fireEvent.touchStart(el, { touches: [{ clientY: ys[0] }] })
+  ys.slice(1).forEach((y) => fireEvent.touchMove(el, { touches: [{ clientY: y }] }))
+  now += ms
+  fireEvent.touchEnd(el, { touches: [] })
+}
+
+describe('Sheet swipe', () => {
+  beforeEach(() => {
+    now = 0
+    vi.spyOn(performance, 'now').mockImplementation(() => now)
+  })
+  afterEach(() => vi.restoreAllMocks())
+
+  it('closes on a swipe down from the top', () => {
+    const onClose = vi.fn()
+    render(<Sheet open onClose={onClose} label="Test"><p>content</p></Sheet>)
+    swipe(screen.getByRole('dialog'), [100, 150, 220])
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('follows the finger and snaps back after a short slow pull', () => {
+    const onClose = vi.fn()
+    render(<Sheet open onClose={onClose} label="Test"><p>content</p></Sheet>)
+    const sheet = screen.getByRole('dialog')
+    fireEvent.touchStart(sheet, { touches: [{ clientY: 100 }] })
+    fireEvent.touchMove(sheet, { touches: [{ clientY: 140 }] })
+    expect(sheet.style.transform).toBe('translateY(40px)')
+    now += 600
+    fireEvent.touchEnd(sheet, { touches: [] })
+    expect(sheet.style.transform).toBe('')
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it('closes on a quick flick even if short', () => {
+    const onClose = vi.fn()
+    render(<Sheet open onClose={onClose} label="Test"><p>content</p></Sheet>)
+    swipe(screen.getByRole('dialog'), [100, 150], 50) // 50 px in 50 ms
+    expect(onClose).toHaveBeenCalled()
+  })
+
+  it('scrolls its content instead when not at the top, and ignores swipes up', () => {
+    const onClose = vi.fn()
+    render(<Sheet open onClose={onClose} label="Test"><p>content</p></Sheet>)
+    const sheet = screen.getByRole('dialog')
+    sheet.scrollTop = 120
+    swipe(sheet, [100, 200, 300])
+    expect(sheet.style.transform).toBe('')
+    sheet.scrollTop = 0
+    swipe(sheet, [300, 100])
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it('locks the page behind while any sheet is open', () => {
+    const html = document.documentElement
+    const { rerender, unmount } = render(<>
+      <Sheet open onClose={() => {}} label="A"><p>a</p></Sheet>
+      <Sheet open onClose={() => {}} label="B"><p>b</p></Sheet>
+    </>)
+    expect(html).toHaveClass('sheet-open')
+    rerender(<>
+      <Sheet open={false} onClose={() => {}} label="A"><p>a</p></Sheet>
+      <Sheet open onClose={() => {}} label="B"><p>b</p></Sheet>
+    </>)
+    expect(html).toHaveClass('sheet-open') // B is still open
+    unmount()
+    expect(html).not.toHaveClass('sheet-open')
   })
 })
 
