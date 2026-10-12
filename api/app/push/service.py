@@ -114,7 +114,12 @@ async def push(
     ids = set(user_ids)
     if key is None or not ids:
         return 0
-    users = [u for u in await session.scalars(select(User).where(User.id.in_(ids)))]
+    # populate_existing: prefs may have changed since this session first loaded the user
+    users = list(
+        await session.scalars(
+            select(User).where(User.id.in_(ids)).execution_options(populate_existing=True)
+        )
+    )
     wanted = {u.id for u in users if ignore_mute or kind not in (u.notify_off or [])}
     if ref is not None and wanted:
         done = await session.scalars(
