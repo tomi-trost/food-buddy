@@ -6,6 +6,7 @@ from pathlib import Path
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.analysis.models import AnalysisJob
+from app.analysis.photos import shrink_jpeg
 from app.analysis.schemas import AnalysisItem, AnalysisResult, MatchedIngredient
 from app.nutrition.macros import total
 from app.nutrition.matching import match_ingredient
@@ -57,7 +58,7 @@ async def ground(session: AsyncSession, analysis: MealAnalysis) -> AnalysisResul
 
 
 async def run_analysis(
-    session: AsyncSession, job_id: int, chain: VisionChain, photo_dir: Path
+    session: AsyncSession, job_id: int, chain: VisionChain, photo_dir: Path, *, vision_max_px: int
 ) -> AnalysisJob:
     job = await session.get(AnalysisJob, job_id)
     if job is None:
@@ -68,7 +69,7 @@ async def run_analysis(
     job.status = "running"
     await session.commit()
 
-    jpeg = (photo_dir / job.photo_path).read_bytes()
+    jpeg = shrink_jpeg((photo_dir / job.photo_path).read_bytes(), vision_max_px)
     try:
         if job.kind == "meal":
             provider, analysis = await chain.analyze_meal(jpeg)

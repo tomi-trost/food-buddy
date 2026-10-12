@@ -23,7 +23,11 @@ class Settings(BaseSettings):
     access_token_minutes: int = 60 * 24 * 7
     photo_dir: Path = Path("data/photos")
     max_upload_mb: int = 15
-    photo_max_px: int = 1280
+    photo_max_px: int = 1280  # stored photo, shown in the app
+    # Copy sent to the vision model. Measured on the 2-core VM (qwen3-vl:4b, Ollama 0.40):
+    # 1280 px → 1,328 prompt tokens, 234 s; 896 px → 1,164, 202 s. Ollama scales smaller
+    # images up to the same ~1,030 image tokens, so going below 896 gains nothing.
+    vision_max_px: int = Field(default=896, gt=0)
 
     # Tried in order; set as JSON, e.g.
     # VISION_PROVIDERS='[{"name":"local","url":"http://ollama:11434/v1","model":"qwen3-vl:4b-instruct"}]'

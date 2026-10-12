@@ -22,6 +22,17 @@ def normalize_photo(data: bytes, max_px: int) -> bytes:
         raise InvalidPhoto("Not a readable image") from exc
 
 
+def shrink_jpeg(jpeg: bytes, max_px: int) -> bytes:
+    """Smaller copy of an already-normalized JPEG; returned as-is if it already fits."""
+    with Image.open(io.BytesIO(jpeg)) as img:
+        if max(img.size) <= max_px:
+            return jpeg
+        img.thumbnail((max_px, max_px))
+        out = io.BytesIO()
+        img.save(out, format="JPEG", quality=85)
+        return out.getvalue()
+
+
 def save_photo(root: Path, household_id: int, jpeg: bytes) -> str:
     """Store under <root>/<household>/<uuid>.jpg; returns the path relative to root."""
     relative = Path(str(household_id)) / f"{uuid.uuid4().hex}.jpg"

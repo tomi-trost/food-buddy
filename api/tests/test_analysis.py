@@ -1,13 +1,16 @@
+import base64
 import io
+import json
 
 import httpx
 import pytest
 from PIL import Image
+from pydantic import ValidationError
 
 from app.analysis.models import AnalysisJob
-from app.analysis.photos import normalize_photo
+from app.analysis.photos import normalize_photo, shrink_jpeg
 from app.analysis.service import run_analysis
-from app.config import get_settings
+from app.config import Settings, get_settings
 from app.nutrition.seed import seed_mock
 from app.vision.providers import chain_from_settings
 from tests.conftest import jpeg_bytes, register
@@ -23,7 +26,11 @@ async def process(session, job_id, transport):
     settings = get_settings()
     async with httpx.AsyncClient(transport=transport) as http:
         return await run_analysis(
-            session, job_id, chain_from_settings(settings, http), settings.photo_dir
+            session,
+            job_id,
+            chain_from_settings(settings, http),
+            settings.photo_dir,
+            vision_max_px=settings.vision_max_px,
         )
 
 
@@ -129,3 +136,55 @@ async def test_task_marks_job_failed_on_unexpected_error(client, auth, session, 
     body = (await client.get(f"/api/analyses/{job_id}", headers=auth)).json()
     assert body["status"] == "failed"
     assert body["error"] == "Unexpected error while analyzing the photo"
+
+
+def sent_image_size(request: httpx.Request) -> tuple[int, int]:
+    """Size of the photo inside an OpenAI-style chat request."""
+    content = json.loads(request.content)["messages"][-1]["content"]
+    url = next(part["image_url"]["url"] for part in content if part["type"] == "image_url")
+    jpeg = base64.b64decode(url.split(",", 1)[1])
+    return Image.open(io.BytesIO(jpeg)).size
+
+
+async def test_worker_sends_smaller_photo_to_model_but_keeps_stored_photo(
+    client, auth, session, monkeypatch
+):
+    settings = get_settings()
+    monkeypatch.setattr(settings, "photo_max_px", 1280)
+    monkeypatch.setattr(settings, "vision_max_px", 768)
+    job_id = (await upload(client, auth, jpeg_bytes(size=(4000, 3000)))).json()["id"]
+
+    seen: list = []
+    job = await process(session, job_id, vision_transport(seen=seen))
+
+    assert job.status == "done"
+    assert sent_image_size(seen[0]) == (768, 576)
+    photo = await client.get(f"/api/analyses/{job_id}/photo", headers=auth)
+    assert Image.open(io.BytesIO(photo.content)).size == (1280, 960)
+
+
+async def test_worker_sends_small_photo_unchanged(client, auth, session, monkeypatch):
+    monkeypatch.setattr(get_settings(), "vision_max_px", 768)
+    job_id = (await upload(client, auth, jpeg_bytes(size=(640, 480)))).json()["id"]
+
+    seen: list = []
+    await process(session, job_id, vision_transport(seen=seen))
+
+    assert sent_image_size(seen[0]) == (640, 480)
+
+
+def test_shrink_jpeg_keeps_bytes_when_already_small():
+    small = normalize_photo(jpeg_bytes(size=(300, 200)), 1280)
+    assert shrink_jpeg(small, 300) is small
+    assert shrink_jpeg(small, 2000) is small
+
+
+def test_shrink_jpeg_resizes_portrait_by_long_side():
+    tall = normalize_photo(jpeg_bytes(size=(960, 1280)), 1280)
+    assert Image.open(io.BytesIO(shrink_jpeg(tall, 896))).size == (672, 896)
+
+
+def test_vision_max_px_must_be_positive(monkeypatch):
+    monkeypatch.setenv("VISION_MAX_PX", "0")
+    with pytest.raises(ValidationError):
+        Settings()

@@ -20,7 +20,9 @@ async def analyze_photo(job_id: int) -> None:
     try:
         async with httpx.AsyncClient() as client, SessionLocal() as session:
             chain = chain_from_settings(settings, client)
-            await run_analysis(session, job_id, chain, settings.photo_dir)
+            await run_analysis(
+                session, job_id, chain, settings.photo_dir, vision_max_px=settings.vision_max_px
+            )
     except Exception:
         # Never leave the job "queued"/"running" forever: the app would keep polling.
         log.exception("analyze_photo failed for job %s", job_id)

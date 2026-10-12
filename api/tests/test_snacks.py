@@ -78,7 +78,11 @@ async def analyze(client, auth, session, kind, answer):
     seen: list = []
     async with httpx.AsyncClient(transport=vision_transport(answer, seen=seen)) as http:
         await run_analysis(
-            session, job["id"], chain_from_settings(settings, http), settings.photo_dir
+            session,
+            job["id"],
+            chain_from_settings(settings, http),
+            settings.photo_dir,
+            vision_max_px=settings.vision_max_px,
         )
     return (await client.get(f"/api/analyses/{job['id']}", headers=auth)).json(), seen
 
