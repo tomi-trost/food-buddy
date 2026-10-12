@@ -36,5 +36,5 @@ Status: idea · planned · done · dropped
 | 2026-10-05 | Service worker serves the previous app version until reload; show an "update available" prompt | idea |
 | 2026-10-05 | Edit a meal's ingredients and steps after posting | idea |
 
-| 2026-10-12 | Taste stars: drag/slide a finger across the stars to set the rating (half-step snapping), tapping alone is fiddly on the phone | idea |
+| 2026-10-12 | Taste stars: drag/slide a finger across the stars to set the rating (half-step snapping), tapping alone is fiddly on the phone | done (2026-10-12) |
 | 2026-10-12 | Edit the macro values the model read (kcal, carbs, protein, fat, fiber, sugar): label scan shows them read-only, so a misread number can't be fixed. Meals: macros come from the matched ingredients (grams/ingredients are editable), but a manual per-ingredient or total override may be wanted too | idea |
