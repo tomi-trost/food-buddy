@@ -89,7 +89,7 @@ Shared conventions for all sections:
 
 ## M2b — After the first days of real use (2026-10-12)
 
-- [x] Login fix: an expired Cloudflare Access session made every API call fail with "Load failed" (the service worker's cached shell never passed Access again); the client now detects Access' redirect and goes through `/api/reauth`, which Access intercepts with its PIN page and then sends back
+- [x] Login fix (2026-10-13 also a "Trouble signing in?" link on the login page to `/api/reauth`): an expired Cloudflare Access session made every API call fail with "Load failed" (the service worker's cached shell never passed Access again); the client now detects Access' redirect and goes through `/api/reauth`, which Access intercepts with its PIN page and then sends back
 - [x] Log an existing meal: Today's "+" opens a picker (snap or one of our meals, slot's type first); meal cards have a log button; the cook sheet has portions eaten and "cooked it now" vs "already made" (leftovers / partner cooked: no second stock deduction, source `leftover`)
 - [x] Saved snacks: "Save to our snacks" when logging a snack (photo kept), "Our snacks" in the snack sheet, Meals → Snacks tab; one per name per household, edit/remove (`saved_snack`, 0013)
 - [x] Type it instead: meals and snacks from a typed name (`POST /api/analyses/text`), same job, check screen and push; text prompts with portion anchors (0014). ~4 s on the Mac vs ~1 min expected on the VM (no image encoding)

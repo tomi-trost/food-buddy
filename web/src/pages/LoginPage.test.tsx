@@ -47,4 +47,9 @@ describe('LoginPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Wrong email or password')
     expect(screen.queryByText('home page')).not.toBeInTheDocument()
   })
+
+  it('links to the Cloudflare access check outside the service worker', () => {
+    renderAt('/login', <Route path="/login" element={<LoginPage />} />)
+    expect(screen.getByRole('link', { name: 'Renew the access check' })).toHaveAttribute('href', '/api/reauth?next=%2Flogin')
+  })
 })

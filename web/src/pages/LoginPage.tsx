@@ -88,6 +88,11 @@ export function LoginPage() {
           {mode === 'login' ? 'Log in' : 'Create account'}
         </button>
       </form>
+      {/* A real navigation outside the service worker: Cloudflare Access can ask for its PIN
+          even when the app runs from its cache and every request silently fails. */}
+      <p className="sub" style={{ textAlign: 'center', marginTop: 16 }}>
+        Trouble signing in? <a href="/api/reauth?next=%2Flogin">Renew the access check</a>
+      </p>
     </main>
   )
 }
