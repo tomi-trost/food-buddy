@@ -97,3 +97,11 @@ async def test_chain_reports_every_failure():
 async def test_empty_chain_fails():
     with pytest.raises(AllProvidersFailed, match="none configured"):
         await VisionChain([]).analyze_meal(b"x")
+
+
+async def test_waits_long_enough_for_a_cpu_only_model():
+    # On the 2-core VM a plate took 286 s; the old 300 s limit nearly failed it.
+    seen: list[httpx.Request] = []
+    await provider(vision_transport(seen=seen)).analyze_meal(b"\xff\xd8jpeg")
+
+    assert seen[0].extensions["timeout"]["read"] >= 600

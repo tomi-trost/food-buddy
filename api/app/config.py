@@ -11,7 +11,8 @@ class VisionProviderConfig(BaseModel):
     name: str
     url: str
     model: str
-    timeout_s: float = 300.0
+    # CPU-only Oracle A1 (2 cores): a 1280 px photo took 286 s with qwen3-vl:4b on 2026-10-12
+    timeout_s: float = 600.0
 
 
 class Settings(BaseSettings):

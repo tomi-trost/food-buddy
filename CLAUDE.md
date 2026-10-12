@@ -19,11 +19,12 @@ Phone-first app for two people (Tomi + partner): snap a plate photo → AI ident
 ## Next session
 M2 is mostly done (2026-10-11): the stack runs on the Oracle A1 VM `food-buddy` (138.3.250.82, `ssh ubuntu@138.3.250.82`, stack in `/opt/food-buddy/deploy`) and is live at **https://food-buddy.web-corner.cc** behind Cloudflare Access (one-time PIN, only Tomi's and partner's emails). Oracle is Pay As You Go, kept at 0 € by quota policy `free-tier-guard` + a budget alert; never create resources beyond the Always Free limits.
 
-**First thing next session: iPhone smoke test** (with Tomi):
-1. Open the link in Safari → enter email → enter the code Cloudflare emails.
-2. Register in the app: the first person creates a new household; the app shows an invite code; the partner registers with that code to join the same household.
-3. Share → Add to Home Screen.
-4. Snap a test meal. Analysis runs on the VM's CPU (`qwen3-vl:4b-instruct`): tens of seconds to a couple of minutes.
+**Deploys:** every push to `main` goes live automatically once CI passes (CI `deploy` job → `deploy/deploy.sh` on the VM via a deploy-only key). For manual SSH, Tomi first runs `ssh-add --apple-use-keychain ~/.ssh/oracle_food-buddy` in a real terminal (the key has a passphrase).
+
+**Smoke test status (2026-10-12):** Snap redesign + "Choose from library" + iPhone zoom fix are live; first real analysis worked end to end (pasta with zucchini). Still to check on the iPhone: camera opens from the shutter, no zoom/sideways scroll, partner registers with the invite code, Add to Home Screen.
+
+**Next fix: analysis is too slow (286 s for one photo on the VM's 2 CPU cores).** Most of the time is image encoding (~1,300 tokens at `photo_max_px` 1280, ~30 s per 512-token batch). The vision timeout was raised 300 → 600 s as a stopgap so it doesn't fail. Fix: lower `photo_max_px` (api/app/config.py) to ~896 or 768 and compare speed + recognition on the same photo; also consider resizing on the phone before upload (saves mobile data, see M5 backlog). Zucchini wasn't in the seed ingredients, so it came back without nutrients (M4 USDA/Ciqual import fixes that).
+
 Then: rest of M2 (nightly backups with restic), M3 (model benchmark), M4 (USDA/Ciqual import). Family members later: add their emails to the Access policy; they can register their own household. Parked questions: license, subdomain, confirming 0017. Vision models must be **instruct** tags (e.g. `qwen3-vl:4b-instruct`); the plain `qwen3-vl:2b` thinks and returns empty content. After rebuilding the web image locally, clear the PWA service worker in the browser (it serves the old bundle until reload).
 
 ## Testing (required)
