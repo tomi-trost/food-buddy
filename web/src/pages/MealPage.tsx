@@ -7,7 +7,6 @@ import { MEAL_TYPE_LABEL, todayISO } from '../lib/dates'
 import { ago, againLabel, FILL_LABEL, fillTip } from '../lib/meals'
 import { AddToPlanSheet } from '../meals/AddToPlanSheet'
 import { CookSheet } from '../meals/CookSheet'
-import { EditMealSheet } from '../meals/EditMealSheet'
 import { RateSheet } from '../meals/RateSheet'
 import { Avatar } from '../ui/Avatar'
 import { Icon } from '../ui/Icon'
@@ -28,7 +27,6 @@ export function MealPage() {
   const [rating, setRating] = useState(false)
   const [cooking, setCooking] = useState(false)
   const [planning, setPlanning] = useState(false)
-  const [editing, setEditing] = useState(false)
 
   // Right after posting (?rate=1) the rating sheet opens, like the mock.
   useEffect(() => {
@@ -48,7 +46,7 @@ export function MealPage() {
         {m && <span className="sub sp" style={{ textAlign: 'center' }}>{ago(m.last_cooked, today)}</span>}
         {m && (
           <>
-            <button className="icon" aria-label="Edit meal" onClick={() => setEditing(true)}><Icon name="settings" /></button>
+            <button className="icon" aria-label="Edit meal" onClick={() => navigate(`/meals/${m.id}/edit`)}><Icon name="settings" /></button>
             <button className="btn sm ghost" onClick={() => setPlanning(true)}><Icon name="plan" size={16} /> Add to plan</button>
           </>
         )}
@@ -101,7 +99,9 @@ export function MealPage() {
           {tab === 'nutrition' && (
             <>
               <div className="card">
-                <div className="sub" style={{ marginBottom: 8 }}>Per portion</div>
+                <div className="sub" style={{ marginBottom: 8 }}>
+                  Per portion{m.nutrients_overridden && ` · your values (calculated ${Math.round(m.per_portion_calculated.kcal)} kcal)`}
+                </div>
                 <MacroTiles values={m.per_portion} />
               </div>
               {fillTip(m.ratings.map((r) => r.rating)) && (
@@ -147,7 +147,6 @@ export function MealPage() {
           <RateSheet meal={m} meId={me.id} open={rating} onClose={() => setRating(false)} />
           <CookSheet meal={m} open={cooking} onClose={() => setCooking(false)} />
           <AddToPlanSheet meal={m} open={planning} onClose={() => setPlanning(false)} />
-          <EditMealSheet meal={m} open={editing} onClose={() => setEditing(false)} />
         </>
       )}
     </>

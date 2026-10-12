@@ -117,6 +117,10 @@ export const api = {
   cookable: () => json<MealCard[]>('/inventory/cookable'),
   patchMeal: (id: number, patch: MealPatch) =>
     json<Meal>(`/meals/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),
+  async deleteMeal(id: number, keepLog: boolean) {
+    await request(`/meals/${id}?keep_log=${keepLog}`, { method: 'DELETE' })
+  },
+  unrateMeal: (id: number) => json<Meal>(`/meals/${id}/rating`, { method: 'DELETE' }),
   day: (date: string) => json<Day>(`/day?date=${date}`),
   insights: (end: string, days = 7) => json<Insights>(`/insights?end=${end}&days=${days}`),
   snackCatalog: () => json<CatalogItem[]>('/snacks/catalog'),

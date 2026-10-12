@@ -2,7 +2,7 @@ from collections import defaultdict
 from datetime import date
 
 from fastapi import HTTPException, status
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.analysis.queue import close, lock_open_job, move_early_ratings
@@ -14,6 +14,7 @@ from app.meals.models import CookLog, Meal, MealIngredient
 from app.meals.recipes import template_steps
 from app.meals.schemas import (
     CookIn,
+    ItemIn,
     MealCard,
     MealCreate,
     MealIngredientOut,
@@ -36,8 +37,15 @@ def estimated_cost(meal: Meal) -> float:
     return sum(mi.ingredient.price_per_100g * mi.grams / 100 for mi in meal.ingredients)
 
 
-def per_portion(meal: Meal) -> Nutrients:
+def calculated_per_portion(meal: Meal) -> Nutrients:
     return recipe_nutrients(meal).scaled(100 / meal.portions)
+
+
+def per_portion(meal: Meal) -> Nutrients:
+    """Typed-in values win over the ones calculated from the ingredients."""
+    if meal.nutrients_override is not None:
+        return Nutrients(**meal.nutrients_override)
+    return calculated_per_portion(meal)
 
 
 def effective_cost(meal: Meal) -> float:
@@ -83,6 +91,7 @@ async def meal_out(session: AsyncSession, user: User, meal: Meal) -> MealOut:
     mine = {r.user_id: r for r in ratings}
     members = await household_members(session, user.household_id)
     ordered = sorted(meal.ingredients, key=lambda mi: -mi.grams)
+    logged = await session.scalar(select(func.count()).where(FoodLog.meal_id == meal.id))
     return MealOut(
         id=meal.id,
         name=meal.name,
@@ -101,6 +110,9 @@ async def meal_out(session: AsyncSession, user: User, meal: Meal) -> MealOut:
             for mi in ordered
         ],
         per_portion=NutrientsOut(**portion.rounded()),
+        per_portion_calculated=NutrientsOut(**calculated_per_portion(meal).rounded()),
+        nutrients_overridden=meal.nutrients_override is not None,
+        logged_count=logged or 0,
         score=meal_score(ratings),
         cooked_count=stats[0],
         last_cooked=stats[1],
@@ -221,6 +233,7 @@ async def post_meal(session: AsyncSession, user: User, body: MealCreate) -> Meal
         portions=body.portions,
         cost=body.cost,
         steps=template_steps([found[k].name for k in by_weight], body.prep_minutes, body.portions),
+        nutrients_override=body.per_portion.model_dump() if body.per_portion else None,
         ingredients=[
             MealIngredient(ingredient_id=k, grams=recipe[k], ingredient=found[k]) for k in ids
         ],
@@ -230,9 +243,6 @@ async def post_meal(session: AsyncSession, user: User, body: MealCreate) -> Meal
 
     if body.eaten:  # saved for later: only the recipe goes into the library
         session.add(CookLog(meal_id=meal.id, user_id=user.id, cooked_on=body.eaten_on))
-        eaten = total(found[k].per100.scaled(g) for k, g in plate.items()).scaled(
-            body.servings_eaten * 100
-        )
         log = FoodLog(
             household_id=user.household_id,
             user_id=user.id,
@@ -243,8 +253,9 @@ async def post_meal(session: AsyncSession, user: User, body: MealCreate) -> Meal
             meal_id=meal.id,
             kind="meal",
             source="snap",
+            servings=body.servings_eaten,
         )
-        log.set_nutrients(eaten)
+        log.set_nutrients(per_portion(meal).scaled(body.servings_eaten * 100))
         session.add(log)
 
         await deduct(session, user.household_id, recipe)
@@ -257,6 +268,13 @@ async def post_meal(session: AsyncSession, user: User, body: MealCreate) -> Meal
 
 
 async def update_meal(session: AsyncSession, meal: Meal, body: MealPatch) -> None:
+    sent = body.model_fields_set
+    if body.items is not None:
+        await _replace_ingredients(session, meal, body.items)
+    if "cost" in sent:
+        meal.cost = body.cost
+    if "per_portion" in sent:
+        meal.nutrients_override = body.per_portion.model_dump() if body.per_portion else None
     if body.name is not None:
         meal.name = body.name.strip()
     if body.types is not None:
@@ -268,6 +286,58 @@ async def update_meal(session: AsyncSession, meal: Meal, body: MealPatch) -> Non
         meal.prep_minutes = body.prep_minutes
     if body.portions is not None:
         meal.portions = body.portions
+    await session.flush()
+    await _refresh_logs(session, meal)
+    await session.commit()
+
+
+async def _replace_ingredients(session: AsyncSession, meal: Meal, items: list[ItemIn]) -> None:
+    ids = [i.ingredient_id for i in items]
+    found = {
+        i.id: i for i in await session.scalars(select(Ingredient).where(Ingredient.id.in_(ids)))
+    }
+    if missing := set(ids) - set(found):
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, f"Unknown ingredients {missing}")
+    # In place: the unit of work inserts before it deletes, so replacing the list would
+    # briefly hold the same ingredient twice (unique per meal)
+    grams = {i.ingredient_id: i.grams for i in items}
+    for mi in list(meal.ingredients):
+        if mi.ingredient_id in grams:
+            mi.grams = grams.pop(mi.ingredient_id)
+        else:
+            meal.ingredients.remove(mi)
+    await session.flush()
+    for k, g in grams.items():
+        meal.ingredients.append(MealIngredient(ingredient_id=k, grams=g, ingredient=found[k]))
+    meal.emoji = found[max(items, key=lambda i: i.grams).ingredient_id].emoji or meal.emoji
+
+
+async def _refresh_logs(session: AsyncSession, meal: Meal) -> None:
+    """Days this meal was eaten follow the edit: name and nutrition (portions eaten × per portion).
+
+    Stock taken out when it was cooked stays as it was.
+    """
+    portion = per_portion(meal)
+    for log in await session.scalars(select(FoodLog).where(FoodLog.meal_id == meal.id)):
+        log.name, log.emoji = meal.name, meal.emoji
+        log.set_nutrients(portion.scaled(log.servings * 100))
+
+
+async def delete_meal(session: AsyncSession, meal: Meal, *, keep_log: bool) -> None:
+    """Ratings, ingredients and cook counts go with it; plan slots become empty.
+
+    With `keep_log` the food-log entries stay (unlinked) so past days keep their totals.
+    """
+    if not keep_log:
+        await session.execute(delete(FoodLog).where(FoodLog.meal_id == meal.id))
+    await session.delete(meal)
+    await session.commit()
+
+
+async def delete_rating(session: AsyncSession, user: User, meal: Meal) -> None:
+    await session.execute(
+        delete(Rating).where(Rating.meal_id == meal.id, Rating.user_id == user.id)
+    )
     await session.commit()
 
 

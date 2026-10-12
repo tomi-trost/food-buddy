@@ -5,11 +5,12 @@ import { MemoryRouter, Routes } from 'react-router'
 import { vi } from 'vitest'
 import { ToastProvider } from '../ui/Toast'
 
-export function renderAt(path: string, routes: ReactNode) {
+/** `path` can be a history (last entry shown) so navigate(-1) has somewhere to go. */
+export function renderAt(path: string | string[], routes: ReactNode) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
     <QueryClientProvider client={client}>
-      <MemoryRouter initialEntries={[path]}>
+      <MemoryRouter initialEntries={Array.isArray(path) ? path : [path]} initialIndex={Array.isArray(path) ? path.length - 1 : 0}>
         <ToastProvider>
           <Routes>{routes}</Routes>
         </ToastProvider>

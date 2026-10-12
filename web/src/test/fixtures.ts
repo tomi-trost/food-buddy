@@ -56,7 +56,8 @@ export const meal = (over: Partial<Meal> = {}): Meal => ({
   id: 3, name: 'Chicken rice bowl', emoji: '🍚', photo_url: null, types: ['lunch'], tags: ['quick'],
   prep_minutes: 20, portions: 2, cost: 3.58, cost_estimated: true, steps: ['Cook rice.', 'Serve.'],
   steps_source: 'template', created_at: '2026-10-01T12:00:00Z',
-  per_portion: n(551.7, 51.9, 56, 9.9, 0.8, 0),
+  per_portion: n(551.7, 51.9, 56, 9.9, 0.8, 0), per_portion_calculated: n(551.7, 51.9, 56, 9.9, 0.8, 0),
+  nutrients_overridden: false, logged_count: 1,
   ingredients: [{ ingredient: ING.rice, grams: 400 }, { ingredient: ING.chicken, grams: 300 }],
   score: null, cooked_count: 1, last_cooked: '2026-10-01',
   ratings: [

@@ -9,6 +9,7 @@ import { HomePage } from './pages/HomePage'
 import { IngredientsPage } from './pages/IngredientsPage'
 import { InsightsPage } from './pages/InsightsPage'
 import { LoginPage } from './pages/LoginPage'
+import { MealEditPage } from './pages/MealEditPage'
 import { MealPage } from './pages/MealPage'
 import { MealsPage } from './pages/MealsPage'
 import { PlanPage } from './pages/PlanPage'
@@ -52,6 +53,7 @@ export function App() {
         <Route path="snap" element={<SnapPage />} />
         <Route path="analysis/:id" element={<AnalysisPage />} />
         <Route path="snack/:id" element={<SnackPage />} />
+        <Route path="meals/:id/edit" element={<MealEditPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

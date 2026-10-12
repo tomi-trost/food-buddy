@@ -1,6 +1,7 @@
 from datetime import date
 
 from sqlalchemy import ARRAY, Date, Float, ForeignKey, String, Text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base, TimestampMixin
@@ -27,6 +28,8 @@ class Meal(TimestampMixin, Base):
     cost: Mapped[float | None] = mapped_column(Float)  # manual override; None → from prices
     steps: Mapped[list[str]] = mapped_column(ARRAY(Text), default=list)
     steps_source: Mapped[str] = mapped_column(String(10), default="template")  # template|model
+    # Per portion, typed in by us; replaces the values calculated from the ingredients
+    nutrients_override: Mapped[dict | None] = mapped_column(JSONB)
 
     ingredients: Mapped[list["MealIngredient"]] = relationship(
         back_populates="meal", cascade="all, delete-orphan", lazy="selectin"

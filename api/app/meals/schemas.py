@@ -4,6 +4,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.nutrition.schemas import IngredientOut, NutrientsOut
+from app.snacks.schemas import NutrientsIn
 
 MealType = Literal["breakfast", "lunch", "dinner"]
 Fill = Literal["hungry", "right", "heavy"]
@@ -34,6 +35,7 @@ class MealCreate(BaseModel):
     items: list[ItemIn] = Field(min_length=1, max_length=40)
     used_up: list[int] = Field(default_factory=list)
     analysis_id: int | None = None
+    per_portion: NutrientsIn | None = None  # typed-in values instead of the ingredients' ones
 
     _servings = field_validator("servings_eaten")(_half_steps)
 
@@ -60,12 +62,28 @@ class CookIn(BaseModel):
     used_up: list[int] = Field(default_factory=list)
 
 
+def _unique_ingredients(items: list[ItemIn] | None) -> list[ItemIn] | None:
+    if items is not None and len({i.ingredient_id for i in items}) != len(items):
+        raise ValueError("Each ingredient may appear only once")
+    return items
+
+
 class MealPatch(BaseModel):
+    """Only the fields sent change. `cost: null` = estimate from prices again;
+    `per_portion: null` = use the values calculated from the ingredients again."""
+
     name: str | None = Field(default=None, min_length=1, max_length=120)
     types: list[MealType] | None = Field(default=None, min_length=1)
     prep_friendly: bool | None = None
     prep_minutes: int | None = Field(default=None, ge=1, le=600)
     portions: int | None = Field(default=None, ge=1, le=20)
+    cost: float | None = Field(default=None, ge=0, le=1000)
+    items: list[ItemIn] | None = Field(
+        default=None, min_length=1, max_length=40, description="grams for the whole recipe"
+    )
+    per_portion: NutrientsIn | None = None
+
+    _items = field_validator("items")(_unique_ingredients)
 
 
 class RatingIn(BaseModel):
@@ -127,6 +145,9 @@ class MealOut(MealStats):
     steps: list[str]
     steps_source: str
     ingredients: list[MealIngredientOut]
-    per_portion: NutrientsOut
+    per_portion: NutrientsOut  # what counts: typed-in values if any, else calculated
+    per_portion_calculated: NutrientsOut
+    nutrients_overridden: bool
+    logged_count: int  # food-log entries (both of us) that deleting the meal can remove
     ratings: list[RatingOut]
     created_at: datetime

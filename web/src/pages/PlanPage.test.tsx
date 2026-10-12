@@ -6,7 +6,6 @@ import type { Plan, Shopping } from '../api/types'
 import { card, me, meal, plan, shopping } from '../test/fixtures'
 import { jsonResponse, mockFetch, renderAt } from '../test/utils'
 import { AddToPlanSheet } from '../meals/AddToPlanSheet'
-import { EditMealSheet } from '../meals/EditMealSheet'
 import { PlanPage } from './PlanPage'
 
 type Handler = (url: string, init?: RequestInit) => Response | undefined
@@ -127,16 +126,5 @@ describe('meal sheets', () => {
     const [slotUrl, init] = fetch.mock.calls.find(([, i]) => i?.method === 'PUT')!
     expect(slotUrl).toBe('/api/plan/slots/1/dinner')
     expect(JSON.parse(String(init!.body))).toEqual({ mode: 'cook', meal_id: 3 })
-  })
-
-  it('edits meal types and the prep-friendly flag', async () => {
-    const fetch = api({ plan: null }, (_u, init) => (init?.method === 'PATCH' ? jsonResponse(meal()) : undefined))
-    renderAt('/m', <Route path="/m" element={<EditMealSheet meal={meal({ types: ['lunch'], tags: [] })} open onClose={() => {}} />} />)
-    expect(screen.getByRole('button', { name: 'Lunch' })).toBeDisabled() // last type can't be removed
-    fireEvent.click(screen.getByRole('button', { name: 'Dinner' }))
-    fireEvent.click(screen.getByRole('button', { name: 'No' }))
-    await waitFor(() => expect(fetch.mock.calls.filter(([, i]) => i?.method === 'PATCH')).toHaveLength(2))
-    const bodies = fetch.mock.calls.filter(([, i]) => i?.method === 'PATCH').map(([, i]) => JSON.parse(String(i!.body)))
-    expect(bodies).toEqual([{ types: ['lunch', 'dinner'] }, { prep_friendly: true }])
   })
 })

@@ -70,7 +70,10 @@ export type Meal = MealStats & {
   steps: string[]
   steps_source: 'template' | 'model'
   ingredients: { ingredient: Ingredient; grams: number }[]
-  per_portion: Nutrients
+  per_portion: Nutrients // what counts: typed-in values if any, else calculated
+  per_portion_calculated: Nutrients
+  nutrients_overridden: boolean
+  logged_count: number // food-log entries (both of us)
   ratings: { user_id: number; name: string; color: string; rating: Rating | null }[]
   created_at: string
 }
@@ -89,6 +92,7 @@ export type MealCreate = {
   items: { ingredient_id: number; grams: number }[]
   used_up: number[]
   analysis_id: number | null
+  per_portion?: Nutrients | null // typed in instead of the ingredients' values
 }
 
 export type AnalysisResult = {
@@ -202,7 +206,17 @@ export type ShoppingItem = {
 
 export type Shopping = { plan_approved: boolean; items: ShoppingItem[]; in_stock: Ingredient[]; total: number }
 
-export type MealPatch = Partial<{ name: string; types: MealType[]; prep_friendly: boolean; prep_minutes: number; portions: number }>
+/** Only the fields sent change. cost null = estimate again; per_portion null = calculate again. */
+export type MealPatch = Partial<{
+  name: string
+  types: MealType[]
+  prep_friendly: boolean
+  prep_minutes: number
+  portions: number
+  cost: number | null
+  items: { ingredient_id: number; grams: number }[] // whole recipe
+  per_portion: Nutrients | null
+}>
 
 export type LogEntry = {
   id: number

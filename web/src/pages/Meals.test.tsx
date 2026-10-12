@@ -98,6 +98,47 @@ describe('MealPage', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
+  it('removes my rating', async () => {
+    const rated = meal({ ratings: [{ user_id: 1, name: 'Tomi', color: '#b9532f', rating: { taste: 4, again: 5, effort: 5, fill: 'right' } }, meal().ratings[1]] })
+    const fetch = mockFetch((url, init) => {
+      if (url === '/api/auth/me') return jsonResponse(me())
+      if (init?.method === 'DELETE') return jsonResponse(meal())
+      return jsonResponse(rated)
+    })
+    renderMeal()
+    fireEvent.click(await screen.findByRole('button', { name: 'Ratings' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }))
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Rate meal' })).getByRole('button', { name: 'Remove my rating' }))
+    expect(await screen.findByText('Rating removed')).toBeInTheDocument()
+    expect(fetch.mock.calls.find(([, i]) => i?.method === 'DELETE')![0]).toBe('/api/meals/3/rating')
+    expect(screen.getByText('Not rated yet')).toBeInTheDocument()
+  })
+
+  it('offers no removal before I rated', async () => {
+    mealApi()
+    renderMeal()
+    fireEvent.click(await screen.findByRole('button', { name: 'Ratings' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Rate' }))
+    expect(screen.queryByRole('button', { name: 'Remove my rating' })).not.toBeInTheDocument()
+  })
+
+  it('opens the edit page and notes typed-in nutrition', async () => {
+    mockFetch((url) => (url === '/api/auth/me' ? jsonResponse(me()) : jsonResponse(meal({
+      nutrients_overridden: true, per_portion: { ...meal().per_portion, kcal: 700 },
+    }))))
+    renderAt('/meals/3', (
+      <>
+        <Route path="/meals/:id" element={<MealPage />} />
+        <Route path="/meals/:id/edit" element={<p>edit page</p>} />
+      </>
+    ))
+    fireEvent.click(await screen.findByRole('button', { name: 'Nutrition' }))
+    expect(screen.getByText(/your values \(calculated 552 kcal\)/)).toBeInTheDocument()
+    expect(screen.getByTestId('macro-kcal')).toHaveTextContent('700')
+    fireEvent.click(screen.getByRole('button', { name: 'Edit meal' }))
+    expect(screen.getByText('edit page')).toBeInTheDocument()
+  })
+
   it('logs a cook with used-up ingredients', async () => {
     let cooked: { meal_type: string; used_up: number[] } | undefined
     mealApi(undefined, (b) => (cooked = b as typeof cooked))

@@ -116,6 +116,46 @@ describe('snap flow', () => {
     expect(body.eaten_on).toMatch(/^\d{4}-\d{2}-\d{2}$/)
   })
 
+  it('posts typed-in nutrition per portion instead of the calculated values', async () => {
+    const fetch = api()
+    render()
+    fireEvent.click(await screen.findByRole('button', { name: /mystery sauce/ }))
+    fireEvent.click(screen.getByText('Remove “mystery sauce”'))
+    expect(screen.getByTestId('macro-kcal')).toHaveTextContent('508') // chicken 247.5 + rice 260
+    fireEvent.click(screen.getByRole('button', { name: 'Edit values' }))
+    expect(screen.getByLabelText('kcal')).toHaveValue('507.5')
+    fireEvent.change(screen.getByLabelText('kcal'), { target: { value: '650' } })
+    fireEvent.click(screen.getByLabelText('More portions eaten')) // 1.5 portions
+    expect(screen.getByTestId('macro-kcal')).toHaveTextContent('975')
+    expect(screen.getByText('Your values · calculated 508 kcal')).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('fat (g)'), { target: { value: 'x' } })
+    expect(screen.getByRole('button', { name: 'Looks right' })).toBeDisabled()
+    fireEvent.change(screen.getByLabelText('fat (g)'), { target: { value: '20' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Looks right' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Post meal' }))
+    await screen.findByText('meal page')
+    const [, init] = fetch.mock.calls.find(([url]) => url === '/api/meals')!
+    expect(JSON.parse(String(init!.body)).per_portion).toMatchObject({ kcal: 650, fat: 20, protein: 51.9 })
+  })
+
+  it('goes back to the calculated values', async () => {
+    const fetch = api()
+    render()
+    fireEvent.click(await screen.findByRole('button', { name: /mystery sauce/ }))
+    fireEvent.click(screen.getByText('Remove “mystery sauce”'))
+    fireEvent.click(screen.getByRole('button', { name: 'Edit values' }))
+    fireEvent.change(screen.getByLabelText('kcal'), { target: { value: '650' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Use the calculated values' }))
+    expect(screen.getByTestId('macro-kcal')).toHaveTextContent('508')
+    expect(screen.getByLabelText('kcal')).toHaveValue('507.5')
+    fireEvent.click(screen.getByRole('button', { name: 'Looks right' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Post meal' }))
+    await screen.findByText('meal page')
+    const [, init] = fetch.mock.calls.find(([url]) => url === '/api/meals')!
+    expect(JSON.parse(String(init!.body)).per_portion).toBeNull()
+  })
+
   it('sends a manual cost once the user changes it', async () => {
     const fetch = api()
     render()

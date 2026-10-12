@@ -59,6 +59,7 @@ export function toMealCreate(args: {
   cost: number | null
   usedUp: number[]
   analysisId: number | null
+  perPortion?: Nutrients | null // typed-in values instead of the ingredients'
 }): MealCreate {
   const resolved = args.items.filter((i) => i.ingredient && i.grams > 0)
   return {
@@ -74,5 +75,6 @@ export function toMealCreate(args: {
     // saved for later: nothing was cooked, so nothing can be used up
     used_up: args.eaten ? args.usedUp.filter((id) => resolved.some((i) => i.ingredient!.id === id)) : [],
     analysis_id: args.analysisId,
+    per_portion: args.perPortion ?? null,
   }
 }

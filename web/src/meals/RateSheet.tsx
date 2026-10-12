@@ -25,16 +25,31 @@ export function RateSheet({ meal, meId, open, onClose }: { meal: Meal; meId: num
       toast(partnerDone ? 'Rating saved' : 'Rating saved — waiting for partner')
     },
   })
+  const remove = useMutation({
+    mutationFn: () => api.unrateMeal(meal.id),
+    onSuccess: (updated) => {
+      qc.setQueryData(['meal', String(meal.id)], updated)
+      qc.invalidateQueries({ queryKey: ['meals'] })
+      onClose()
+      toast('Rating removed')
+    },
+  })
   const set = (patch: Partial<Rating>) => setDraft((d) => ({ ...d, ...patch }))
+  const error = save.error ?? remove.error
 
   return (
     <Sheet open={open} onClose={onClose} label="Rate meal">
       <h1>Rate {meal.name}</h1>
       <RatingFields draft={draft} set={set} />
-      {save.isError && <p className="error" role="alert">{save.error.message}</p>}
-      <button className="btn" style={{ marginTop: 20 }} disabled={save.isPending} onClick={() => save.mutate()}>
+      {error && <p className="error" role="alert">{error.message}</p>}
+      <button className="btn" style={{ marginTop: 20 }} disabled={save.isPending || remove.isPending} onClick={() => save.mutate()}>
         Save rating
       </button>
+      {existing && (
+        <button type="button" className="textbtn" disabled={save.isPending || remove.isPending} onClick={() => remove.mutate()}>
+          Remove my rating
+        </button>
+      )}
     </Sheet>
   )
 }

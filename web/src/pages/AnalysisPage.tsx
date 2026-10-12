@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { api, ApiError } from '../api/client'
-import type { AnalysisJob, AnalysisResult, MealType, Rating } from '../api/types'
+import type { AnalysisJob, AnalysisResult, MealType, Nutrients, Rating } from '../api/types'
 import { OPEN_ANALYSES } from '../layout/PendingBanner'
 import { todayISO } from '../lib/dates'
 import { DEFAULT_RATING, RatingFields } from '../meals/RatingFields'
@@ -160,6 +160,7 @@ function SnapFlow({ analysisId, photoUrl, result, rated, chosenType, saveOnly, c
   const [step, setStep] = useState<'verdict' | 'details'>('verdict')
   const [items, setItemsState] = useState<PlateItem[]>(() => fromAnalysis(result))
   const [servings, setServings] = useState(1)
+  const [override, setOverride] = useState<Nutrients | null>(null)
   const typeParam = params.get('type') as MealType | null
   const [details, setDetails] = useState<DetailsState>(() => ({
     name: result.dish.charAt(0).toUpperCase() + result.dish.slice(1),
@@ -184,7 +185,7 @@ function SnapFlow({ analysisId, photoUrl, result, rated, chosenType, saveOnly, c
         toMealCreate({
           items, name: details.name, mealType: details.mealType, eaten: details.eaten, eatenOn: todayISO(),
           prepMinutes: details.prepMinutes, portions: details.portions, servingsEaten: servings,
-          cost: costTouched ? details.cost : null, usedUp: details.usedUp, analysisId,
+          cost: costTouched ? details.cost : null, usedUp: details.usedUp, analysisId, perPortion: override,
         }),
       ),
     onSuccess: (meal) => {
@@ -227,6 +228,8 @@ function SnapFlow({ analysisId, photoUrl, result, rated, chosenType, saveOnly, c
             setItems={(f) => setItemsState(f)}
             servings={servings}
             setServings={setServings}
+            override={override}
+            setOverride={setOverride}
             onNext={() => setStep('details')}
           />
         </>

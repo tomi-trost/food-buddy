@@ -24,6 +24,7 @@ class FoodLog(TimestampMixin, Base):
     snack_kind: Mapped[str | None] = mapped_column(String(10))  # sweet|savory|drink
     is_reward: Mapped[bool] = mapped_column(default=False)
     source: Mapped[str] = mapped_column(String(10))  # snap|cook|list|photo|label|reward
+    servings: Mapped[float] = mapped_column(Float, default=1)  # meals: portions eaten
     kcal: Mapped[float] = mapped_column(Float, default=0)
     protein: Mapped[float] = mapped_column(Float, default=0)
     carbs: Mapped[float] = mapped_column(Float, default=0)
