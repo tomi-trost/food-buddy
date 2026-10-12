@@ -25,7 +25,7 @@ M2 is mostly done (2026-10-11): the stack runs on the Oracle A1 VM `food-buddy` 
 
 **Analysis speed (measured 2026-10-12, pasta photo, qwen3-vl:4b-instruct on 2 cores):** 1280 px → 234 s (1,328 prompt tokens); 896 px → 202 s; 768 px → 202 s (both 1,164 tokens: Ollama scales small images up to ~1,030 image tokens). Same answer at all sizes. `vision_max_px` = 896 (model copy only; stored photo stays 1280). Remaining time ≈ 140 s image encoding + 65 s for ~250 output tokens. Real speedups are M3 work: smaller model (`qwen3-vl:2b-instruct`), shorter answer schema, or llama.cpp server with `--image-max-tokens`. Zucchini wasn't in the seed ingredients, so it came back without nutrients (M4 USDA/Ciqual import fixes that).
 
-**Backups:** `deploy/backup.sh` (restic → Backblaze B2, decision 0020) is written and tested; waiting on Tomi's B2 bucket + `/etc/food-buddy/backup.env` on the VM, then first run + `backup.sh restore-test`.
+**Backups (live 2026-10-12):** nightly restic → Backblaze B2 (`deploy/backup.sh`, decision 0020), timer ~03:30 UTC; logs: `sudo journalctl -u food-buddy-backup`. Restore drill: `sudo /opt/food-buddy/deploy/backup.sh restore-test`. The restic password is in Tomi's Passwords app; without it the backups are unreadable.
 
 Then: M3 (model benchmark), M4 (USDA/Ciqual import). Family members later: add their emails to the Access policy; they can register their own household. Parked questions: license, subdomain, confirming 0017. Vision models must be **instruct** tags (e.g. `qwen3-vl:4b-instruct`); the plain `qwen3-vl:2b` thinks and returns empty content. After rebuilding the web image locally, clear the PWA service worker in the browser (it serves the old bundle until reload).
 
