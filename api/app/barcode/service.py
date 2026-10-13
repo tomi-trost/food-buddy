@@ -35,6 +35,7 @@ SWEET_CATEGORIES = {
     "en:sweet-snacks", "en:confectioneries", "en:chocolates", "en:biscuits-and-cakes",
     "en:desserts", "en:sweet-spreads", "en:candies", "en:ice-creams-and-sorbets",
 }  # fmt: skip
+FRUIT_CATEGORIES = {"en:fresh-fruits", "en:dried-fruits", "en:fruits"}  # not juices or jams
 SWEET_SUGAR = 15  # g per 100 g: sweet without a telling category (e.g. cereal bars)
 
 
@@ -69,10 +70,12 @@ def per100(nutriments: dict) -> dict[str, float] | None:
 
 
 def snack_kind(categories: list[str], per100: dict[str, float] | None) -> str:
-    """Guess for the snack type toggle: sweet | savory | drink (the user can change it)."""
+    """Guess for the snack type toggle: sweet | savory | fruit | drink (the user can change it)."""
     tags = set(categories)
     if "en:beverages" in tags:
         return "drink"
+    if tags & FRUIT_CATEGORIES and not tags & SWEET_CATEGORIES:
+        return "fruit"
     if tags & SWEET_CATEGORIES or (per100 is not None and per100["sugar"] >= SWEET_SUGAR):
         return "sweet"
     return "savory"

@@ -5,7 +5,7 @@ import { api, ApiError } from '../api/client'
 import type { AnalysisJob, SnackKind, SnackResult } from '../api/types'
 import { OPEN_ANALYSES } from '../layout/PendingBanner'
 import { todayISO } from '../lib/dates'
-import { amountStep, KIND_EMOJI as EMOJI, KIND_LABEL, snackNutrients } from '../lib/snacks'
+import { amountStep, isTreatKind, KIND_EMOJI as EMOJI, KIND_LABEL, SNACK_KINDS, snackNutrients } from '../lib/snacks'
 import { SAVED_SNACKS } from '../snacks/LogSnackSheet'
 import { Icon } from '../ui/Icon'
 import { MacroTiles } from '../ui/Macro'
@@ -142,7 +142,7 @@ function SnackForm({ analysisId, photoUrl, label, initial, close }: {
         </div>
       </div>
       <Toggle<SnackKind> label="Snack type" value={snack.kind} onChange={(kind) => setSnack((s) => ({ ...s, kind }))}
-        options={(['sweet', 'savory', 'drink'] as const).map((k) => ({ value: k, label: KIND_LABEL[k] }))} />
+        options={SNACK_KINDS.map((k) => ({ value: k, label: KIND_LABEL[k] }))} />
       <MacroTiles values={values} label="This snack" />
       <section className="card" style={{ marginTop: 14 }}>
         <div className="row">
@@ -168,7 +168,7 @@ function SnackForm({ analysisId, photoUrl, label, initial, close }: {
         <Stepper label="amount" value={snack.amount} step={amountStep(snack.per)} min={amountStep(snack.per)} max={2000} unit={unit}
           onChange={(amount) => setSnack((s) => ({ ...s, amount }))} />
       </div>
-      {snack.kind !== 'savory' && (
+      {isTreatKind(snack.kind) && (
         <div className="sub row" style={{ gap: 6, marginBottom: 12 }}><Icon name="gift" size={16} /> Counts as a treat for your streak</div>
       )}
       <label className="switch-row card" style={{ marginBottom: 12 }}>

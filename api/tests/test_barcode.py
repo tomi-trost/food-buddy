@@ -98,6 +98,10 @@ async def test_lookup_returns_label_values_per_100_g(client, auth, off):
         (["en:beverages", "en:waters"], 0, "drink"),  # the user switches water off "treat"
         (["en:snacks", "en:sweet-snacks", "en:biscuits-and-cakes"], 8, "sweet"),
         (["en:snacks", "en:salty-snacks", "en:crisps"], 0.5, "savory"),
+        (["en:plant-based-foods", "en:fruits", "en:fresh-fruits"], 10, "fruit"),
+        (["en:dried-fruits", "en:dates"], 66, "fruit"),  # sugary, still fruit
+        (["en:fruits", "en:sweet-spreads", "en:jams"], 50, "sweet"),  # jam is a sweet
+        (["en:beverages", "en:fruit-juices"], 9, "drink"),
         ([], 22, "sweet"),  # no categories: the sugar decides
         ([], 14.9, "savory"),
     ],

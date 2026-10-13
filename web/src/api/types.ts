@@ -105,7 +105,7 @@ export type AnalysisResult = {
   unmatched: number
 }
 
-export type SnackKind = 'sweet' | 'savory' | 'drink'
+export type SnackKind = 'sweet' | 'savory' | 'fruit' | 'drink' // fruit never counts as a treat
 
 export type SnackResult = {
   name: string
@@ -226,7 +226,7 @@ export type LogEntry = {
   name: string
   emoji: string
   kind: 'meal' | 'snack'
-  snack_kind: 'sweet' | 'savory' | 'drink' | null
+  snack_kind: SnackKind | null
   is_reward: boolean
   meal_id: number | null
   nutrients: Nutrients

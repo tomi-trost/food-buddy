@@ -112,6 +112,30 @@ describe('SnackPage', () => {
   })
 })
 
+describe('SnackPage fruit', () => {
+  it('offers Fruit as a type, which is not a treat', async () => {
+    const pear = n(100, 17)
+    const fetch = api((url) =>
+      url === '/api/analyses/8'
+        ? jsonResponse(analysisJob({ id: 8, kind: 'snack', status: 'done', snack: { name: 'Pear', kind: 'sweet', per: 'piece', amount: 1, per_unit: pear } }))
+        : url.endsWith('/photo') ? new Response('img') : undefined,
+    )
+    renderAt('/snack/8', (
+      <>
+        <Route path="/snack/:id" element={<SnackPage />} />
+        <Route path="/" element={<p>home</p>} />
+      </>
+    ))
+    expect(await screen.findByText('Counts as a treat for your streak')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Fruit' }))
+    expect(screen.queryByText('Counts as a treat for your streak')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Log snack' }))
+    expect(await screen.findByText('home')).toBeInTheDocument()
+    const [, init] = fetch.mock.calls.find(([u]) => u === '/api/snacks')!
+    expect(JSON.parse(String(init!.body))).toMatchObject({ name: 'Pear', kind: 'fruit', emoji: '🍎' })
+  })
+})
+
 describe('SnacksInsights', () => {
   it('summarises treats, rewards and who resists better', async () => {
     api()

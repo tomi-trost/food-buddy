@@ -31,7 +31,7 @@ class HouseholdProduct(Base):
     household_id: Mapped[int] = mapped_column(ForeignKey("household.id", ondelete="CASCADE"))
     code: Mapped[str] = mapped_column(String(14))
     name: Mapped[str] = mapped_column(String(120))
-    kind: Mapped[str] = mapped_column(String(10))  # sweet|savory|drink
+    kind: Mapped[str] = mapped_column(String(10))  # sweet|savory|fruit|drink
     per100: Mapped[dict] = mapped_column(JSONB)
     amount: Mapped[float] = mapped_column(Float)  # grams we usually eat
     updated_by: Mapped[int | None] = mapped_column(ForeignKey("app_user.id", ondelete="SET NULL"))

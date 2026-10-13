@@ -22,7 +22,7 @@ class FoodLog(TimestampMixin, Base):
     emoji: Mapped[str] = mapped_column(String(8), default="")
     meal_id: Mapped[int | None] = mapped_column(ForeignKey("meal.id", ondelete="SET NULL"))
     kind: Mapped[str] = mapped_column(String(10), default="meal")  # meal|snack
-    snack_kind: Mapped[str | None] = mapped_column(String(10))  # sweet|savory|drink
+    snack_kind: Mapped[str | None] = mapped_column(String(10))  # sweet|savory|fruit|drink
     is_reward: Mapped[bool] = mapped_column(default=False)
     source: Mapped[str] = mapped_column(
         String(10)

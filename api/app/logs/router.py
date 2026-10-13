@@ -20,7 +20,10 @@ from app.snacks.schemas import NutrientsIn
 
 router = APIRouter(tags=["logs"])
 
-TREAT_KINDS = ("sweet", "drink")  # sweets and sugary drinks count as treats (decision 0014)
+TREAT_KINDS = (
+    "sweet",
+    "drink",
+)  # sweets and sugary drinks count as treats (0014); fruit doesn't (0024)
 
 
 class LogEntry(BaseModel):

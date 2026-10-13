@@ -91,6 +91,16 @@ describe('Barcode scanner', () => {
     expect(JSON.parse(String(init!.body))).toMatchObject({ kind: 'savory', emoji: '🥨', save: false })
   })
 
+  it('shows the treat hint only for sweets and drinks', async () => {
+    const { sheet } = setup({ ...nutella, name: 'Dried apricots', brand: '', kind: 'fruit' })
+    typeCode(sheet, CODE)
+    await within(sheet).findByDisplayValue('Dried apricots')
+    expect(within(sheet).getByRole('button', { name: 'Fruit' })).toHaveAttribute('aria-pressed', 'true')
+    expect(within(sheet).queryByText('Counts as a treat for your streak')).not.toBeInTheDocument()
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Sweet' }))
+    expect(within(sheet).getByText('Counts as a treat for your streak')).toBeInTheDocument()
+  })
+
   it('goes back to the scanner with "Scan another"', async () => {
     const { sheet } = setup()
     typeCode(sheet, CODE)

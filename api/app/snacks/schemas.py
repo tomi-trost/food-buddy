@@ -3,7 +3,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-SnackKind = Literal["sweet", "savory", "drink"]
+SnackKind = Literal["sweet", "savory", "fruit", "drink"]  # fruit never counts as a treat (0024)
 
 
 class NutrientsIn(BaseModel):

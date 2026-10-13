@@ -6,7 +6,7 @@ import { api, ApiError } from '../api/client'
 import type { Nutrients, SavedSnack, SnackKind } from '../api/types'
 import { todayISO } from '../lib/dates'
 import { type ProductSnack, productSnack, unknownProduct } from '../lib/barcode'
-import { KIND_EMOJI, KIND_LABEL } from '../lib/snacks'
+import { isTreatKind, KIND_EMOJI, KIND_LABEL, SNACK_KINDS } from '../lib/snacks'
 import { Icon } from '../ui/Icon'
 import { Photo } from '../ui/Photo'
 import { Sheet } from '../ui/Sheet'
@@ -117,7 +117,10 @@ function LogSnack({ onClose, saved, scan }: { onClose: () => void; saved?: Saved
         </div>
         {scanned && (
           <Toggle<SnackKind> label="Snack type" value={draft.kind} onChange={(kind) => setDraft({ ...draft, kind, emoji: KIND_EMOJI[kind] })}
-            options={(['sweet', 'savory', 'drink'] as const).map((k) => ({ value: k, label: KIND_LABEL[k] }))} />
+            options={SNACK_KINDS.map((k) => ({ value: k, label: KIND_LABEL[k] }))} />
+        )}
+        {scanned && isTreatKind(draft.kind) && (
+          <div className="sub row" style={{ gap: 6, marginBottom: 12 }}><Icon name="gift" size={16} /> Counts as a treat for your streak</div>
         )}
         <SnackAmount per={draft.per} amount={draft.amount} perUnit={draft.perUnit} startEditing={scanned?.missingValues}
           onAmount={(amount) => setDraft({ ...draft, amount })} onPerUnit={(perUnit) => setDraft({ ...draft, perUnit })} onValid={setValid} />
@@ -177,7 +180,7 @@ function LogSnack({ onClose, saved, scan }: { onClose: () => void; saved?: Saved
     <>
       <h1>Log a snack</h1>
       <div className="sub" style={{ marginBottom: 12 }}>
-        Sweets and sugary drinks count as treats for your streak and croissant rewards. Savory snacks only add to your macros.
+        Sweets and sugary drinks count as treats for your streak and croissant rewards. Fruit and savory snacks only add to your macros.
       </div>
       <button className="btn" style={{ marginBottom: 8 }} onClick={() => setScanning(true)}>
         <Icon name="barcode" size={18} /> Scan barcode

@@ -28,10 +28,11 @@ def snack(**over):
     } | over
 
 
-async def test_catalog_is_the_mock_list(client, auth):
+async def test_catalog_is_the_mock_list_plus_fruit(client, auth):
     items = (await client.get("/api/snacks/catalog", headers=auth)).json()
-    assert len(items) == 10
-    assert {i["kind"] for i in items} == {"sweet", "savory", "drink"}
+    assert len(items) == 13
+    assert {i["kind"] for i in items} == {"sweet", "savory", "fruit", "drink"}
+    assert [i["name"] for i in items if i["kind"] == "fruit"] == ["Apple", "Pear", "Banana"]
     assert items[1] == {
         "key": "cookie",
         "name": "Cookie",
@@ -59,6 +60,26 @@ async def test_log_snack_scales_pieces_and_grams(client, auth, session):
     rows = list(await session.scalars(select(FoodLog).order_by(FoodLog.id)))
     assert [r.meal_type for r in rows] == ["snack"] * 3
     assert [r.source for r in rows] == ["list", "label", "list"]
+
+
+async def test_fruit_is_never_a_treat(client, auth, session):
+    pear = {"kcal": 100, "protein": 0.6, "carbs": 27, "fat": 0.2, "fiber": 5.5, "sugar": 17}
+    body = snack(name="Pear", emoji="🍐", kind="fruit", per_unit=pear)
+    response = await client.post("/api/snacks", json=body, headers=auth)
+    assert response.status_code == 201
+    assert (response.json()["sugar"], response.json()["treat"]) == (17, False)
+
+    day = (await client.get(f"/api/day?date={TODAY.isoformat()}", headers=auth)).json()
+    entry = next(e for e in day["entries"] if e["name"] == "Pear")
+    assert entry["snack_kind"] == "fruit"
+
+
+async def test_fruit_keeps_the_day_treat_free(client, auth, session):
+    from app.logs.router import is_treat
+
+    rows = [FoodLog(kind="snack", snack_kind=k, is_reward=False) for k in ("fruit", "savory")]
+    assert [is_treat(r) for r in rows] == [False, False]
+    assert is_treat(FoodLog(kind="snack", snack_kind="sweet", is_reward=False))
 
 
 async def test_log_scanned_snack_saves_it(client, auth, session):
@@ -117,6 +138,16 @@ async def test_snack_photo_analysis(client, auth, session):
         "per_unit": COOKIE,
     }
     assert "ONE piece" in seen[0].content.decode()
+
+
+async def test_snack_photo_of_fruit(client, auth, session):
+    pear = {"kcal": 100, "protein": 0.6, "carbs": 27, "fat": 0.2, "fiber": 5.5, "sugar": 17}
+    answer = {"name": "Pear", "kind": "fruit", "pieces": 1, "per_piece": pear}
+    job, seen = await analyze(client, auth, session, "snack", answer)
+    assert job["snack"]["kind"] == "fruit"
+    sent = seen[0].content.decode()
+    assert '"fruit"' in sent  # in the answer schema the model must follow
+    assert "fresh or dried fruit" in sent  # and explained in the prompt
 
 
 async def test_label_analysis_suggests_a_portion(client, auth, session):

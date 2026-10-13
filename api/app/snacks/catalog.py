@@ -1,4 +1,4 @@
-"""The mock's quick-pick snack list (values per piece/portion)."""
+"""The quick-pick snack list (values per piece/portion): the mock's ten plus three fruits."""
 
 from pydantic import BaseModel
 
@@ -67,6 +67,20 @@ CATALOG = [
         emoji="🍿",
         kind="savory",
         per_unit=_n(110, 3, 22, 1.5, 4, 0.5),
+    ),
+    # fruit: sweet, but never a treat (0024); one medium piece
+    CatalogItem(
+        key="apple", name="Apple", emoji="🍎", kind="fruit", per_unit=_n(95, 0.5, 25, 0.3, 4.4, 19)
+    ),
+    CatalogItem(
+        key="pear", name="Pear", emoji="🍐", kind="fruit", per_unit=_n(100, 0.6, 27, 0.2, 5.5, 17)
+    ),
+    CatalogItem(
+        key="banana",
+        name="Banana",
+        emoji="🍌",
+        kind="fruit",
+        per_unit=_n(105, 1.3, 27, 0.4, 3.1, 14),
     ),
 ]
 

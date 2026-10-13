@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { LogEntry } from '../api/types'
-import { isTreat, snackNutrients, treatSugarToday } from './snacks'
+import { isTreat, isTreatKind, snackNutrients, treatSugarToday } from './snacks'
 import { logEntry } from '../test/fixtures'
 
 const n = (kcal: number, sugar: number) => ({ kcal, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar })
@@ -14,7 +14,9 @@ describe('snacks', () => {
     expect(snackNutrients({ per: '100g', amount: 45, per_unit: n(450, 26) }).sugar).toBeCloseTo(11.7)
   })
 
-  it('treats are sweets and drinks but not rewards or savory snacks', () => {
+  it('treats are sweets and drinks but not rewards, fruit or savory snacks', () => {
+    expect(isTreat(entry({ snack_kind: 'fruit' }))).toBe(false)
+    expect([isTreatKind('sweet'), isTreatKind('drink'), isTreatKind('fruit'), isTreatKind('savory'), isTreatKind(null)]).toEqual([true, true, false, false, false])
     expect(isTreat(entry({}))).toBe(true)
     expect(isTreat(entry({ snack_kind: 'drink' }))).toBe(true)
     expect(isTreat(entry({ snack_kind: 'savory' }))).toBe(false)

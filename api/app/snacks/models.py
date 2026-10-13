@@ -21,7 +21,7 @@ class SavedSnack(TimestampMixin, Base):
     created_by: Mapped[int | None] = mapped_column(ForeignKey("app_user.id", ondelete="SET NULL"))
     name: Mapped[str] = mapped_column(String(120))
     emoji: Mapped[str] = mapped_column(String(8))
-    kind: Mapped[str] = mapped_column(String(10))  # sweet|savory|drink
+    kind: Mapped[str] = mapped_column(String(10))  # sweet|savory|fruit|drink
     per: Mapped[str] = mapped_column(String(5))  # piece | 100g
     amount: Mapped[float] = mapped_column(Float)  # usual amount: pieces or grams
     per_unit: Mapped[dict] = mapped_column(JSONB)  # values per piece / per 100 g
