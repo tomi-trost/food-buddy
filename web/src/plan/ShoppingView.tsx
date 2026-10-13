@@ -5,6 +5,7 @@ import type { ShoppingItem } from '../api/types'
 import { todayISO } from '../lib/dates'
 import { Icon } from '../ui/Icon'
 import { useToast } from '../ui/Toast'
+import { formatAmount } from '../lib/units'
 
 export function ShoppingView() {
   const qc = useQueryClient()
@@ -42,13 +43,13 @@ export function ShoppingView() {
 
   const line = (i: ShoppingItem) => (
     <button key={i.ingredient.id} style={{ width: '100%', textAlign: 'left' }} aria-pressed={i.checked}
-      aria-label={`${i.ingredient.name}, ${i.buy} g`} onClick={() => check.mutate({ id: i.ingredient.id, on: !i.checked })}>
+      aria-label={`${i.ingredient.name}, ${formatAmount(i.buy, i.ingredient, true)}`} onClick={() => check.mutate({ id: i.ingredient.id, on: !i.checked })}>
       <span className={`chk${i.checked ? ' on' : ''}`}>{i.checked && <Icon name="check" size={16} />}</span>
       <span className={`sp${i.checked ? ' done' : ''}`}>
         {i.ingredient.emoji} {i.ingredient.name}
-        {i.have > 0 && <div className="sub">have {i.have} g</div>}
+        {i.have > 0 && <div className="sub">have {formatAmount(i.have, i.ingredient)}</div>}
       </span>
-      <b>{i.buy} g</b>
+      <b>{formatAmount(i.buy, i.ingredient, true)}</b>
     </button>
   )
 

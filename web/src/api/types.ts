@@ -17,6 +17,8 @@ export type Ingredient = {
   location: 'fridge' | 'pantry'
   price_per_100g: number
   per100: Nutrients
+  unit: 'g' | 'ml' | 'pc' | 'slice' | 'clove' // shown and typed like this; stored in grams
+  unit_grams: number // grams per piece/slice/clove, g per ml, or 1
 }
 
 export type MealType = 'breakfast' | 'lunch' | 'dinner'

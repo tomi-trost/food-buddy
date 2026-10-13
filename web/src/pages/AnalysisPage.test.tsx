@@ -59,12 +59,12 @@ describe('snap flow', () => {
     expect(next).toBeDisabled()
     expect(screen.getByRole('note')).toHaveTextContent('Pick or remove 1 unknown ingredient')
 
-    fireEvent.click(screen.getByRole('button', { name: /mystery sauce · 30g/ }))
+    fireEvent.click(screen.getByRole('button', { name: /mystery sauce · 30 g/ }))
     const sheet = await screen.findByRole('dialog', { name: 'Pick ingredient' })
     expect(within(sheet).getByLabelText('Search ingredients')).toHaveValue('mystery sauce')
     fireEvent.click(await within(sheet).findByText('Soy sauce'))
 
-    expect(screen.getByRole('button', { name: /Soy sauce · 30g/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Soy sauce · 30 g/ })).toBeInTheDocument()
     expect(next).toBeEnabled()
     expect(screen.getByTestId('macro-kcal')).toHaveTextContent('526') // + 30 g soy sauce (18 kcal)
   })
@@ -72,10 +72,10 @@ describe('snap flow', () => {
   it('edits grams, portions eaten and removes items', async () => {
     api()
     render()
-    fireEvent.click(await screen.findByRole('button', { name: /Rice \(cooked\) · 200g/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /Rice \(cooked\) · 200 g/ }))
     const sheet = screen.getByRole('dialog', { name: 'Edit ingredient' })
     expect(within(sheet).getByText('Detected as “cooked rice”')).toBeInTheDocument()
-    fireEvent.click(within(sheet).getByLabelText('Less grams')) // 175 g
+    fireEvent.click(within(sheet).getByLabelText('Less amount')) // 175 g
     fireEvent.click(within(sheet).getByText('Done'))
     expect(screen.getByTestId('macro-kcal')).toHaveTextContent('475') // 247.5 + 227.5
 

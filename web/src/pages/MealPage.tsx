@@ -14,6 +14,7 @@ import { MacroTiles } from '../ui/Macro'
 import { Photo } from '../ui/Photo'
 import { StarNum, Stars } from '../ui/Stars'
 import { Toggle } from '../ui/Toggle'
+import { formatAmount } from '../lib/units'
 
 type Tab = 'recipe' | 'nutrition' | 'ratings'
 
@@ -96,7 +97,7 @@ export function MealPage() {
                     <div key={ingredient.id}>
                       <span>{ingredient.emoji}</span>
                       <span className="sp">{ingredient.name}</span>
-                      <span className="sub">{Math.round(grams)} g</span>
+                      <span className="sub">{formatAmount(grams, ingredient)}</span>
                     </div>
                   ))}
                 </div>

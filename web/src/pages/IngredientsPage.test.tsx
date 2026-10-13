@@ -36,6 +36,17 @@ describe('expiryText', () => {
 })
 
 describe('IngredientsPage', () => {
+  it('shows eggs in pieces and steps one egg at a time', async () => {
+    const fetch = api([{ ingredient: ING.eggs, grams: 300, expires_on: '2026-10-20', days_left: 16 }])
+    render()
+    const row = await screen.findByRole('group', { name: 'Eggs amount' })
+    expect(row).toHaveTextContent('6 pcs')
+    fireEvent.click(within(row).getByLabelText('Less Eggs'))
+    await waitFor(() => expect(fetch.mock.calls.some(([, init]) => init?.method === 'PATCH')).toBe(true))
+    const [, init] = fetch.mock.calls.find(([, i]) => i?.method === 'PATCH')!
+    expect(JSON.parse(String(init!.body))).toMatchObject({ delta: -50 })
+  })
+
   it('splits fridge and pantry, shows expiry and suggestions', async () => {
     api()
     render()

@@ -3,7 +3,7 @@ import { Route } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { tokenStore } from '../api/client'
 import type { Plan, Shopping } from '../api/types'
-import { card, me, meal, plan, shopping } from '../test/fixtures'
+import { card, ING, me, meal, plan, shopping } from '../test/fixtures'
 import { jsonResponse, mockFetch, renderAt } from '../test/utils'
 import { AddToPlanSheet } from '../meals/AddToPlanSheet'
 import { PlanPage } from './PlanPage'
@@ -92,6 +92,14 @@ describe('Shopping list', () => {
     api({ plan: null })
     renderAt('/plan?tab=shop', routes)
     expect(await screen.findByText(/appears once you both approve the weekly menu/)).toBeInTheDocument()
+  })
+
+  it('lists counted foods as whole pieces to buy', async () => {
+    const eggs = { ingredient: ING.eggs, need: 330, have: 50, buy: 280, ran_out: false, checked: false }
+    api({ plan: plan({ status: 'approved' }), shopping: shopping({ items: [eggs] }) })
+    renderAt('/plan?tab=shop', routes)
+    expect(await screen.findByRole('button', { name: 'Eggs, 6 pcs' })).toBeInTheDocument() // 5.6 → 6
+    expect(screen.getByText('have 1 pc')).toBeInTheDocument()
   })
 
   it('groups items, checks them off and finishes shopping', async () => {

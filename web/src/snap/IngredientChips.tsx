@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { Ingredient } from '../api/types'
 import { scale } from '../lib/macros'
+import { amountStepper, formatAmount, isCounted, roundAmount, toAmount, toGrams, unitLabel } from '../lib/units'
 import { Icon } from '../ui/Icon'
 import { IngredientPicker } from '../ui/IngredientPicker'
 import { Sheet } from '../ui/Sheet'
@@ -9,7 +10,7 @@ import { addIngredient, type PlateItem, replaceIngredient } from './plate'
 
 type SheetState = { kind: 'edit'; key: string } | { kind: 'replace'; key: string } | { kind: 'add' } | null
 
-/** Ingredient chips: tap to change grams, replace or remove; "add" picks a new one. */
+/** Ingredient chips: tap to change the amount (grams, pieces or ml), replace or remove; "add" picks a new one. */
 export function IngredientChips({ items, setItems, amountLabel = 'on the plate' }: {
   items: PlateItem[]
   setItems: (f: (items: PlateItem[]) => PlateItem[]) => void
@@ -36,7 +37,7 @@ export function IngredientChips({ items, setItems, amountLabel = 'on the plate' 
             className={`chip${i.ingredient ? '' : ' warn'}`}
             onClick={() => setSheet(i.ingredient ? { kind: 'edit', key: i.key } : { kind: 'replace', key: i.key })}
           >
-            {i.ingredient ? `${i.ingredient.emoji} ${i.ingredient.name}` : <><Icon name="alert" size={14} /> {i.name}</>} · {Math.round(i.grams)}g
+            {i.ingredient ? `${i.ingredient.emoji} ${i.ingredient.name}` : <><Icon name="alert" size={14} /> {i.name}</>} · {i.ingredient ? formatAmount(i.grams, i.ingredient) : `${Math.round(i.grams)} g`}
           </button>
         ))}
         <button className="chip on" onClick={() => setSheet({ kind: 'add' })}>
@@ -52,11 +53,15 @@ export function IngredientChips({ items, setItems, amountLabel = 'on the plate' 
             )}
             <div className="card row" style={{ marginTop: 12 }}>
               <span className="sp">Amount</span>
-              <Stepper label="grams" value={open.grams} step={25} min={5} max={5000} unit="g"
-                onChange={(g) => update(open.key, { grams: g })} />
+              <Stepper label="amount" {...amountStepper(open.ingredient)}
+                value={roundAmount(toAmount(open.grams, open.ingredient), open.ingredient)}
+                unit={` ${unitLabel(open.ingredient, 2)}`}
+                onChange={(a) => update(open.key, { grams: toGrams(a, open.ingredient!) })} />
             </div>
             <div className="sub" style={{ marginBottom: 12 }}>
+              {open.ingredient.unit !== 'g' && <>≈ {Math.round(open.grams)} g · </>}
               {Math.round(scale(open.ingredient.per100, open.grams).kcal)} kcal
+              {isCounted(open.ingredient) && <> · 1 {unitLabel(open.ingredient)} ≈ {open.ingredient.unit_grams} g</>}
             </div>
             <button className="btn ghost" onClick={() => setSheet({ kind: 'replace', key: open.key })}>
               <Icon name="swap" size={18} /> Replace with another ingredient
@@ -76,7 +81,7 @@ export function IngredientChips({ items, setItems, amountLabel = 'on the plate' 
         {open && (
           <>
             <h1>Which ingredient is “{open.name}”?</h1>
-            <div className="sub" style={{ marginBottom: 10 }}>{Math.round(open.grams)} g {amountLabel}</div>
+            <div className="sub" style={{ marginBottom: 10 }}>{open.ingredient ? formatAmount(open.grams, open.ingredient) : `${Math.round(open.grams)} g`} {amountLabel}</div>
             <IngredientPicker hint={open.ingredient ? '' : open.name} exclude={exclude} onPick={pickReplacement} />
             {!open.ingredient && (
               <button className="btn ghost" style={{ marginTop: 8 }} onClick={() => {

@@ -4,7 +4,8 @@ import { Link } from 'react-router'
 import { api } from '../api/client'
 import type { StockItem } from '../api/types'
 import { todayISO } from '../lib/dates'
-import { expiryClass, expiryText, STEP_GRAMS } from '../lib/stock'
+import { expiryClass, expiryText, stockStep } from '../lib/stock'
+import { formatAmount } from '../lib/units'
 import { Icon } from '../ui/Icon'
 import { IngredientPicker } from '../ui/IngredientPicker'
 import { Photo } from '../ui/Photo'
@@ -83,6 +84,7 @@ export function IngredientsPage() {
           <div className="list">
             {shown.map((item) => {
               const { ingredient: ing } = item
+              const step = stockStep(ing)
               return (
                 <div key={ing.id}>
                   <span style={{ fontSize: 24 }}>{ing.emoji}</span>
@@ -94,11 +96,11 @@ export function IngredientsPage() {
                   </div>
                   <div className="stepper" role="group" aria-label={`${ing.name} amount`}>
                     <button aria-label={`Less ${ing.name}`} onClick={() =>
-                      item.grams - STEP_GRAMS <= 0 ? setZero(item) : change.mutate({ id: ing.id, delta: -STEP_GRAMS })}>
+                      item.grams - step <= 0.01 ? setZero(item) : change.mutate({ id: ing.id, delta: -step })}>
                       −
                     </button>
-                    <b>{Math.round(item.grams)}g</b>
-                    <button aria-label={`More ${ing.name}`} onClick={() => change.mutate({ id: ing.id, delta: STEP_GRAMS })}>+</button>
+                    <b>{formatAmount(item.grams, ing)}</b>
+                    <button aria-label={`More ${ing.name}`} onClick={() => change.mutate({ id: ing.id, delta: step })}>+</button>
                   </div>
                 </div>
               )

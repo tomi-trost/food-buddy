@@ -4,6 +4,10 @@ export type Release = { id: string; notes: string[] }
 
 export const RELEASES: Release[] = [
   {
+    id: '2026-10-13-units',
+    notes: ['Eggs, fruit, bread slices and the like are counted in pieces, and drinks, milk and oils in ml, instead of grams.'],
+  },
+  {
     id: '2026-10-13-photo-resize',
     notes: ['Photos are shrunk on the phone before uploading, so sending one is much quicker.'],
   },

@@ -46,8 +46,8 @@ describe('MealEditPage', () => {
     fireEvent.click(screen.getByLabelText('More portions made'))
     fireEvent.click(screen.getByLabelText('More prep time'))
 
-    fireEvent.click(screen.getByRole('button', { name: /Chicken breast · 300g/ }))
-    fireEvent.click(screen.getByLabelText('Less grams'))
+    fireEvent.click(screen.getByRole('button', { name: /Chicken breast · 300 g/ }))
+    fireEvent.click(screen.getByLabelText('Less amount'))
     fireEvent.click(screen.getByRole('button', { name: 'Done' }))
     fireEvent.click(screen.getByRole('button', { name: /add/ }))
     fireEvent.click(await screen.findByRole('button', { name: /Olive oil/ }))
@@ -106,7 +106,7 @@ describe('MealEditPage', () => {
     fireEvent.change(await screen.findByLabelText('Name'), { target: { value: '  ' } })
     expect(screen.getByRole('button', { name: 'Save changes' })).toBeDisabled()
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Bowl' } })
-    for (const name of [/Rice \(cooked\) · 400g/, /Chicken breast · 300g/]) {
+    for (const name of [/Rice \(cooked\) · 400 g/, /Chicken breast · 300 g/]) {
       fireEvent.click(screen.getByRole('button', { name }))
       fireEvent.click(screen.getByRole('button', { name: 'Remove ingredient' }))
     }
