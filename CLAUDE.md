@@ -42,7 +42,7 @@ Then: M3's second comparison when enough of our plates are weighed. Family membe
 **Order of work (set by Tomi 2026-10-13); after this we're done for a while:**
 1. ~~Evening push when a goal isn't hit yet~~ done 2026-10-13: `goal_reminder` (16:30 UTC, kind `goal`), fiber/protein still short + up to 3 rich items at home for the bigger gap; skipped on days with nothing logged; kcal left out on purpose
 2. ~~Household portion priors~~ done 2026-10-13: `app/analysis/priors.py` compares the model's grams with what we posted (per plate) over the last 40 posted analyses; an ingredient seen ≥2× with a median correction >15% goes into the photo/typed prompt as "usual portions" (max 8)
-3. Client-side photo resize before upload; HEIC check on iPhone
+3. ~~Client-side photo resize; HEIC~~ done 2026-10-13: `web/src/lib/photoResize.ts` (1280 px JPEG before upload, original as fallback) + server reads HEIC (`pillow-heif`); still to confirm on the iPhone (camera + library photo)
 4. Undo after posting a meal + edit a meal's recipe steps
 5. Plan: variety (no same breakfast all week) and who cooks each meal — **both optional** (off unless chosen); also choose meal-prep day
 6. Sensible default buy quantities per ingredient (instead of 250 g)

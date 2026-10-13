@@ -2,6 +2,7 @@ import type {
   AnalysisJob, CatalogItem, CookIn, Day, Insights, LogEntry, LogPatch, Reward, SnackIn, HouseholdPatch, Ingredient, Me, Meal, MealCard, MealCreate, MealPatch, MealType, MePatch, Plan, PushConfig, PushKind, SavedSnack, Suggestion, SavedSnackPatch, SnackLogged, PlanMode, Product, Rating, RegisterBody, Shopping, StockItem, WizardCell,
 } from './types'
 import { reportReachable } from '../lib/online'
+import { shrinkPhoto } from '../lib/photoResize'
 
 const TOKEN_KEY = 'fb.token'
 
@@ -98,13 +99,13 @@ export const api = {
   updateMe: (patch: MePatch) => json<Me>('/auth/me', { method: 'PATCH', body: JSON.stringify(patch) }),
   updateHousehold: (patch: HouseholdPatch) =>
     json<Me>('/household', { method: 'PATCH', body: JSON.stringify(patch) }),
-  uploadPhoto(file: File, kind: 'meal' | 'snack' | 'label' = 'meal', meal?: { type: MealType | null; saveOnly: boolean }) {
+  async uploadPhoto(file: File, kind: 'meal' | 'snack' | 'label' = 'meal', meal?: { type: MealType | null; saveOnly: boolean }) {
     const form = new FormData()
-    form.append('photo', file)
+    form.append('photo', await shrinkPhoto(file))
     form.append('kind', kind)
     if (meal?.type) form.append('meal_type', meal.type)
     if (meal?.saveOnly) form.append('save_only', 'true')
-    return json<AnalysisJob>('/analyses', { method: 'POST', body: form })
+    return await json<AnalysisJob>('/analyses', { method: 'POST', body: form })
   },
   /** Type a dish instead of snapping it; checked and posted like a photo. */
   describe: (kind: 'meal' | 'snack', text: string, meal?: { type: MealType | null; saveOnly: boolean }) =>

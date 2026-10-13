@@ -4,6 +4,10 @@ export type Release = { id: string; notes: string[] }
 
 export const RELEASES: Release[] = [
   {
+    id: '2026-10-13-photo-resize',
+    notes: ['Photos are shrunk on the phone before uploading, so sending one is much quicker.'],
+  },
+  {
     id: '2026-10-13-typed-amounts',
     notes: ['Tap the number between − and + to type an exact value (grams, portions, cost, goals…).'],
   },

@@ -49,6 +49,18 @@ async def test_upload_queues_job_and_stores_resized_photo(client, auth, queue):
     assert max(Image.open(io.BytesIO(photo.content)).size) == get_settings().photo_max_px
 
 
+async def test_upload_accepts_iphone_heic(client, auth):
+    img = Image.new("RGB", (3024, 4032), (180, 120, 60))
+    heic = io.BytesIO()
+    img.save(heic, format="HEIF")
+    response = await upload(client, auth, heic.getvalue(), filename="IMG_0001.HEIC")
+    assert response.status_code == 202, response.text
+    photo = await client.get(response.json()["photo_url"], headers=auth)
+    stored = Image.open(io.BytesIO(photo.content))
+    assert stored.format == "JPEG"
+    assert stored.size == (960, 1280)
+
+
 async def test_upload_rejects_non_images_and_requires_auth(client, auth):
     bad = await upload(client, auth, b"definitely not an image")
     assert bad.status_code == 422

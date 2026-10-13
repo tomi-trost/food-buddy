@@ -3,6 +3,9 @@ import uuid
 from pathlib import Path
 
 from PIL import Image, ImageOps, UnidentifiedImageError
+from pillow_heif import register_heif_opener
+
+register_heif_opener()  # lets Image.open read HEIC/HEIF straight from an iPhone
 
 
 class InvalidPhoto(ValueError):

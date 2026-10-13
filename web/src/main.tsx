@@ -18,9 +18,12 @@ createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <ToastProvider>
+          {/* in the page flow above every screen: pushes it down instead of covering it */}
+          <div className="notices">
+            <UpdatePrompt />
+            <WhatsNew />
+          </div>
           <App />
-          <UpdatePrompt />
-          <WhatsNew />
         </ToastProvider>
       </BrowserRouter>
     </QueryClientProvider>

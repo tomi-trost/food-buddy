@@ -161,10 +161,12 @@ svg text { fill: var(--ink2); font-size: 11px; }
 .offline { position: sticky; top: env(safe-area-inset-top); z-index: 6; margin: 8px 0 4px; padding: 10px 12px; border-radius: var(--r);
   background: color-mix(in srgb, var(--warn) 22%, var(--surface)); border: 1px solid var(--warn); color: var(--ink); font-size: 14px; }
 
-/* New-version popup: above everything, under the notch */
-.update { position: fixed; z-index: 60; top: calc(env(safe-area-inset-top) + 8px); left: 12px; right: 12px; max-width: 520px; margin: 0 auto;
-  display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 8px 6px 8px 14px; border-radius: var(--r);
-  background: var(--surface); border: 1px solid var(--accent); color: var(--ink); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18); }
+/* New-version / What's new notes: a strip above the screen (under the notch) that pushes it down */
+.notices { max-width: 480px; margin: 0 auto; padding: 0 12px; }
+.notices:not(:empty) { padding-top: calc(env(safe-area-inset-top) + 8px); }
+.notices:not(:empty) ~ .app .screen, .notices:not(:empty) ~ .app.screen { padding-top: 0; } /* the strip already clears the notch */
+.update { display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 8px 6px 8px 14px; margin-bottom: 8px; border-radius: var(--r);
+  background: var(--surface); border: 1px solid var(--accent); color: var(--ink); }
 .update .sp { display: flex; flex-direction: column; min-width: 0; }
 .update small { font-size: 12px; color: var(--ink2); }
 .whatsnew { align-items: flex-start; }

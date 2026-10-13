@@ -20,10 +20,13 @@ describe('mobile layout guards', () => {
     expect(rule).toMatch(/align-items: flex-start/)
   })
 
-  it('keeps the update popup a comfortable tap target, clear of the notch', () => {
+  it('keeps the update popup a comfortable tap target, in the page flow above the screen', () => {
     const rule = css.match(/\.update \{([^}]*)\}/)?.[1] ?? ''
     expect(Number(rule.match(/min-height:\s*(\d+)px/)?.[1])).toBeGreaterThanOrEqual(44)
-    expect(rule).toMatch(/top: calc\(env\(safe-area-inset-top\)/)
+    expect(rule).not.toMatch(/position: (fixed|absolute)/) // pushes the screen down, never covers it
+    // the strip clears the notch, so the screen under it doesn't add the inset again
+    expect(css).toMatch(/\.notices:not\(:empty\) \{[^}]*padding-top: calc\(env\(safe-area-inset-top\)/)
+    expect(css).toMatch(/\.notices:not\(:empty\) ~ \.app \.screen, \.notices:not\(:empty\) ~ \.app\.screen \{ padding-top: 0; \}/)
   })
 
   it('keeps the pending banner a comfortable tap target', () => {
