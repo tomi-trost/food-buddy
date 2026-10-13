@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router'
 import { App } from './App'
 import { UpdatePrompt } from './layout/UpdatePrompt'
+import { WhatsNew } from './layout/WhatsNew'
 import { disablePinchZoom } from './lib/noZoom'
 import { ToastProvider } from './ui/Toast'
 import './styles.css'
@@ -19,6 +20,7 @@ createRoot(document.getElementById('root')!).render(
         <ToastProvider>
           <App />
           <UpdatePrompt />
+          <WhatsNew />
         </ToastProvider>
       </BrowserRouter>
     </QueryClientProvider>

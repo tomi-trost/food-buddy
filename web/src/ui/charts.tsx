@@ -79,7 +79,7 @@ export function BarChart({ bars, goal, goalLabel, color, label, height = 140 }: 
   const W = 330
   const max = Math.max(goal ? goal * 1.2 : 0, ...bars.map((b) => b.value), 1)
   const slot = W / bars.length
-  const bw = Math.min(slot - 8, 40)
+  const bw = Math.min(slot - (bars.length > 14 ? 3 : 8), 40) // a month of bars needs thinner gaps
   const gy = goal ? height - (goal / max) * height : 0
   return (
     <>

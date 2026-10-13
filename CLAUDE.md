@@ -37,32 +37,24 @@ M2 is mostly done (2026-10-11): the stack runs on the Oracle A1 VM `food-buddy` 
 
 Then: M3's second comparison when enough of our plates are weighed. Family members later: add their emails to the Access policy; they can register their own household. Parked questions: license, subdomain, confirming 0017. Vision models must be **instruct** tags (e.g. `qwen3-vl:4b-instruct`); the plain `qwen3-vl:2b` thinks and returns empty content. **App updates (2026-10-13):** the service worker is in `prompt` mode; an open app checks for a new version every 30 min and on each return to the foreground, then shows a "New version available · Reload" popup (`web/src/layout/UpdatePrompt.tsx`, `lib/swUpdate.ts`). Phones still on a bundle from before this change get it once after fully closing and reopening the app.
 
-**Backlog to go through next (listed 2026-10-12):**
-- Open from the plan (`docs/execution-plan.md`):
-  - M3 second comparison once ~20–30 household plates are weighed and labelled (weigh before posting, `python -m benchmark.household`): 4B v1 vs v2, add Gemma (first run 2026-10-12 kept `qwen3-vl:4b-instruct` + v1, `eval/results/2026-10-12.md`)
-  - M4 done 2026-10-13 (full import, barcode endpoint + snack scanner, matching quality list); scanner still to try on the iPhone
-  - Refresh tokens + login rate limit
-  - Client-side photo resize before upload; HEIC check on iPhone
-  - API types generated from OpenAPI
-  - Capacitor Android APK
-  - Offline write queue, failover drill, self-hosting docs, go public (license undecided)
-  - Optional: Uptime Kuma on the Pi
-- Ideas, not scheduled (`docs/ideas.md`):
-  - Edit a meal's recipe steps (ingredients/portions/cost/nutrition already editable)
-  - Undo after posting a meal
-  - Household portion priors learned from corrections (e.g. our rice ≈ 180 g) fed into the prompt
-  - Plan: variety (no same breakfast all week), choose meal-prep day, who cooks each meal
-  - Sensible default buy quantities per ingredient (instead of 250 g)
-  - Price source for cost estimates
-  - AI meal variations ("make it vegetarian") and similar-tasting healthier swaps
-  - Fullness feedback adjusting portions
-  - Sweets story: craving triggers, weekly treat budget, treat-free streaks
-  - Weekly challenge history in Versus
+**Goal calendar (2026-10-13):** Insights → Calendar (`web/src/insights/GoalCalendar.tsx`, logic `lib/goalCalendar.ts`): month grid of days each goal was hit (kcal ±150 like "On target", fiber/protein ≥ goal, sugar ≤ goal; empty days count neither way) + current streak. Overview has a Month range (last 30 days). Goals aren't stored per day, so past days use today's goals. "What's new" note after each update: `web/src/lib/whatsNew.ts`.
+
+**Order of work (set by Tomi 2026-10-13); after this we're done for a while:**
+1. Evening push when a goal isn't hit yet ("12 g fiber to go", suggest what's in the fridge), built on the 18:00 reminder
+2. Household portion priors learned from corrections (e.g. our rice ≈ 180 g) fed into the vision prompt
+3. Client-side photo resize before upload; HEIC check on iPhone
+4. Undo after posting a meal + edit a meal's recipe steps
+5. Plan: variety (no same breakfast all week) and who cooks each meal — **both optional** (off unless chosen); also choose meal-prep day
+6. Sensible default buy quantities per ingredient (instead of 250 g)
+7. Offline write queue
+
+Deferred (not now): M3 second comparison, refresh tokens + login rate limit, OpenAPI types, Capacitor APK, failover drill, self-hosting docs, going public, Uptime Kuma, and the other ideas in `docs/ideas.md`.
 
 ## Testing (required)
 - Every feature or bug fix ships with tests in the same change: backend in `api/tests/` (pytest), web in `web/src/**/*.test.ts(x)` (Vitest + Testing Library).
 - Cover the behaviour, not just the happy path: validation errors, auth/permission checks, and edge cases (empty lists, zero grams, missing provider, etc.).
 - External services (vision model, Open Food Facts, push) are faked in tests (e.g. `httpx.MockTransport`); tests never call the network.
+- Every user-facing change adds a short entry at the top of `RELEASES` in `web/src/lib/whatsNew.ts` (new `id`, 1–3 plain-language notes); the app shows it once after updating.
 - Run the full suite before saying a feature is done and report the result; don't commit with failing tests. A bug fix starts with a test that reproduces it.
 
 ## Git rules

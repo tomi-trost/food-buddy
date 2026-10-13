@@ -2,6 +2,7 @@ import { fireEvent, screen, within } from '@testing-library/react'
 import { Route } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { tokenStore } from '../api/client'
+import { todayISO } from '../lib/dates'
 import type { Day } from '../api/types'
 import { card, ING, logEntry, me, memberInsights, plan, reward } from '../test/fixtures'
 import { jsonResponse, mockFetch, renderAt } from '../test/utils'
@@ -168,6 +169,20 @@ describe('InsightsPage', () => {
     expect(screen.getByText('0 of 1 days hit · avg 10 g')).toBeInTheDocument()
   })
 
+  it('overview month range loads the last 30 days', async () => {
+    const month = memberInsights({
+      days: Array.from({ length: 30 }, (_, i) => ({ ...memberInsights().days[0], date: todayISO(new Date(2026, 8, 5 + i)), fiber: i < 10 ? 31 : 5 })),
+    })
+    const fetch = api()
+    renderAt('/insights', <Route path="/insights" element={<InsightsPage />} />)
+    await screen.findByText('3 of 7 days hit · avg 27 g')
+    fetch.mockImplementation((url) => Promise.resolve(String(url).includes('days=30') ? jsonResponse({ members: [month] }) : jsonResponse({ members: [memberInsights()] })))
+    fireEvent.click(screen.getByRole('button', { name: 'Month' }))
+    expect(await screen.findByText('10 of 30 days hit · avg 14 g')).toBeInTheDocument()
+    expect(fetch).toHaveBeenCalledWith('/api/insights?end=2026-10-04&days=30', expect.anything())
+    expect(screen.getByRole('table', { name: 'Calories per day' }).querySelectorAll('tr')).toHaveLength(30)
+  })
+
   it('versus scores categories and tracks the weekly challenge', async () => {
     api()
     renderAt('/insights', <Route path="/insights" element={<InsightsPage />} />)
@@ -183,6 +198,30 @@ describe('InsightsPage', () => {
     api()
     renderAt('/insights?tab=snacks', <Route path="/insights" element={<InsightsPage />} />)
     expect(await screen.findByRole('button', { name: 'Snacks' })).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('calendar colors the days each goal was hit and steps through months', async () => {
+    const fetch = api()
+    renderAt('/insights?tab=calendar', <Route path="/insights" element={<InsightsPage />} />)
+    const grid = await screen.findByRole('grid', { name: 'kcal goal, October 2026' })
+    expect(fetch).toHaveBeenCalledWith('/api/insights?end=2026-10-04&days=92', expect.anything())
+    // fixture: kcal 2000 + i·50 over Sep 28 – Oct 4 (Oct: 2150–2300, all within ±150), fiber 32 on odd days
+    expect(await within(grid).findByRole('button', { name: '2026-10-04: goal hit' })).toBeInTheDocument()
+    expect(within(grid).getByRole('button', { name: '2026-10-05: upcoming' })).toBeDisabled()
+    expect(screen.getByText('Within ±150 kcal of 2200 · 4 of 4 logged days')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fiber' }))
+    expect(within(grid).getByRole('button', { name: '2026-10-04: missed' })).toBeInTheDocument()
+    expect(within(grid).getByRole('button', { name: '2026-10-03: goal hit' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Current streak')).toHaveTextContent('1 day')
+    fireEvent.click(within(grid).getByRole('button', { name: '2026-10-03: goal hit' }))
+    expect(screen.getByText('Sat, Oct 3: 32 g fiber · goal hit')).toBeInTheDocument()
+
+    expect(screen.getByRole('button', { name: 'Next month' })).toBeDisabled()
+    fireEvent.click(screen.getByRole('button', { name: 'Previous month' }))
+    expect(await screen.findByRole('grid', { name: 'Fiber goal, September 2026' })).toBeInTheDocument()
+    expect(fetch).toHaveBeenCalledWith('/api/insights?end=2026-09-30&days=92', expect.anything())
+    expect(screen.queryByLabelText('Current streak')).not.toBeInTheDocument()
   })
 
   it('asks to invite the partner when alone', async () => {

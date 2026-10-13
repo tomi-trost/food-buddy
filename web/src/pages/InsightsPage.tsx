@@ -6,6 +6,7 @@ import { useMe } from '../api/hooks'
 import type { MealCard, MemberInsights } from '../api/types'
 import { todayISO } from '../lib/dates'
 import { avg, CHALLENGE_TARGET, CHALLENGES, type Challenge, challengeProgress, fiberHit, macroSplit, versus } from '../lib/insights'
+import { GoalCalendar } from '../insights/GoalCalendar'
 import { SnacksInsights } from '../snacks/SnacksInsights'
 import { Avatar } from '../ui/Avatar'
 import { BarChart, Donut } from '../ui/charts'
@@ -14,7 +15,10 @@ import { Photo } from '../ui/Photo'
 import { StarNum } from '../ui/Stars'
 import { Toggle } from '../ui/Toggle'
 
-type Tab = 'overview' | 'versus' | 'snacks'
+type Range = 'day' | 'week' | 'month'
+const MONTH_DAYS = 30
+type Tab = 'overview' | 'calendar' | 'versus' | 'snacks'
+const TABS: Tab[] = ['overview', 'calendar', 'versus', 'snacks']
 const WEEKDAY = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 const weekdayOf = (iso: string) => {
   const [y, m, d] = iso.split('-').map(Number)
@@ -26,7 +30,7 @@ export function InsightsPage() {
   const me = useMe().data
   const today = todayISO()
   const [params] = useSearchParams()
-  const [tab, setTab] = useState<Tab>(params.get('tab') === 'snacks' ? 'snacks' : params.get('tab') === 'versus' ? 'versus' : 'overview')
+  const [tab, setTab] = useState<Tab>(TABS.find((t) => t === params.get('tab')) ?? 'overview')
   const [who, setWho] = useState<number | null>(null)
   const insights = useQuery({ queryKey: ['insights', today], queryFn: () => api.insights(today) })
   const meals = useQuery({ queryKey: ['meals'], queryFn: api.meals })
@@ -41,10 +45,13 @@ export function InsightsPage() {
         <span style={{ width: 44 }} />
       </div>
       <Toggle<Tab> variant="tabs" label="Insights sections" value={tab} onChange={setTab}
-        options={[{ value: 'overview', label: 'Overview' }, { value: 'versus', label: 'Versus' }, { value: 'snacks', label: 'Snacks' }]} />
+        options={[{ value: 'overview', label: 'Overview' }, { value: 'calendar', label: 'Calendar' }, { value: 'versus', label: 'Versus' }, { value: 'snacks', label: 'Snacks' }]} />
       {insights.isError && <p className="error" role="alert">{insights.error.message}</p>}
       {tab === 'overview' && selected && (
         <Overview members={members} selected={selected} meId={me?.id} onWho={setWho} meals={meals.data ?? []} />
+      )}
+      {tab === 'calendar' && selected && (
+        <GoalCalendar userId={selected.user_id} who={<WhoToggle members={members} selected={selected} meId={me?.id} onWho={setWho} />} />
       )}
       {tab === 'versus' && members.length > 0 && <Versus members={members} meId={me?.id} />}
       {tab === 'snacks' && members.length > 0 && <SnacksInsights members={members} meId={me?.id} />}
@@ -67,8 +74,12 @@ function Overview({ members, selected, meId, onWho, meals }: {
   onWho: (id: number) => void
   meals: MealCard[]
 }) {
-  const [range, setRange] = useState<'day' | 'week'>('week')
-  const days = range === 'day' ? selected.days.slice(-1) : selected.days
+  const [range, setRange] = useState<Range>('week')
+  const today = todayISO()
+  const month = useQuery({ queryKey: ['insights', today, MONTH_DAYS], queryFn: () => api.insights(today, MONTH_DAYS), enabled: range === 'month' })
+  const days = range === 'day' ? selected.days.slice(-1)
+    : range === 'week' ? selected.days
+      : month.data?.members.find((m) => m.user_id === selected.user_id)?.days ?? []
   const g = selected.goals
   const split = macroSplit(days)
   const hits = days.filter((d) => fiberHit(d, g)).length
@@ -80,8 +91,8 @@ function Overview({ members, selected, meId, onWho, meals }: {
       <div className="row" style={{ marginBottom: 12 }}>
         <WhoToggle members={members} selected={selected} meId={meId} onWho={onWho} />
         <span className="sp" />
-        <Toggle<'day' | 'week'> variant="mini" label="Range" value={range} onChange={setRange}
-          options={[{ value: 'day', label: 'Day' }, { value: 'week', label: 'Week' }]} />
+        <Toggle<Range> variant="mini" label="Range" value={range} onChange={setRange}
+          options={[{ value: 'day', label: 'Day' }, { value: 'week', label: 'Week' }, { value: 'month', label: 'Month' }]} />
       </div>
       <div className="card">
         <h3>Calories <span className="sub">avg {Math.round(avg(days, 'kcal'))} · goal {g.kcal}</span></h3>
@@ -91,7 +102,7 @@ function Overview({ members, selected, meId, onWho, meals }: {
           goal={g.kcal}
           goalLabel={`goal ${g.kcal}`}
           bars={days.map((d, i) => ({
-            label: days.length === 1 ? 'Today' : weekdayOf(d.date),
+            label: days.length === 1 ? 'Today' : range === 'month' ? ((days.length - 1 - i) % 7 ? '' : String(Number(d.date.slice(8)))) : weekdayOf(d.date),
             value: d.kcal,
             highlight: i === days.length - 1,
             title: `${d.date}: ${Math.round(d.kcal)} kcal`,
@@ -116,7 +127,7 @@ function Overview({ members, selected, meId, onWho, meals }: {
       </div>
       <div className="card">
         <h3>Fiber goal ({g.fiber} g)</h3>
-        <div className="row" style={{ margin: '10px 0' }} aria-hidden="true">
+        <div className="row" style={{ margin: '10px 0', flexWrap: 'wrap', gap: range === 'month' ? 6 : undefined }} aria-hidden="true">
           {days.map((d) => (
             <span key={d.date} className={`chk${fiberHit(d, g) ? ' on' : ''}`} title={`${d.date}: ${Math.round(d.fiber)} g`}>
               {fiberHit(d, g) && <Icon name="check" size={16} />}
