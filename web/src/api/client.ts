@@ -41,6 +41,19 @@ export class SessionExpired extends Error {
   }
 }
 
+/** Back from /api/reauth and Access still redirects: its cookie doesn't stick on this device
+ *  (blocked cookies, private tab, a stale Home Screen app). Going again would reload forever. */
+export class AccessBlocked extends Error {
+  constructor() {
+    super(
+      "Cloudflare's access check didn't stick on this device. Open food-buddy.web-corner.cc in Safari " +
+        '(not a private tab, cookies allowed), enter the e-mail code, then log in here again.',
+    )
+  }
+}
+
+const REAUTH_MARK = 'reauth=1'
+
 async function request(path: string, init: RequestInit = {}): Promise<Response> {
   const headers = new Headers(init.headers)
   const token = tokenStore.get()
@@ -57,8 +70,11 @@ async function request(path: string, init: RequestInit = {}): Promise<Response> 
   }
   reportReachable(true)
   if (response.type === 'opaqueredirect') {
-    // A full navigation outside the service worker's scope, so Access can show its page.
-    const here = window.location.pathname + window.location.search
+    const { pathname, search } = window.location
+    if (new URLSearchParams(search).get('reauth') === '1') throw new AccessBlocked() // tried once already
+    // A full navigation outside the service worker's scope, so Access can show its page; the
+    // marker comes back with the page so a second redirect stops instead of looping.
+    const here = pathname + (search ? `${search}&` : '?') + REAUTH_MARK
     window.location.assign(`/api/reauth?next=${encodeURIComponent(here)}`)
     throw new SessionExpired()
   }

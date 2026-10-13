@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { jsonResponse, mockFetch } from '../test/utils'
 import { isOffline, reportReachable } from '../lib/online'
-import { api, ApiError, SessionExpired, tokenStore } from './client'
+import { AccessBlocked, api, ApiError, SessionExpired, tokenStore } from './client'
 
 describe('api client', () => {
   it('stores the token on login and sends it afterwards', async () => {
@@ -49,8 +49,27 @@ describe('api client', () => {
 
       await expect(api.login('t@example.com', 'secret')).rejects.toBeInstanceOf(SessionExpired)
       expect(fetch.mock.calls[0][1]?.redirect).toBe('manual')
-      expect(assign).toHaveBeenCalledWith('/api/reauth?next=%2Fmeals%2F3%3Fx%3D1')
+      expect(assign).toHaveBeenCalledWith('/api/reauth?next=%2Fmeals%2F3%3Fx%3D1%26reauth%3D1')
       expect(tokenStore.get()).toBe('abc')
+    })
+
+    it('tries the access check only once: back from it and still redirected, it stops and explains', async () => {
+      const assign = vi.fn()
+      vi.stubGlobal('location', { ...window.location, pathname: '/login', search: '?reauth=1', assign })
+      mockFetch(() => ({ type: 'opaqueredirect', status: 0, ok: false }) as Response)
+
+      const error = await api.login('t@example.com', 'secret').catch((e) => e)
+      expect(error).toBeInstanceOf(AccessBlocked)
+      expect(error.message).toMatch(/Cloudflare's access check didn't stick/)
+      expect(assign).not.toHaveBeenCalled() // no endless reloading
+    })
+
+    it('spots the marker anywhere in the query', async () => {
+      const assign = vi.fn()
+      vi.stubGlobal('location', { ...window.location, pathname: '/', search: '?a=1&reauth=1&b=2', assign })
+      mockFetch(() => ({ type: 'opaqueredirect', status: 0, ok: false }) as Response)
+      await expect(api.me()).rejects.toBeInstanceOf(AccessBlocked)
+      expect(assign).not.toHaveBeenCalled()
     })
 
     it('says there is no connection instead of the browser message when offline', async () => {
