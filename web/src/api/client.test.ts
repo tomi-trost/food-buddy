@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { jsonResponse, mockFetch } from '../test/utils'
+import { isOffline, reportReachable } from '../lib/online'
 import { api, ApiError, SessionExpired, tokenStore } from './client'
 
 describe('api client', () => {
@@ -55,6 +56,17 @@ describe('api client', () => {
     it('says there is no connection instead of the browser message when offline', async () => {
       vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new TypeError('Load failed'))))
       await expect(api.me()).rejects.toThrow("Can't reach Food Buddy. Check your connection and try again.")
+    })
+
+    it('marks the app offline when the server is unreachable and online again on the next answer', async () => {
+      reportReachable(true)
+      vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new TypeError('Load failed'))))
+      await expect(api.me()).rejects.toBeInstanceOf(ApiError)
+      expect(isOffline()).toBe(true)
+
+      mockFetch(() => jsonResponse({ detail: 'Not found' }, 404))
+      await expect(api.me()).rejects.toBeInstanceOf(ApiError)
+      expect(isOffline()).toBe(false)
     })
   })
 })

@@ -15,6 +15,11 @@ describe('mobile layout guards', () => {
     expect(css).toMatch(/html \{[^}]*touch-action: manipulation[^}]*overflow-x: clip/)
   })
 
+  it('top-aligns Today entries so a wrapped name keeps its pencil level with the +', () => {
+    const rule = css.match(/\.today-entry \{([^}]*)\}/)?.[1] ?? ''
+    expect(rule).toMatch(/align-items: flex-start/)
+  })
+
   it('keeps the pending banner a comfortable tap target', () => {
     const rule = css.match(/\.pending \{([^}]*)\}/)?.[1] ?? ''
     expect(Number(rule.match(/min-height:\s*(\d+)px/)?.[1])).toBeGreaterThanOrEqual(44)

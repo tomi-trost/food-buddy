@@ -3,6 +3,7 @@ import { NavLink, Outlet } from 'react-router'
 import { useAddFood } from '../add/AddFood'
 import { syncPush } from '../lib/push'
 import { Icon, type IconName } from '../ui/Icon'
+import { OfflineBanner } from './OfflineBanner'
 import { PendingBanner } from './PendingBanner'
 
 const TABS: { to: string; label: string; icon: IconName }[] = [
@@ -29,6 +30,7 @@ export function AppLayout() {
   return (
     <div className="app">
       <main className="screen">
+        <OfflineBanner />
         <Outlet />
         <PendingBanner />
       </main>
@@ -50,6 +52,7 @@ export function BareLayout() {
   return (
     <div className="app">
       <main className="screen bare">
+        <OfflineBanner />
         <Outlet />
       </main>
     </div>

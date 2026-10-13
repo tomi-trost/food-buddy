@@ -1,6 +1,7 @@
 import type {
   AnalysisJob, CatalogItem, CookIn, Day, Insights, LogEntry, LogPatch, Reward, SnackIn, HouseholdPatch, Ingredient, Me, Meal, MealCard, MealCreate, MealPatch, MealType, MePatch, Plan, PushConfig, PushKind, SavedSnack, Suggestion, SavedSnackPatch, SnackLogged, PlanMode, Rating, RegisterBody, Shopping, StockItem, WizardCell,
 } from './types'
+import { reportReachable } from '../lib/online'
 
 const TOKEN_KEY = 'fb.token'
 
@@ -50,8 +51,10 @@ async function request(path: string, init: RequestInit = {}): Promise<Response> 
     // The API never redirects; a redirect means Cloudflare Access sends us to its PIN page.
     response = await fetch(`/api${path}`, { ...init, headers, redirect: 'manual' })
   } catch {
+    reportReachable(false)
     throw new ApiError(0, "Can't reach Food Buddy. Check your connection and try again.")
   }
+  reportReachable(true)
   if (response.type === 'opaqueredirect') {
     // A full navigation outside the service worker's scope, so Access can show its page.
     const here = window.location.pathname + window.location.search
