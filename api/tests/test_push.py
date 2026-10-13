@@ -490,3 +490,104 @@ async def test_plan_push_respects_the_switch(client, auth, seeded, push_on):
     response = await client.put("/api/push/prefs", json={"off": ["plan"]}, headers=partner)
     assert response.status_code == 200
     assert await deliver(seeded, plan_push(plan["id"], me, "new")) == []
+
+
+# --- 7. goals not hit yet ---------------------------------------------------------------
+
+
+def goal_push(day=TODAY):
+    return lambda s, http: notify.goal_reminder(s, http, day)
+
+
+async def at_home(client, headers, seeded, *names):
+    from tests.conftest import ingredient_ids
+    from tests.test_inventory import add
+
+    for iid in await ingredient_ids(seeded, *names):
+        await add(client, headers, iid)
+
+
+async def eaten_today(client, headers):
+    return (await client.get(f"/api/day?date={TODAY.isoformat()}", headers=headers)).json()[
+        "totals"
+    ]
+
+
+async def test_goal_reminder_names_the_gaps_and_what_helps_at_home(client, auth, seeded, push_on):
+    phone = FakePhone()
+    await subscribe(client, auth, phone)
+    await client.post("/api/meals", json=await body(seeded), headers=auth)  # little fiber
+    # fiber-rich first; broccoli (2.6 g) and banana are below the 3 g bar; a 4th rich one is cut
+    await at_home(
+        client, auth, seeded, "Broccoli", "Banana", "Chickpeas", "Rolled oats", "Lentils", "Avocado"
+    )
+    totals = await eaten_today(client, auth)
+
+    seen = await deliver(seeded, goal_push())
+    message = phone.read(seen[0])
+    fiber, protein = round(30 - totals["fiber"]), round(110 - totals["protein"])
+    assert message["title"] == "Goals not hit yet today"
+    assert message["body"] == (
+        f"{fiber} g fiber · {protein} g protein to go. At home: rolled oats, lentils, chickpeas"
+    )
+    assert message["url"] == "/insights?tab=calendar"
+    assert await deliver(seeded, goal_push()) == []  # once per day
+
+
+async def test_goal_reminder_tips_follow_the_bigger_gap(client, auth, seeded, push_on):
+    phone = FakePhone()
+    await subscribe(client, auth, phone)
+    await client.patch("/api/auth/me", json={"goal_fiber": 0}, headers=auth)  # fiber: no goal
+    await client.post("/api/meals", json=await body(seeded), headers=auth)
+    await at_home(client, auth, seeded, "Rolled oats", "Eggs", "Chicken breast", "Milk")
+    totals = await eaten_today(client, auth)
+
+    message = phone.read((await deliver(seeded, goal_push()))[0])
+    # protein ≥ 10 g / 100 g, richest first; milk (3.4 g) isn't
+    assert message["body"] == (
+        f"{round(110 - totals['protein'])} g protein to go. "
+        "At home: chicken breast, rolled oats, eggs"
+    )
+
+
+async def test_goal_reminder_without_anything_useful_at_home(client, auth, seeded, push_on):
+    phone = FakePhone()
+    await subscribe(client, auth, phone)
+    await client.post("/api/meals", json=await body(seeded), headers=auth)
+    await at_home(client, auth, seeded, "Milk")
+    message = phone.read((await deliver(seeded, goal_push()))[0])
+    assert message["body"].endswith("g protein to go")
+
+
+async def test_goal_reminder_is_quiet_without_logs_met_goals_or_when_muted(
+    client, auth, seeded, push_on
+):
+    await subscribe(client, auth, FakePhone())
+    assert await deliver(seeded, goal_push()) == []  # nothing logged today
+
+    await client.post("/api/meals", json=await body(seeded), headers=auth)
+    assert await deliver(seeded, goal_push(TODAY + timedelta(days=1))) == []  # not that day
+
+    await client.put("/api/push/prefs", json={"off": ["goal"]}, headers=auth)
+    assert await deliver(seeded, goal_push()) == []
+    await client.put("/api/push/prefs", json={"off": []}, headers=auth)
+
+    await client.patch("/api/auth/me", json={"goal_fiber": 0, "goal_protein": 20}, headers=auth)
+    assert await deliver(seeded, goal_push()) == []  # both met
+
+
+async def test_goal_reminder_only_uses_my_households_stock(client, auth, seeded, push_on):
+    phone = FakePhone()
+    await subscribe(client, auth, phone)
+    await client.post("/api/meals", json=await body(seeded), headers=auth)
+    stranger = await register(client, email="x@example.com")
+    await at_home(client, stranger, seeded, "Lentils")
+    message = phone.read((await deliver(seeded, goal_push()))[0])
+    assert "At home" not in message["body"]
+
+
+async def test_goal_reminder_runs_on_the_push_queue_before_dinner():
+    from app.push import tasks
+
+    periodic = tasks.jobs_app.periodic_registry.periodic_tasks[("goal_reminder", "")]
+    assert (periodic.task.queue, periodic.cron) == ("push", "30 16 * * *")

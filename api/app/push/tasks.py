@@ -44,3 +44,10 @@ async def notify_plan(plan_id: int, by_id: int, event: Literal["new", "approved"
 @jobs_app.task(name="daily_reminder", queue="push")
 async def daily_reminder(timestamp: int) -> None:
     await _run(notify.daily_reminder, datetime.fromtimestamp(timestamp, UTC).date())
+
+
+# 16:30 UTC = 18:30 in summer, 17:30 in winter: before dinner, while it can still help
+@jobs_app.periodic(cron="30 16 * * *")
+@jobs_app.task(name="goal_reminder", queue="push")
+async def goal_reminder(timestamp: int) -> None:
+    await _run(notify.goal_reminder, datetime.fromtimestamp(timestamp, UTC).date())

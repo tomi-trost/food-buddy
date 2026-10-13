@@ -57,7 +57,7 @@ describe('NotificationSettings', () => {
     expect(await screen.findByText(/Notifications are blocked/)).toBeInTheDocument()
   })
 
-  it('turns notifications on with the server key, then shows the six switches', async () => {
+  it('turns notifications on with the server key, then shows the seven switches', async () => {
     serve()
     render()
     vi.mocked(push.enablePush).mockImplementation(async () => {
@@ -66,7 +66,7 @@ describe('NotificationSettings', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Turn on notifications' }))
     await waitFor(() => expect(push.enablePush).toHaveBeenCalledWith('BKEY'))
     expect(await screen.findByRole('switch', { name: /Photo analyzed/ })).toBeChecked()
-    expect(screen.getAllByRole('switch')).toHaveLength(6)
+    expect(screen.getAllByRole('switch')).toHaveLength(7)
     expect(screen.getByRole('switch', { name: /Weekly menu/ })).toBeChecked()
     expect(screen.getByRole('switch', { name: /Ana rated/ })).toBeInTheDocument()
     expect(screen.getByRole('switch', { name: /Ana logged a meal/ })).toBeChecked()
@@ -94,6 +94,17 @@ describe('NotificationSettings', () => {
       await waitFor(() => expect(screen.getByRole('switch', { name: /Rate after eating/ })).not.toBeChecked())
       const [, init] = fetch.mock.calls.find(([url]) => url === '/api/push/prefs')!
       expect(JSON.parse(String(init!.body))).toEqual({ off: ['daily', 'rate'] })
+    })
+
+    it('lists the goal reminder and mutes it', async () => {
+      const fetch = serve()
+      render()
+      const goal = await screen.findByRole('switch', { name: /Goals not hit yet/ })
+      expect(goal).toBeChecked()
+      fireEvent.click(goal)
+      await waitFor(() => expect(screen.getByRole('switch', { name: /Goals not hit yet/ })).not.toBeChecked())
+      const [, init] = fetch.mock.calls.find(([url]) => url === '/api/push/prefs')!
+      expect(JSON.parse(String(init!.body))).toEqual({ off: ['goal'] })
     })
 
     it('sends a test notification', async () => {

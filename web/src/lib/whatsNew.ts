@@ -4,6 +4,12 @@ export type Release = { id: string; notes: string[] }
 
 export const RELEASES: Release[] = [
   {
+    id: '2026-10-13-goal-push',
+    notes: [
+      "New notification around 6:30 pm when fiber or protein is still short, with what's at home that helps. Turn it off in Settings → Notifications.",
+    ],
+  },
+  {
     id: '2026-10-13-goal-calendar',
     notes: [
       'Insights → Calendar: see the days you hit your kcal, fiber, protein or sugar goal, with your streak.',

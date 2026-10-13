@@ -12,6 +12,7 @@ const KINDS: { kind: PushKind; title: (partner: string) => string; hint: string 
   { kind: 'shared', title: (p) => `${p} logged a meal`, hint: 'Asks if you ate it too' },
   { kind: 'plan', title: () => 'Weekly menu', hint: 'When the menu needs your approval, and when the shopping list is ready' },
   { kind: 'daily', title: () => 'Evening reminder', hint: 'Meals to rate and photos to check, around 8 pm' },
+  { kind: 'goal', title: () => 'Goals not hit yet', hint: "Fiber or protein still short around 6:30 pm, with what's at home that helps" },
 ]
 
 const CONFIG = ['push', 'config']

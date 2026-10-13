@@ -1,5 +1,5 @@
 """The notifications: photo ready, rate after eating, partner rated, "you too?" (a meal the
-other one logged), the week's menu to approve, daily reminder."""
+other one logged), the week's menu to approve, daily reminder, goals not hit yet."""
 
 from datetime import date, timedelta
 from typing import Literal
@@ -11,7 +11,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.analysis.models import AnalysisJob
 from app.auth.models import User
 from app.auth.service import household_members
+from app.inventory.models import InventoryItem
+from app.logs.models import FoodLog
 from app.meals.models import CookLog, Meal
+from app.nutrition.macros import total
+from app.nutrition.models import Ingredient
 from app.plan.models import PlanWeek
 from app.push.models import PushSubscription
 from app.push.service import PushMessage, push
@@ -20,6 +24,9 @@ from app.suggestions.models import MealSuggestion
 
 RATE_AFTER_MIN = 90  # roughly when the plate is empty
 DAILY_LOOKBACK_DAYS = 14  # older unrated meals stop nagging
+# Goals that dinner can still fix, and what counts as a good source of it (per 100 g)
+GOAL_NUTRIENTS = (("fiber", 3.0), ("protein", 10.0))
+GOAL_TIPS = 3
 
 
 def _cap(text: str) -> str:
@@ -204,4 +211,64 @@ async def daily_reminder(session: AsyncSession, client: httpx.AsyncClient, today
             continue
         message = PushMessage(title="Waiting for you", body=" · ".join(parts), url="/", tag="daily")
         sent += await push(session, client, [user.id], "daily", message, ref=today.isoformat())
+    return sent
+
+
+async def _rich_at_home(session: AsyncSession, household_id: int, nutrient: str) -> list[str]:
+    """Up to GOAL_TIPS things in the fridge/pantry that are rich in `nutrient`, richest first."""
+    column = getattr(Ingredient, nutrient)
+    threshold = dict(GOAL_NUTRIENTS)[nutrient]
+    rows = await session.scalars(
+        select(Ingredient)
+        .join(InventoryItem, InventoryItem.ingredient_id == Ingredient.id)
+        .where(InventoryItem.household_id == household_id, InventoryItem.grams > 0)
+        .where(column >= threshold)
+        .order_by(column.desc(), Ingredient.name)
+    )
+    names: list[str] = []
+    for ingredient in rows.unique():
+        name = ingredient.name.split(",")[0].strip().lower()  # "Lentils, cooked" → "lentils"
+        if name not in names:
+            names.append(name)
+    return names[:GOAL_TIPS]
+
+
+async def goal_reminder(session: AsyncSession, client: httpx.AsyncClient, today: date) -> int:
+    """Early evening, per person who logged something today: fiber/protein still short of the
+    goal, with what's at home that would help (for the bigger gap). kcal is left out: a calorie
+    "to go" would only push eating more."""
+    users = list(
+        await session.scalars(
+            select(User)
+            .where(User.id.in_(select(PushSubscription.user_id).distinct()))
+            .execution_options(populate_existing=True)  # goals may have changed since
+        )
+    )
+    sent = 0
+    for user in users:
+        entries = list(
+            await session.scalars(
+                select(FoodLog).where(FoodLog.user_id == user.id, FoodLog.eaten_on == today)
+            )
+        )
+        if not entries:  # nothing logged: probably not tracking today
+            continue
+        eaten = total(e.nutrients for e in entries)
+        short = {}
+        for nutrient, _ in GOAL_NUTRIENTS:
+            goal = getattr(user, f"goal_{nutrient}")
+            gap = goal - getattr(eaten, nutrient)
+            if goal > 0 and gap >= 1:
+                short[nutrient] = (round(gap), gap / goal)
+        if not short:
+            continue
+        body = " · ".join(f"{g} g {n}" for n, (g, _) in short.items()) + " to go"
+        focus = max(short, key=lambda n: short[n][1])
+        tips = await _rich_at_home(session, user.household_id, focus)
+        if tips:
+            body += f". At home: {', '.join(tips)}"
+        message = PushMessage(
+            title="Goals not hit yet today", body=body, url="/insights?tab=calendar", tag="goal"
+        )
+        sent += await push(session, client, [user.id], "goal", message, ref=today.isoformat())
     return sent

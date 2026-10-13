@@ -314,7 +314,7 @@ export type Reward = {
   per: number
 }
 
-export type PushKind = 'ready' | 'rate' | 'partner' | 'shared' | 'plan' | 'daily'
+export type PushKind = 'ready' | 'rate' | 'partner' | 'shared' | 'plan' | 'daily' | 'goal'
 
 /** A meal the other one logged: "you too?" */
 export type Suggestion = {
