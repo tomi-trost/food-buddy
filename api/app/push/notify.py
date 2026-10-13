@@ -1,7 +1,8 @@
 """The notifications: photo ready, rate after eating, partner rated, "you too?" (a meal the
-other one logged), daily reminder."""
+other one logged), the week's menu to approve, daily reminder."""
 
 from datetime import date, timedelta
+from typing import Literal
 
 import httpx
 from sqlalchemy import func, select
@@ -11,6 +12,7 @@ from app.analysis.models import AnalysisJob
 from app.auth.models import User
 from app.auth.service import household_members
 from app.meals.models import CookLog, Meal
+from app.plan.models import PlanWeek
 from app.push.models import PushSubscription
 from app.push.service import PushMessage, push
 from app.ratings.models import Rating
@@ -114,6 +116,56 @@ async def notify_suggested(
     return await push(
         session, client, [suggestion.to_user_id], "shared", message, ref=f"s{suggestion.id}"
     )
+
+
+async def notify_plan(
+    session: AsyncSession,
+    client: httpx.AsyncClient,
+    plan_id: int,
+    by_id: int,
+    event: Literal["new", "approved"],
+) -> int:
+    """The week's menu: planned by one of us (the others approve it), approved by one (the others'
+    turn), or approved by all (shopping list ready). Skipped when the plan changed since."""
+    plan = await session.get(PlanWeek, plan_id, populate_existing=True)
+    by = await session.get(User, by_id)
+    if plan is None or by is None:
+        return 0
+    members = [m.id for m in await household_members(session, plan.household_id)]
+    approvals = {a.user_id: a.id for a in plan.approvals}
+    tag = f"plan{plan.id}"
+    if event == "new":
+        if plan.status == "approved":
+            return 0
+        message = PushMessage(
+            title=f"{by.name} planned the week",
+            body="Take a look at the menu and approve it.",
+            url="/plan",
+            tag=tag,
+        )
+        to = [uid for uid in members if uid != by_id and uid not in approvals]
+        return await push(session, client, to, "plan", message, ref=f"plan{plan.id}")
+    if by_id not in approvals:  # changed (approvals reset) before this ran
+        return 0
+    if plan.status == "approved":
+        message = PushMessage(
+            title="The menu is approved ✓",
+            body="The shopping list is ready.",
+            url="/plan?tab=shop",
+            tag=tag,
+        )
+        to = [uid for uid in members if uid != by_id]
+        return await push(
+            session, client, to, "plan", message, ref=f"plan{plan.id}:done{max(approvals.values())}"
+        )
+    message = PushMessage(
+        title=f"{by.name} approved the menu",
+        body="Your turn: take a look and approve it.",
+        url="/plan",
+        tag=tag,
+    )
+    to = [uid for uid in members if uid not in approvals]
+    return await push(session, client, to, "plan", message, ref=f"a{approvals[by_id]}")
 
 
 def _plural(n: int, word: str) -> str:

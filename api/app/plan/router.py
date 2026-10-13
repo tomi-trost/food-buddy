@@ -14,6 +14,7 @@ from app.plan.service import (
     set_slot,
     slot_options,
 )
+from app.push.tasks import notify_plan
 
 router = APIRouter(prefix="/plan", tags=["plan"])
 
@@ -31,6 +32,7 @@ async def get_plan(user: CurrentUser, session: Session) -> PlanOut | None:
 async def make_plan(body: PlanCreate, user: CurrentUser, session: Session) -> PlanOut:
     """Generate a new menu from the wizard; replaces the current one."""
     plan = await create_plan(session, user, body)
+    await notify_plan.defer_async(plan_id=plan.id, by_id=user.id, event="new")
     return await plan_out(session, user, plan)
 
 
@@ -54,5 +56,6 @@ async def put_slot(
 @router.post("/approve")
 async def approve_plan(user: CurrentUser, session: Session) -> PlanOut:
     plan = await require_plan(session, user)
-    await approve(session, user, plan)
+    if await approve(session, user, plan):
+        await notify_plan.defer_async(plan_id=plan.id, by_id=user.id, event="approved")
     return await plan_out(session, user, await require_plan(session, user))

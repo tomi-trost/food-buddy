@@ -1,4 +1,4 @@
-"""Web Push: subscriptions, preferences, sending (encrypted + signed) and the four triggers."""
+"""Web Push: subscriptions, preferences, sending (encrypted + signed) and the triggers."""
 
 from datetime import UTC, date, datetime, timedelta
 
@@ -392,3 +392,101 @@ async def test_daily_reminder_singular_and_other_households(client, auth, seeded
     seen = await deliver(seeded, lambda s, http: notify.daily_reminder(s, http, TODAY))
     assert [str(r.url) for r in seen] == [phone.endpoint]
     assert phone.read(seen[0])["body"] == "1 meal to rate"
+
+
+# --- 6. the week's menu to approve -----------------------------------------------------
+
+
+def plan_push(plan_id, by_id, event):
+    return lambda s, http: notify.notify_plan(s, http, plan_id, by_id, event)
+
+
+async def plan_pair(client, auth):
+    """Both of us with a phone each, and a fresh menu from me. Returns ids, phones, plan."""
+    from tests.test_plan_api import new_plan
+
+    partner = await partner_of(client, auth)
+    mine, hers = FakePhone("https://web.push.apple.com/mine"), FakePhone()
+    await subscribe(client, auth, mine)
+    await subscribe(client, partner, hers)
+    plan = await new_plan(client, auth)
+    me, ana = await user_id(client, auth), await user_id(client, partner)
+    return partner, me, ana, mine, hers, plan
+
+
+async def test_planning_and_approving_queue_plan_notifications(client, auth, seeded, queue):
+    from tests.test_plan_api import new_plan
+
+    plan = await new_plan(client, auth)
+    me = await user_id(client, auth)
+    await client.post("/api/plan/approve", headers=auth)
+    await client.post("/api/plan/approve", headers=auth)  # a second tap: no second push
+    jobs = [j["args"] for j in queue.jobs.values() if j["task_name"] == "notify_plan"]
+    assert jobs == [
+        {"plan_id": plan["id"], "by_id": me, "event": "new"},
+        {"plan_id": plan["id"], "by_id": me, "event": "approved"},
+    ]
+    assert {j["queue_name"] for j in queue.jobs.values() if j["task_name"] == "notify_plan"} == {
+        "push"
+    }
+
+
+async def test_new_plan_asks_the_other_one_to_approve(client, auth, seeded, push_on):
+    _, me, _, mine, hers, plan = await plan_pair(client, auth)
+
+    seen = await deliver(seeded, plan_push(plan["id"], me, "new"))
+
+    assert [str(r.url) for r in seen] == [hers.endpoint]
+    message = hers.read(seen[0])
+    assert message["title"] == "Tomi planned the week"
+    assert (message["url"], message["tag"]) == ("/plan", f"plan{plan['id']}")
+    assert await deliver(seeded, plan_push(plan["id"], me, "new")) == []  # once
+
+
+async def test_first_approval_tells_whoever_has_not_approved(client, auth, seeded, push_on):
+    partner, me, ana, mine, hers, plan = await plan_pair(client, auth)
+    await client.post("/api/plan/approve", headers=partner)
+
+    seen = await deliver(seeded, plan_push(plan["id"], ana, "approved"))
+
+    assert [str(r.url) for r in seen] == [mine.endpoint]
+    assert mine.read(seen[0])["title"] == "Ana approved the menu"
+    assert await deliver(seeded, plan_push(plan["id"], ana, "approved")) == []
+
+
+async def test_last_approval_says_the_shopping_list_is_ready(client, auth, seeded, push_on):
+    partner, me, ana, mine, hers, plan = await plan_pair(client, auth)
+    await client.post("/api/plan/approve", headers=auth)
+    await client.post("/api/plan/approve", headers=partner)
+
+    seen = await deliver(seeded, plan_push(plan["id"], ana, "approved"))
+
+    assert [str(r.url) for r in seen] == [mine.endpoint]
+    message = mine.read(seen[0])
+    assert message["title"] == "The menu is approved ✓"
+    assert message["url"] == "/plan?tab=shop"
+
+
+async def test_plan_push_skipped_when_the_menu_changed_meanwhile(client, auth, seeded, push_on):
+    partner, me, ana, mine, hers, plan = await plan_pair(client, auth)
+    await client.post("/api/plan/approve", headers=partner)
+    # I change a slot before the push goes out: approvals reset, nothing to tell
+    await client.put("/api/plan/slots/0/dinner", json={"mode": "out"}, headers=auth)
+    assert await deliver(seeded, plan_push(plan["id"], ana, "approved")) == []
+
+    # approved again after the change: a new approval, so a new push
+    await client.post("/api/plan/approve", headers=partner)
+    seen = await deliver(seeded, plan_push(plan["id"], ana, "approved"))
+    assert [str(r.url) for r in seen] == [mine.endpoint]
+
+    # replaced by a new menu, or approved by both before "new" ran: nothing
+    await client.post("/api/plan/approve", headers=auth)
+    assert await deliver(seeded, plan_push(plan["id"], me, "new")) == []
+    assert await deliver(seeded, plan_push(999, me, "new")) == []
+
+
+async def test_plan_push_respects_the_switch(client, auth, seeded, push_on):
+    partner, me, _, _, hers, plan = await plan_pair(client, auth)
+    response = await client.put("/api/push/prefs", json={"off": ["plan"]}, headers=partner)
+    assert response.status_code == 200
+    assert await deliver(seeded, plan_push(plan["id"], me, "new")) == []

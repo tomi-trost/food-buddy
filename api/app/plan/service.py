@@ -163,10 +163,13 @@ async def set_slot(session, user, plan: PlanWeek, day: int, meal_type: str, body
     await session.commit()
 
 
-async def approve(session: AsyncSession, user: User, plan: PlanWeek) -> None:
-    if all(a.user_id != user.id for a in plan.approvals):
+async def approve(session: AsyncSession, user: User, plan: PlanWeek) -> bool:
+    """True when this is a new approval (not a repeated tap)."""
+    new = all(a.user_id != user.id for a in plan.approvals)
+    if new:
         plan.approvals.append(PlanApproval(user_id=user.id))
     members = {m.id for m in await household_members(session, user.household_id)}
     if members <= {a.user_id for a in plan.approvals}:
         plan.status = "approved"
     await session.commit()
+    return new

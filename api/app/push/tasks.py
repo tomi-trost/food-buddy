@@ -1,6 +1,7 @@
 """Push jobs run on their own `push` queue/worker so they never wait behind a 3-minute analysis."""
 
 from datetime import UTC, datetime
+from typing import Literal
 
 from app.db import SessionLocal
 from app.jobs import jobs_app
@@ -31,6 +32,11 @@ async def notify_partner_rated(meal_id: int, rater_id: int) -> None:
 @jobs_app.task(name="notify_suggested", queue="push")
 async def notify_suggested(suggestion_id: int) -> None:
     await _run(notify.notify_suggested, suggestion_id)
+
+
+@jobs_app.task(name="notify_plan", queue="push")
+async def notify_plan(plan_id: int, by_id: int, event: Literal["new", "approved"]) -> None:
+    await _run(notify.notify_plan, plan_id, by_id, event)
 
 
 # 18:00 UTC = 20:00 in summer, 19:00 in winter (Central Europe)

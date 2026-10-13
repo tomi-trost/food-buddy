@@ -10,6 +10,7 @@ const KINDS: { kind: PushKind; title: (partner: string) => string; hint: string 
   { kind: 'rate', title: () => 'Rate after eating', hint: 'About 1½ hours after posting a meal' },
   { kind: 'partner', title: (p) => `${p} rated`, hint: "When they rate a meal you haven't yet" },
   { kind: 'shared', title: (p) => `${p} logged a meal`, hint: 'Asks if you ate it too' },
+  { kind: 'plan', title: () => 'Weekly menu', hint: 'When the menu needs your approval, and when the shopping list is ready' },
   { kind: 'daily', title: () => 'Evening reminder', hint: 'Meals to rate and photos to check, around 8 pm' },
 ]
 
