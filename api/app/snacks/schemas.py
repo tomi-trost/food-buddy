@@ -60,7 +60,7 @@ class SnackIn(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     emoji: str = Field(default="🍪", max_length=8)
     kind: SnackKind
-    source: Literal["list", "photo", "label", "saved"]
+    source: Literal["list", "photo", "label", "saved", "barcode"]
     per: Per
     amount: float = Field(gt=0, le=2000)
     per_unit: NutrientsIn

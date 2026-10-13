@@ -3,6 +3,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router'
 import { App } from './App'
+import { UpdatePrompt } from './layout/UpdatePrompt'
 import { disablePinchZoom } from './lib/noZoom'
 import { ToastProvider } from './ui/Toast'
 import './styles.css'
@@ -17,6 +18,7 @@ createRoot(document.getElementById('root')!).render(
       <BrowserRouter>
         <ToastProvider>
           <App />
+          <UpdatePrompt />
         </ToastProvider>
       </BrowserRouter>
     </QueryClientProvider>

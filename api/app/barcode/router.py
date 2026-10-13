@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from app.auth.deps import CurrentUser, Session
 from app.barcode import service
 from app.nutrition.schemas import NutrientsOut
+from app.snacks.schemas import SnackKind
 
 router = APIRouter(prefix="/barcode", tags=["barcode"])
 
@@ -21,6 +22,7 @@ class ProductOut(BaseModel):
     serving_g: float | None
     image_url: str | None
     per100: NutrientsOut | None  # None: OFF has no energy value, the user types the label
+    kind: SnackKind  # guessed from OFF's categories and the sugar
     source: str = "Open Food Facts"
 
 
@@ -35,4 +37,5 @@ async def product_by_barcode(code: Barcode, session: Session, _: CurrentUser) ->
         ) from None
     if product is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Product not found in Open Food Facts")
-    return ProductOut(code=code, **product)
+    # answers cached before `kind` existed get it guessed from the sugar alone
+    return ProductOut(code=code, **{"kind": service.snack_kind([], product["per100"]), **product})

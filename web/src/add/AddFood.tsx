@@ -21,21 +21,21 @@ export const useAddFood = () => useContext(AddFoodContext)
 
 export function AddFoodProvider({ children }: { children: ReactNode }) {
   const [slot, setSlot] = useState<Slot | null>(null) // null = closed
-  const [snack, setSnack] = useState(false)
+  const [snack, setSnack] = useState<'closed' | 'list' | 'scan'>('closed')
   const open = useCallback<Open>((opts = {}) => {
-    if (opts.snack) setSnack(true)
+    if (opts.snack) setSnack('list')
     else setSlot(opts.type ?? guessMealType())
   }, [])
   return (
     <AddFoodContext.Provider value={open}>
       {children}
-      <AddFoodSheet slot={slot} setSlot={setSlot} openSnack={() => { setSlot(null); setSnack(true) }} />
-      <LogSnackSheet open={snack} onClose={() => setSnack(false)} />
+      <AddFoodSheet slot={slot} setSlot={setSlot} openSnack={(scan) => { setSlot(null); setSnack(scan ? 'scan' : 'list') }} />
+      <LogSnackSheet open={snack !== 'closed'} scan={snack === 'scan'} onClose={() => setSnack('closed')} />
     </AddFoodContext.Provider>
   )
 }
 
-function AddFoodSheet({ slot, setSlot, openSnack }: { slot: Slot | null; setSlot: (s: Slot | null) => void; openSnack: () => void }) {
+function AddFoodSheet({ slot, setSlot, openSnack }: { slot: Slot | null; setSlot: (s: Slot | null) => void; openSnack: (scan?: boolean) => void }) {
   const [view, setView] = useState<View>('menu')
   const [cooking, setCooking] = useState<{ id: number; type: MealType } | null>(null) // kept after the sheet closes
   const close = () => {
@@ -86,7 +86,7 @@ function AddFoodSheet({ slot, setSlot, openSnack }: { slot: Slot | null; setSlot
           <button className="add-opt" disabled={busy || !mealType} onClick={() => setView('meals')}>
             <Icon name="meals" size={22} /><b>Our meals</b><small>{mealType ? 'Again, or leftovers' : 'Pick a meal type first'}</small>
           </button>
-          <button className="add-opt" disabled={busy} onClick={openSnack}>
+          <button className="add-opt" disabled={busy} onClick={() => openSnack()}>
             <Icon name="gift" size={22} /><b>Snack</b><small>Sweets, drinks, bites</small>
           </button>
         </div>
@@ -95,6 +95,10 @@ function AddFoodSheet({ slot, setSlot, openSnack }: { slot: Slot | null; setSlot
           <Icon name="tag" size={20} /><span className="sp"><b>Scan a nutrition label</b><small>Packaged food: we read the table</small></span>
           <Icon name="chev" size={16} />
         </PhotoInput>
+        <button className="add-row" style={{ width: '100%', textAlign: 'left' }} disabled={busy} onClick={() => openSnack(true)}>
+          <Icon name="barcode" size={20} /><span className="sp"><b>Scan a barcode</b><small>Packaged snack: values from Open Food Facts</small></span>
+          <Icon name="chev" size={16} />
+        </button>
       </>
     )
   }

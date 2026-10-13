@@ -261,13 +261,26 @@ export type SnackIn = {
   name: string
   emoji: string
   kind: SnackKind
-  source: 'list' | 'photo' | 'label' | 'saved'
+  source: 'list' | 'photo' | 'label' | 'saved' | 'barcode'
   per: 'piece' | '100g'
   amount: number
   per_unit: Nutrients
   analysis_id?: number
   save?: boolean // also keep it in our snacks (with the photo, if any)
   saved_id?: number // logged from our snacks
+}
+
+/** A packaged product from Open Food Facts, looked up by its barcode. */
+export type Product = {
+  code: string
+  name: string
+  brand: string
+  quantity: string // pack size as printed, e.g. "400 g"
+  serving_g: number | null
+  image_url: string | null
+  per100: Nutrients | null // null: OFF has no values, type them from the label
+  kind: SnackKind // guessed from OFF's categories and the sugar
+  source: string
 }
 
 export type SnackLogged = { id: number; name: string; kcal: number; sugar: number; treat: boolean; saved_id: number | null }

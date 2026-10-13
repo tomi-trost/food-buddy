@@ -20,6 +20,12 @@ describe('mobile layout guards', () => {
     expect(rule).toMatch(/align-items: flex-start/)
   })
 
+  it('keeps the update popup a comfortable tap target, clear of the notch', () => {
+    const rule = css.match(/\.update \{([^}]*)\}/)?.[1] ?? ''
+    expect(Number(rule.match(/min-height:\s*(\d+)px/)?.[1])).toBeGreaterThanOrEqual(44)
+    expect(rule).toMatch(/top: calc\(env\(safe-area-inset-top\)/)
+  })
+
   it('keeps the pending banner a comfortable tap target', () => {
     const rule = css.match(/\.pending \{([^}]*)\}/)?.[1] ?? ''
     expect(Number(rule.match(/min-height:\s*(\d+)px/)?.[1])).toBeGreaterThanOrEqual(44)

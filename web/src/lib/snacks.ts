@@ -2,6 +2,7 @@ import type { LogEntry, Nutrients, SnackKind, SnackResult } from '../api/types'
 import { scale } from './macros'
 
 export const KIND_LABEL: Record<SnackKind, string> = { sweet: 'Sweet', savory: 'Savory', drink: 'Drink' }
+export const KIND_EMOJI: Record<SnackKind, string> = { sweet: '🍪', savory: '🥨', drink: '🥤' }
 
 /** Sweets and sugary drinks count as treats; croissant rewards don't (decisions 0011, 0012, 0014). */
 export const isTreat = (e: Pick<LogEntry, 'kind' | 'snack_kind' | 'is_reward'>) =>

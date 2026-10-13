@@ -5,7 +5,7 @@ import { api, ApiError } from '../api/client'
 import type { AnalysisJob, SnackKind, SnackResult } from '../api/types'
 import { OPEN_ANALYSES } from '../layout/PendingBanner'
 import { todayISO } from '../lib/dates'
-import { amountStep, KIND_LABEL, snackNutrients } from '../lib/snacks'
+import { amountStep, KIND_EMOJI as EMOJI, KIND_LABEL, snackNutrients } from '../lib/snacks'
 import { SAVED_SNACKS } from '../snacks/LogSnackSheet'
 import { Icon } from '../ui/Icon'
 import { MacroTiles } from '../ui/Macro'
@@ -14,8 +14,6 @@ import { Photo } from '../ui/Photo'
 import { Stepper } from '../ui/Stepper'
 import { Toggle } from '../ui/Toggle'
 import { useToast } from '../ui/Toast'
-
-const EMOJI: Record<SnackKind, string> = { sweet: '🍪', savory: '🥨', drink: '🥤' }
 
 export function SnackPage() {
   const { id = '' } = useParams()

@@ -80,10 +80,44 @@ async def test_lookup_returns_label_values_per_100_g(client, auth, off):
             "fiber": 0.0,
             "sugar": 56.3,
         },
+        "kind": "sweet",  # 56 g sugar per 100 g
         "source": "Open Food Facts",
     }
     assert off[0].url.path == f"/api/v2/product/{CODE}.json"
     assert "nutriments" in off[0].url.params["fields"]
+    assert "categories_tags" in off[0].url.params["fields"]
+
+
+@pytest.mark.parametrize(
+    ("categories", "sugar", "kind"),
+    [
+        (["en:beverages", "en:sodas"], 10.6, "drink"),
+        (["en:beverages", "en:waters"], 0, "drink"),  # the user switches water off "treat"
+        (["en:snacks", "en:sweet-snacks", "en:biscuits-and-cakes"], 8, "sweet"),
+        (["en:snacks", "en:salty-snacks", "en:crisps"], 0.5, "savory"),
+        ([], 22, "sweet"),  # no categories: the sugar decides
+        ([], 14.9, "savory"),
+    ],
+)
+async def test_snack_kind_is_guessed(client, auth, off, categories, sugar, kind):
+    nutriments = {"energy-kcal_100g": 100, "sugars_100g": sugar}
+    off.set(product={**OFF_PRODUCT, "categories_tags": categories, "nutriments": nutriments})
+    assert (await client.get(f"/api/barcode/{CODE}", headers=auth)).json()["kind"] == kind
+
+
+def test_snack_kind_without_values_is_savory():
+    assert service.snack_kind([], None) == "savory"
+    assert service.snack_kind(["en:chocolates"], None) == "sweet"
+
+
+async def test_answer_cached_before_kind_existed_still_gets_one(client, auth, off, session):
+    old = service.product_of(OFF_PRODUCT)
+    del old["kind"]
+    session.add(OffProduct(code=CODE, product=old, fetched_at=datetime.now(UTC)))
+    await session.commit()
+    body = (await client.get(f"/api/barcode/{CODE}", headers=auth)).json()
+    assert body["kind"] == "sweet"
+    assert off == []  # served from the cache
 
 
 async def test_second_lookup_comes_from_the_cache(client, auth, off):

@@ -61,8 +61,26 @@ async def test_log_snack_scales_pieces_and_grams(client, auth, session):
     assert [r.source for r in rows] == ["list", "label", "list"]
 
 
+async def test_log_scanned_snack_saves_it(client, auth, session):
+    per100 = {"kcal": 539, "protein": 6.3, "carbs": 57.5, "fat": 30.9, "fiber": 0, "sugar": 56.3}
+    body = snack(name="Ferrero Nutella", per="100g", amount=15, per_unit=per100, source="barcode")
+    response = await client.post("/api/snacks", json=body | {"save": True}, headers=auth)
+    assert response.status_code == 201
+    assert response.json()["kcal"] == 80.8  # 15 g of 539 kcal / 100 g
+    assert response.json()["saved_id"] is not None
+    row = await session.scalar(select(FoodLog))
+    assert (row.source, row.per, row.servings) == ("barcode", "100g", 15)
+
+
 @pytest.mark.parametrize(
-    "over", [{"amount": 0}, {"kind": "candy"}, {"per": "cup"}, {"per_unit": {**COOKIE, "kcal": -1}}]
+    "over",
+    [
+        {"amount": 0},
+        {"kind": "candy"},
+        {"per": "cup"},
+        {"per_unit": {**COOKIE, "kcal": -1}},
+        {"source": "qr"},
+    ],
 )
 async def test_snack_validation(client, auth, over):
     assert (await client.post("/api/snacks", json=snack(**over), headers=auth)).status_code == 422

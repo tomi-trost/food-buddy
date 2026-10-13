@@ -146,6 +146,13 @@ svg text { fill: var(--ink2); font-size: 11px; }
 .offline { position: sticky; top: env(safe-area-inset-top); z-index: 6; margin: 8px 0 4px; padding: 10px 12px; border-radius: var(--r);
   background: color-mix(in srgb, var(--warn) 22%, var(--surface)); border: 1px solid var(--warn); color: var(--ink); font-size: 14px; }
 
+/* New-version popup: above everything, under the notch */
+.update { position: fixed; z-index: 60; top: calc(env(safe-area-inset-top) + 8px); left: 12px; right: 12px; max-width: 520px; margin: 0 auto;
+  display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 8px 6px 8px 14px; border-radius: var(--r);
+  background: var(--surface); border: 1px solid var(--accent); color: var(--ink); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18); }
+.update .sp { display: flex; flex-direction: column; min-width: 0; }
+.update small { font-size: 12px; color: var(--ink2); }
+
 /* On/off switch (checkbox role="switch") */
 .switch-row { display: flex; align-items: center; gap: 12px; min-height: 52px; }
 .switch-row .sp { display: flex; flex-direction: column; }
@@ -183,8 +190,14 @@ html.sheet-open, html.sheet-open body { overflow: hidden; overscroll-behavior: n
 .add-row { display: flex; align-items: center; gap: 12px; margin-top: 10px; padding: 12px 14px; min-height: 56px; border-radius: var(--r); background: var(--surface); border: 1px solid var(--line); cursor: pointer; }
 .add-row b { display: block; font-size: 15px; }
 .add-row small { display: block; font-size: 12px; color: var(--ink2); }
-.add-hero[aria-disabled='true'], .add-opt[aria-disabled='true'], .add-row[aria-disabled='true'] { opacity: 0.5; pointer-events: none; }
+.add-hero[aria-disabled='true'], .add-opt[aria-disabled='true'], .add-row[aria-disabled='true'], .add-row:disabled { opacity: 0.5; pointer-events: none; }
 .add-back { display: flex; align-items: center; gap: 4px; margin-top: 14px; }
+
+/* Barcode scanner: live camera with a guide over the band that gets decoded */
+.scanner { position: relative; margin: 4px 0 12px; border-radius: var(--r); overflow: hidden; background: #000; aspect-ratio: 4 / 3; }
+.scanner video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.scanner-guide { position: absolute; inset: 25% 5%; border: 2px solid rgba(255, 255, 255, 0.9); border-radius: var(--r); box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.35); }
+.scanner-hint { position: absolute; left: 0; right: 0; bottom: 8px; margin: 0; text-align: center; font-size: 14px; color: #fff; }
 .chip.warn { background: color-mix(in srgb, var(--warn) 18%, var(--surface2)); color: var(--ink); }
 
 /* Meals feed (mock .mealgrid/.mealcard) */

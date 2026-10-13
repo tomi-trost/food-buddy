@@ -26,7 +26,7 @@ class FoodLog(TimestampMixin, Base):
     is_reward: Mapped[bool] = mapped_column(default=False)
     source: Mapped[str] = mapped_column(
         String(10)
-    )  # snap|cook|leftover|shared|list|photo|label|reward|saved
+    )  # snap|cook|leftover|shared|list|photo|label|reward|saved|barcode
     servings: Mapped[float] = mapped_column(Float, default=1)  # portions (meals), pieces/g (snacks)
     per: Mapped[str | None] = mapped_column(String(5))  # snacks: piece | 100g
     per_unit: Mapped[dict | None] = mapped_column(JSONB)  # snacks: values per piece / per 100 g

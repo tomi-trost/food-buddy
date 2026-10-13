@@ -1,5 +1,5 @@
 import type {
-  AnalysisJob, CatalogItem, CookIn, Day, Insights, LogEntry, LogPatch, Reward, SnackIn, HouseholdPatch, Ingredient, Me, Meal, MealCard, MealCreate, MealPatch, MealType, MePatch, Plan, PushConfig, PushKind, SavedSnack, Suggestion, SavedSnackPatch, SnackLogged, PlanMode, Rating, RegisterBody, Shopping, StockItem, WizardCell,
+  AnalysisJob, CatalogItem, CookIn, Day, Insights, LogEntry, LogPatch, Reward, SnackIn, HouseholdPatch, Ingredient, Me, Meal, MealCard, MealCreate, MealPatch, MealType, MePatch, Plan, PushConfig, PushKind, SavedSnack, Suggestion, SavedSnackPatch, SnackLogged, PlanMode, Product, Rating, RegisterBody, Shopping, StockItem, WizardCell,
 } from './types'
 import { reportReachable } from '../lib/online'
 
@@ -158,6 +158,7 @@ export const api = {
   snackCatalog: () => json<CatalogItem[]>('/snacks/catalog'),
   logSnack: (body: SnackIn) => json<SnackLogged>('/snacks', { method: 'POST', body: JSON.stringify(body) }),
   savedSnacks: () => json<SavedSnack[]>('/snacks/saved'),
+  product: (code: string) => json<Product>(`/barcode/${code}`),
   suggestions: (today: string) => json<Suggestion[]>(`/suggestions?today=${today}`),
   acceptSuggestion: (id: number, servings = 1) =>
     json<{ log_id: number }>(`/suggestions/${id}/accept`, { method: 'POST', body: JSON.stringify({ servings_eaten: servings }) }),

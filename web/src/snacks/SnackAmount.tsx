@@ -6,15 +6,16 @@ import { NutrientFields } from '../ui/NutrientFields'
 import { Stepper } from '../ui/Stepper'
 
 /** How much of a snack, and its values per piece / per 100 g (editable). */
-export function SnackAmount({ per, amount, perUnit, onAmount, onPerUnit, onValid }: {
+export function SnackAmount({ per, amount, perUnit, startEditing = false, onAmount, onPerUnit, onValid }: {
   per: 'piece' | '100g'
   amount: number
   perUnit: Nutrients
+  startEditing?: boolean // values still to be typed in
   onAmount: (amount: number) => void
   onPerUnit: (perUnit: Nutrients) => void
   onValid: (valid: boolean) => void
 }) {
-  const [editing, setEditing] = useState(false)
+  const [editing, setEditing] = useState(startEditing)
   const [valid, setValid] = useState(true)
   const step = amountStep(per)
   const unit = per === 'piece' ? (amount === 1 ? ' piece' : ' pieces') : ' g'

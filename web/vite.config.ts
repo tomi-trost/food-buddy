@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt', // a new build waits until "Reload" in the update popup (layout/UpdatePrompt.tsx)
       includeAssets: ['apple-touch-icon.png'],
       manifest: {
         name: 'Food Buddy',

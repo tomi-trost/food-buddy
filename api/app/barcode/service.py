@@ -17,7 +17,7 @@ FOUND_TTL = timedelta(days=30)
 NOT_FOUND_TTL = timedelta(days=1)
 FIELDS = ",".join(
     ["product_name", "product_name_en", "brands", "quantity", "serving_quantity",
-     "image_front_small_url", "nutriments"]
+     "image_front_small_url", "nutriments", "categories_tags"]
 )  # fmt: skip
 KJ_PER_KCAL = 4.184
 NUTRIMENTS = {  # ours → OFF key, per 100 g
@@ -27,6 +27,13 @@ NUTRIMENTS = {  # ours → OFF key, per 100 g
     "fiber": "fiber_100g",
     "sugar": "sugars_100g",
 }
+
+
+SWEET_CATEGORIES = {
+    "en:sweet-snacks", "en:confectioneries", "en:chocolates", "en:biscuits-and-cakes",
+    "en:desserts", "en:sweet-spreads", "en:candies", "en:ice-creams-and-sorbets",
+}  # fmt: skip
+SWEET_SUGAR = 15  # g per 100 g: sweet without a telling category (e.g. cereal bars)
 
 
 class OffUnavailable(Exception):
@@ -59,15 +66,27 @@ def per100(nutriments: dict) -> dict[str, float] | None:
     return {"kcal": round(kcal, 1), **{k: round(v, 2) for k, v in values.items()}}
 
 
+def snack_kind(categories: list[str], per100: dict[str, float] | None) -> str:
+    """Guess for the snack type toggle: sweet | savory | drink (the user can change it)."""
+    tags = set(categories)
+    if "en:beverages" in tags:
+        return "drink"
+    if tags & SWEET_CATEGORIES or (per100 is not None and per100["sugar"] >= SWEET_SUGAR):
+        return "sweet"
+    return "savory"
+
+
 def product_of(raw: dict) -> dict:
     """The parts of an OFF product we keep."""
+    values = per100(raw.get("nutriments") or {})
     return {
         "name": (raw.get("product_name") or raw.get("product_name_en") or "").strip(),
         "brand": (raw.get("brands") or "").split(",")[0].strip(),
         "quantity": (raw.get("quantity") or "").strip(),
         "serving_g": _number(raw.get("serving_quantity")),
         "image_url": raw.get("image_front_small_url") or None,
-        "per100": per100(raw.get("nutriments") or {}),
+        "per100": values,
+        "kind": snack_kind(raw.get("categories_tags") or [], values),
     }
 
 
