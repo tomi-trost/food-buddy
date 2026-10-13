@@ -18,7 +18,7 @@ Status: idea · planned · done · dropped
 | 2026-10-04 | Use fullness feedback ("left us hungry"/"too heavy") to auto-suggest carb/fiber portion changes and feed the menu generator | idea |
 | 2026-10-04 | Sweets story: temptation triggers (time of day, after which meal), weekly treat budget, streak of treat-free days | idea |
 | 2026-10-04 | Barcode scan for packaged snacks (Open Food Facts) as a fallback/validation for label OCR | done 2026-10-13 (decision 0023) |
-| 2026-10-04 | Let the user correct label-scan values before logging (editable table) and remember products | correcting done 2026-10-12; remembering products open |
+| 2026-10-04 | Let the user correct label-scan values before logging (editable table) and remember products | correcting done 2026-10-12; remembering scanned (barcode) products done 2026-10-13, decision 0023 |
 | 2026-10-04 | NEXT SESSION: decide tech stack, deployment options and app serving, then write the implementation plan | done (docs/design-plan.md) |
 | 2026-10-04 | Which phones (iPhone/Android)? Pay Apple 99 USD/yr or use home-screen web on iOS | done (both iPhone → PWA, no fee; Android APK too) |
 | 2026-10-04 | Raspberry Pi model/RAM + SSD → decides local model size | done (Pi 3 B, 1 GB, SD → monitor only) |

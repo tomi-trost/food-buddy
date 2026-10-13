@@ -1,7 +1,7 @@
 from datetime import date
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 SnackKind = Literal["sweet", "savory", "drink"]
 
@@ -67,6 +67,13 @@ class SnackIn(BaseModel):
     analysis_id: int | None = None  # the photo/label this came from; closes it
     save: bool = False  # also keep it in our snacks (with the photo, if any)
     saved_id: int | None = None  # logged from our snacks
+    barcode: str | None = Field(default=None, pattern=r"^\d{8,14}$")  # scanned: remembered
+
+    @model_validator(mode="after")
+    def barcode_needs_scanned_per_100g(self):
+        if self.barcode is not None and (self.source != "barcode" or self.per != "100g"):
+            raise ValueError("A barcode comes with a scanned snack per 100 g")
+        return self
 
 
 class SavedSnackOut(BaseModel):

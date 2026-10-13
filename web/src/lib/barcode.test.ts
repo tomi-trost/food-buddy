@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import type { Product } from '../api/types'
-import { cleanBarcode, productSnack } from './barcode'
+import { cleanBarcode, productSnack, unknownProduct } from './barcode'
 
 const per100 = { kcal: 539, protein: 6.3, carbs: 57.5, fat: 30.9, fiber: 0, sugar: 56.3 }
 const product = (over: Partial<Product> = {}): Product => ({
   code: '8000500310427', name: 'Nutella', brand: 'Ferrero', quantity: '400 g', serving_g: 15,
-  image_url: null, per100, kind: 'sweet', source: 'Open Food Facts', ...over,
+  image_url: null, per100, kind: 'sweet', remembered: false, source: 'Open Food Facts', ...over,
 })
 
 describe('cleanBarcode', () => {
@@ -50,5 +50,14 @@ describe('productSnack', () => {
     const snack = productSnack(product({ per100: null }))
     expect(snack.missingValues).toBe(true)
     expect(snack.perUnit).toEqual({ kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0 })
+  })
+})
+
+describe('unknownProduct', () => {
+  it('starts nameless with zero values to type in, per 100 g', () => {
+    expect(unknownProduct()).toEqual({
+      name: '', kind: 'savory', per: '100g', amount: 100,
+      perUnit: { kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0 }, missingValues: true,
+    })
   })
 })

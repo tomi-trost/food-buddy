@@ -5,7 +5,7 @@ import { useFoodUpload } from '../add/upload'
 import { api, ApiError } from '../api/client'
 import type { Nutrients, SavedSnack, SnackKind } from '../api/types'
 import { todayISO } from '../lib/dates'
-import { productSnack } from '../lib/barcode'
+import { type ProductSnack, productSnack, unknownProduct } from '../lib/barcode'
 import { KIND_EMOJI, KIND_LABEL } from '../lib/snacks'
 import { Icon } from '../ui/Icon'
 import { Photo } from '../ui/Photo'
@@ -35,7 +35,7 @@ type Draft = {
   amount: number
   perUnit: Nutrients
   saved?: SavedSnack
-  scanned?: { quantity: string; missingValues: boolean } // from a barcode
+  scanned?: { code: string; quantity: string; missingValues: boolean; remembered: boolean } // from a barcode
 }
 
 const fromSaved = (s: SavedSnack): Draft => ({
@@ -54,17 +54,14 @@ function LogSnack({ onClose, saved, scan }: { onClose: () => void; saved?: Saved
   const [save, setSave] = useState(false)
   const lookup = useMutation({
     mutationFn: api.product,
-    onSuccess: (product) => {
-      const p = productSnack(product)
-      pick({ name: p.name, emoji: KIND_EMOJI[p.kind], kind: p.kind, per: p.per, amount: p.amount, perUnit: p.perUnit,
-        scanned: { quantity: product.quantity, missingValues: p.missingValues } })
-    },
+    onSuccess: (product) => pickScanned(productSnack(product), { code: product.code, quantity: product.quantity, remembered: product.remembered }),
   })
   const log = useMutation({
     mutationFn: (d: Draft) =>
       api.logSnack({
         eaten_on: todayISO(), name: d.name, emoji: d.emoji, kind: d.kind, source: d.saved ? 'saved' : d.scanned ? 'barcode' : 'list',
         per: d.per, amount: d.amount, per_unit: d.perUnit, saved_id: d.saved?.id, save: !!d.scanned && save,
+        barcode: d.scanned?.code,
       }),
     onSuccess: (logged) => {
       qc.invalidateQueries({ queryKey: ['day'] })
@@ -87,6 +84,9 @@ function LogSnack({ onClose, saved, scan }: { onClose: () => void; saved?: Saved
     setValid(!d.scanned?.missingValues)
     setDraft(d)
   }
+  const pickScanned = (p: ProductSnack, from: { code: string; quantity: string; remembered: boolean }) =>
+    pick({ name: p.name, emoji: KIND_EMOJI[p.kind], kind: p.kind, per: p.per, amount: p.amount, perUnit: p.perUnit,
+      scanned: { ...from, missingValues: p.missingValues } })
 
   if (draft) {
     const scanned = draft.scanned
@@ -96,13 +96,23 @@ function LogSnack({ onClose, saved, scan }: { onClose: () => void; saved?: Saved
           {draft.saved?.photo_url && (
             <Photo url={draft.saved.photo_url} emoji={draft.emoji} alt="" style={{ width: 56, height: 56, aspectRatio: '1', flex: 'none' }} />
           )}
-          <h1 className="sp">{draft.saved?.photo_url ? '' : `${draft.emoji} `}{draft.name}</h1>
+          {scanned ? (
+            <label className="field sp">
+              <span className="visually-hidden">Product name</span>
+              <input value={draft.name} maxLength={120} placeholder="Product name" autoComplete="off"
+                onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
+            </label>
+          ) : (
+            <h1 className="sp">{draft.saved?.photo_url ? '' : `${draft.emoji} `}{draft.name}</h1>
+          )}
         </div>
         <div className="sub" style={{ marginBottom: 12 }}>
           {scanned
-            ? scanned.missingValues
-              ? 'Open Food Facts has no values for this one. Type them from the label.'
-              : `From Open Food Facts${scanned.quantity ? ` · ${scanned.quantity} pack` : ''}. Check them against the label.`
+            ? scanned.remembered
+              ? 'Your values from last time. Change them if this one was different.'
+              : scanned.missingValues
+                ? 'Open Food Facts has no values for this one. Type them from the label, we remember them.'
+                : `From Open Food Facts${scanned.quantity ? ` · ${scanned.quantity} pack` : ''}. Check them against the label, we remember your changes.`
             : draft.saved ? 'Your values from last time. Change them if this one was different.' : 'Typical values. Change them if yours was different.'}
         </div>
         {scanned && (
@@ -118,7 +128,7 @@ function LogSnack({ onClose, saved, scan }: { onClose: () => void; saved?: Saved
           </label>
         )}
         {(log.error ?? remove.error) && <p className="error" role="alert">{(log.error ?? remove.error)!.message}</p>}
-        <button className="btn" disabled={log.isPending || !valid} onClick={() => log.mutate(draft)}>Log snack</button>
+        <button className="btn" disabled={log.isPending || !valid || !draft.name.trim()} onClick={() => log.mutate(draft)}>Log snack</button>
         {!saved && (
           <button className="btn ghost" style={{ marginTop: 8 }} onClick={() => { setDraft(null); setScanning(!!scanned) }}>
             {scanned ? 'Scan another' : 'Pick another'}
@@ -142,6 +152,12 @@ function LogSnack({ onClose, saved, scan }: { onClose: () => void; saved?: Saved
         {lookup.error && (
           <div role="alert" className="card" style={{ marginTop: 12 }}>
             <p className="error" style={{ margin: 0 }}>{notFound ? 'Not in Open Food Facts yet.' : lookup.error.message}</p>
+            {notFound && (
+              <button className="btn" style={{ margin: '10px 0 8px' }}
+                onClick={() => pickScanned(unknownProduct(), { code: lookup.variables!, quantity: '', remembered: false })}>
+                <Icon name="edit" size={18} /> Type the values from the pack
+              </button>
+            )}
             {notFound && (
               <PhotoInput camera label="Scan the label instead" disabled={upload.busy} className="btn ghost"
                 onFile={(file) => upload.photo.mutate({ file, kind: 'label' })}>

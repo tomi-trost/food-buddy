@@ -13,7 +13,7 @@ const CODE = '8000500310427'
 const per100 = { kcal: 539, protein: 6.3, carbs: 57.5, fat: 30.9, fiber: 0, sugar: 56.3 }
 const nutella: Product = {
   code: CODE, name: 'Nutella', brand: 'Ferrero', quantity: '400 g', serving_g: 15,
-  image_url: null, per100, kind: 'sweet', source: 'Open Food Facts',
+  image_url: null, per100, kind: 'sweet', remembered: false, source: 'Open Food Facts',
 }
 
 function Opener() {
@@ -63,9 +63,9 @@ describe('Barcode scanner', () => {
   it('looks up a typed number and logs the product per 100 g, one serving, saved to our snacks', async () => {
     const { fetch, sheet } = setup()
     typeCode(sheet, '8000500 310427')
-    expect(await within(sheet).findByRole('heading', { name: '🍪 Ferrero Nutella' })).toBeInTheDocument()
+    expect(await within(sheet).findByDisplayValue('Ferrero Nutella')).toBeInTheDocument()
     expect(lookups(fetch)[0][0]).toBe(`/api/barcode/${CODE}`)
-    expect(within(sheet).getByText('From Open Food Facts · 400 g pack. Check them against the label.')).toBeInTheDocument()
+    expect(within(sheet).getByText('From Open Food Facts · 400 g pack. Check them against the label, we remember your changes.')).toBeInTheDocument()
     expect(within(sheet).getByRole('button', { name: 'Sweet' })).toHaveAttribute('aria-pressed', 'true')
     expect(within(sheet).getByText('15 g')).toBeInTheDocument()
 
@@ -75,15 +75,16 @@ describe('Barcode scanner', () => {
     const [, init] = fetch.mock.calls.find(([u]) => u === '/api/snacks')!
     expect(JSON.parse(String(init!.body))).toMatchObject({
       name: 'Ferrero Nutella', emoji: '🍪', kind: 'sweet', source: 'barcode', per: '100g', amount: 15, per_unit: per100, save: true,
+      barcode: CODE,
     })
   })
 
   it('lets you change the guessed type (water is no treat) and scan another', async () => {
     const { fetch, sheet } = setup({ ...nutella, name: 'Still water', brand: 'Aqua', kind: 'drink', per100: { ...per100, kcal: 0, sugar: 0 } })
     typeCode(sheet, CODE)
-    await within(sheet).findByRole('heading', { name: '🥤 Aqua Still water' })
+    await within(sheet).findByDisplayValue('Aqua Still water')
+    expect(within(sheet).getByRole('button', { name: 'Drink' })).toHaveAttribute('aria-pressed', 'true')
     fireEvent.click(within(sheet).getByRole('button', { name: 'Savory' }))
-    expect(within(sheet).getByRole('heading', { name: '🥨 Aqua Still water' })).toBeInTheDocument()
     fireEvent.click(within(sheet).getByRole('button', { name: 'Log snack' }))
     await waitFor(() => expect(fetch.mock.calls.some(([u]) => u === '/api/snacks')).toBe(true))
     const [, init] = fetch.mock.calls.find(([u]) => u === '/api/snacks')!
@@ -109,7 +110,7 @@ describe('Barcode scanner', () => {
     const { fetch, sheet } = setup()
     const file = new File(['x'], 'b.jpg', { type: 'image/jpeg' })
     fireEvent.change(within(sheet).getByLabelText('Photo of the barcode'), { target: { files: [file] } })
-    await within(sheet).findByRole('heading', { name: '🍪 Ferrero Nutella' })
+    await within(sheet).findByDisplayValue('Ferrero Nutella')
     expect(readBarcode).toHaveBeenCalledWith(file)
     expect(lookups(fetch)).toHaveLength(1)
   })
@@ -133,17 +134,52 @@ describe('Barcode scanner', () => {
     expect((upload[1]!.body as FormData).get('kind')).toBe('label')
   })
 
+  it('uses our remembered values, and a corrected name is sent along', async () => {
+    const { fetch, sheet } = setup({ ...nutella, name: 'Nutella (ours)', brand: '', serving_g: 20, remembered: true, source: 'Our values' })
+    typeCode(sheet, CODE)
+    const name = await within(sheet).findByDisplayValue('Nutella (ours)')
+    expect(within(sheet).getByText('Your values from last time. Change them if this one was different.')).toBeInTheDocument()
+    expect(within(sheet).getByText('20 g')).toBeInTheDocument()
+
+    fireEvent.change(name, { target: { value: '' } })
+    expect(within(sheet).getByRole('button', { name: 'Log snack' })).toBeDisabled() // a name is needed
+    fireEvent.change(name, { target: { value: 'Nutella jar' } })
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Log snack' }))
+    await waitFor(() => expect(fetch.mock.calls.some(([u]) => u === '/api/snacks')).toBe(true))
+    const [, init] = fetch.mock.calls.find(([u]) => u === '/api/snacks')!
+    expect(JSON.parse(String(init!.body))).toMatchObject({ name: 'Nutella jar', amount: 20, barcode: CODE })
+  })
+
+  it('lets you type in a product Open Food Facts does not know, remembered by its barcode', async () => {
+    const { fetch, sheet } = setup(null)
+    typeCode(sheet, CODE)
+    fireEvent.click(await within(sheet).findByRole('button', { name: /Type the values from the pack/ }))
+    const log = within(sheet).getByRole('button', { name: 'Log snack' })
+    expect(log).toBeDisabled()
+    fireEvent.change(within(sheet).getByLabelText('Product name'), { target: { value: 'Market granola' } })
+    fireEvent.change(within(sheet).getByLabelText('kcal'), { target: { value: '450' } })
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Sweet' }))
+    fireEvent.click(log)
+    await waitFor(() => expect(fetch.mock.calls.some(([u]) => u === '/api/snacks')).toBe(true))
+    const [, init] = fetch.mock.calls.find(([u]) => u === '/api/snacks')!
+    expect(JSON.parse(String(init!.body))).toMatchObject({
+      name: 'Market granola', kind: 'sweet', source: 'barcode', per: '100g', amount: 100, barcode: CODE,
+      per_unit: { kcal: 450, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0 },
+    })
+  })
+
   it('shows the server message when Open Food Facts is down', async () => {
     const { sheet } = setup('down')
     typeCode(sheet, CODE)
     expect(await within(sheet).findByText("Open Food Facts can't be reached right now")).toBeInTheDocument()
     expect(within(sheet).queryByLabelText('Scan the label instead')).not.toBeInTheDocument()
+    expect(within(sheet).queryByRole('button', { name: /Type the values/ })).not.toBeInTheDocument()
   })
 
   it('asks for the values when Open Food Facts has none, logging only after they are typed', async () => {
     const { sheet } = setup({ ...nutella, per100: null })
     typeCode(sheet, CODE)
-    expect(await within(sheet).findByText('Open Food Facts has no values for this one. Type them from the label.')).toBeInTheDocument()
+    expect(await within(sheet).findByText('Open Food Facts has no values for this one. Type them from the label, we remember them.')).toBeInTheDocument()
     const log = within(sheet).getByRole('button', { name: 'Log snack' })
     expect(log).toBeDisabled()
     fireEvent.change(within(sheet).getByLabelText('kcal'), { target: { value: '539' } })

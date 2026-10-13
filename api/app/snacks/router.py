@@ -8,6 +8,7 @@ from sqlalchemy import nulls_last, select
 from app.analysis.queue import close, lock_open_job
 from app.auth.deps import CurrentUser, Session
 from app.auth.service import household_members
+from app.barcode.service import remember
 from app.config import get_settings
 from app.logs.models import FoodLog
 from app.logs.router import is_treat
@@ -72,6 +73,9 @@ async def log_snack(body: SnackIn, user: CurrentUser, session: Session) -> Logge
     )
     entry.set_nutrients(snack_nutrients(entry))
     session.add(entry)
+    if body.barcode is not None:
+        values = body.per_unit.model_dump()
+        await remember(session, user, body.barcode, entry.name, body.kind, values, body.amount)
     kept = await saved.save(session, user, body, photo_path) if body.save else from_list
     if from_list is not None:
         saved.eaten(from_list, body.eaten_on)

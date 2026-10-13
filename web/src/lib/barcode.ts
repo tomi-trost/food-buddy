@@ -17,6 +17,11 @@ export type ProductSnack = {
   missingValues: boolean // OFF has no values: the user types them from the label
 }
 
+/** A product Open Food Facts doesn't know: typed in from the pack (then remembered). */
+export const unknownProduct = (): ProductSnack => ({
+  name: '', kind: 'savory', per: '100g', amount: 100, perUnit: NO_VALUES, missingValues: true,
+})
+
 /** A scanned product as a snack draft: per 100 g, one serving eaten. */
 export function productSnack(p: Product): ProductSnack {
   const brand = p.brand && !p.name.toLowerCase().includes(p.brand.toLowerCase()) ? p.brand : ''

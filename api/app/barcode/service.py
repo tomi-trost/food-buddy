@@ -7,10 +7,12 @@ can't be reached, a stale cached answer is better than none.
 from datetime import UTC, datetime, timedelta
 
 import httpx
+from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.barcode.models import OffProduct
+from app.auth.models import User
+from app.barcode.models import HouseholdProduct, OffProduct
 from app.config import get_settings
 
 FOUND_TTL = timedelta(days=30)
@@ -126,3 +128,25 @@ async def lookup(
     await session.execute(stmt)
     await session.commit()
     return product
+
+
+async def remembered(
+    session: AsyncSession, household_id: int, code: str
+) -> HouseholdProduct | None:
+    return await session.scalar(
+        select(HouseholdProduct).where(
+            HouseholdProduct.household_id == household_id, HouseholdProduct.code == code
+        )
+    )
+
+
+async def remember(
+    session: AsyncSession, user: User, code: str, name: str, kind: str, per100: dict, amount: float
+) -> None:
+    """Keep a scanned product as just logged (the caller commits)."""
+    values = {"name": name, "kind": kind, "per100": per100, "amount": amount, "updated_by": user.id}
+    stmt = insert(HouseholdProduct).values(household_id=user.household_id, code=code, **values)
+    stmt = stmt.on_conflict_do_update(
+        index_elements=["household_id", "code"], set_={**values, "updated_at": func.now()}
+    )
+    await session.execute(stmt)

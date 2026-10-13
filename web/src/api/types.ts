@@ -268,6 +268,7 @@ export type SnackIn = {
   analysis_id?: number
   save?: boolean // also keep it in our snacks (with the photo, if any)
   saved_id?: number // logged from our snacks
+  barcode?: string // scanned: the household remembers it as logged
 }
 
 /** A packaged product from Open Food Facts, looked up by its barcode. */
@@ -280,6 +281,7 @@ export type Product = {
   image_url: string | null
   per100: Nutrients | null // null: OFF has no values, type them from the label
   kind: SnackKind // guessed from OFF's categories and the sugar
+  remembered: boolean // our values (name, type, values, amount) from the last time we logged it
   source: string
 }
 

@@ -8,6 +8,8 @@ from sqlalchemy import update
 
 from app.barcode import service
 from app.barcode.models import OffProduct
+from tests.conftest import register
+from tests.test_analysis_queue import partner_of
 
 CODE = "8000500310427"  # a 400 g jar of hazelnut spread
 OFF_PRODUCT = {
@@ -81,6 +83,7 @@ async def test_lookup_returns_label_values_per_100_g(client, auth, off):
             "sugar": 56.3,
         },
         "kind": "sweet",  # 56 g sugar per 100 g
+        "remembered": False,
         "source": "Open Food Facts",
     }
     assert off[0].url.path == f"/api/v2/product/{CODE}.json"
@@ -218,3 +221,94 @@ def test_real_client_identifies_the_app():
     client = service.off_client()
     assert client.headers["User-Agent"].startswith("FoodBuddy/")
     assert str(client.base_url).startswith("https://world.openfoodfacts.org")
+
+
+# --- our corrected products -------------------------------------------------------------
+
+FIXED = {"kcal": 545, "protein": 6.3, "carbs": 57.5, "fat": 31, "fiber": 3.4, "sugar": 56.3}
+
+
+def scanned(**over):
+    return {
+        "eaten_on": "2026-10-13",
+        "name": "Nutella (ours)",
+        "emoji": "🍪",
+        "kind": "sweet",
+        "source": "barcode",
+        "per": "100g",
+        "amount": 20,
+        "per_unit": FIXED,
+        "barcode": CODE,
+    } | over
+
+
+async def test_logged_scan_is_remembered_and_used_next_time(client, auth, off):
+    await client.get(f"/api/barcode/{CODE}", headers=auth)  # OFF answer cached
+    assert (await client.post("/api/snacks", json=scanned(), headers=auth)).status_code == 201
+
+    body = (await client.get(f"/api/barcode/{CODE}", headers=auth)).json()
+    assert body == {
+        "code": CODE,
+        "name": "Nutella (ours)",
+        "brand": "",
+        "quantity": "400 g",  # still from OFF's cached answer
+        "serving_g": 20.0,  # what we ate last time
+        "image_url": "https://images.openfoodfacts.org/nutella.jpg",
+        "per100": {k: float(v) for k, v in FIXED.items()},
+        "kind": "sweet",
+        "remembered": True,
+        "source": "Our values",
+    }
+    assert len(off) == 1  # ours: OFF not asked again
+
+    # logging it again updates it (last one wins)
+    again = scanned(name="Nutella", kind="savory", amount=15, per_unit={**FIXED, "kcal": 539})
+    await client.post("/api/snacks", json=again, headers=auth)
+    body = (await client.get(f"/api/barcode/{CODE}", headers=auth)).json()
+    assert (body["name"], body["kind"], body["serving_g"], body["per100"]["kcal"]) == (
+        "Nutella",
+        "savory",
+        15.0,
+        539.0,
+    )
+
+
+async def test_product_unknown_to_off_is_found_once_typed_in(client, auth, off):
+    off.set(product=None)
+    assert (await client.get(f"/api/barcode/{CODE}", headers=auth)).status_code == 404
+    await client.post("/api/snacks", json=scanned(name="Market granola"), headers=auth)
+
+    body = (await client.get(f"/api/barcode/{CODE}", headers=auth)).json()
+    assert (body["name"], body["remembered"]) == ("Market granola", True)
+    assert body["quantity"] == "" and body["image_url"] is None
+
+
+async def test_remembered_products_stay_in_the_household(client, auth, off):
+    await client.post("/api/snacks", json=scanned(), headers=auth)
+    partner = await partner_of(client, auth)
+    assert (await client.get(f"/api/barcode/{CODE}", headers=partner)).json()["remembered"] is True
+
+    stranger = await register(client, email="x@example.com", name="X")
+    body = (await client.get(f"/api/barcode/{CODE}", headers=stranger)).json()
+    assert (body["name"], body["remembered"]) == ("Nutella", False)  # OFF's
+
+
+@pytest.mark.parametrize(
+    "over",
+    [
+        {"barcode": "12345"},
+        {"barcode": "8000500310427x"},
+        {"source": "list"},  # a barcode only with a scanned snack
+        {"per": "piece"},
+    ],
+)
+async def test_barcode_on_a_snack_is_validated(client, auth, over):
+    response = await client.post("/api/snacks", json=scanned(**over), headers=auth)
+    assert response.status_code == 422
+
+
+async def test_scanned_snack_without_barcode_is_not_remembered(client, auth, off):
+    body = scanned()
+    del body["barcode"]
+    assert (await client.post("/api/snacks", json=body, headers=auth)).status_code == 201
+    assert (await client.get(f"/api/barcode/{CODE}", headers=auth)).json()["remembered"] is False
