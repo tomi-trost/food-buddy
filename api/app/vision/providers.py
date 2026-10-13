@@ -43,6 +43,12 @@ def image_message(text: str, jpeg: bytes) -> dict:
     }
 
 
+def meal_messages(jpeg: bytes, hint: str = "") -> list[dict]:
+    """The meal photo prompt; `hint` = the household's usual portions (see analysis.priors)."""
+    text = "Analyze this meal." + (f"\n{hint}" if hint else "")
+    return [{"role": "system", "content": MEAL_SYSTEM_PROMPT}, image_message(text, jpeg)]
+
+
 class OpenAICompatibleProvider:
     def __init__(self, config: VisionProviderConfig, client: httpx.AsyncClient):
         self.config = config
@@ -85,12 +91,8 @@ class OpenAICompatibleProvider:
         except (KeyError, IndexError, TypeError, ValueError, ValidationError) as exc:
             raise ProviderError(f"invalid response: {exc}") from exc
 
-    async def analyze_meal(self, jpeg: bytes) -> MealAnalysis:
-        messages = [
-            {"role": "system", "content": MEAL_SYSTEM_PROMPT},
-            image_message("Analyze this meal.", jpeg),
-        ]
-        return await self.chat_json(messages, MealAnalysis)
+    async def analyze_meal(self, jpeg: bytes, hint: str = "") -> MealAnalysis:
+        return await self.chat_json(meal_messages(jpeg, hint), MealAnalysis)
 
 
 class VisionChain:
@@ -108,12 +110,8 @@ class VisionChain:
                 errors[provider.name] = str(exc)
         raise AllProvidersFailed(errors)
 
-    async def analyze_meal(self, jpeg: bytes) -> tuple[str, MealAnalysis]:
-        messages = [
-            {"role": "system", "content": MEAL_SYSTEM_PROMPT},
-            image_message("Analyze this meal.", jpeg),
-        ]
-        return await self.chat_json(messages, MealAnalysis)
+    async def analyze_meal(self, jpeg: bytes, hint: str = "") -> tuple[str, MealAnalysis]:
+        return await self.chat_json(meal_messages(jpeg, hint), MealAnalysis)
 
 
 def chain_from_settings(settings: Settings, client: httpx.AsyncClient) -> VisionChain:

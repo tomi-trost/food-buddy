@@ -4,6 +4,12 @@ export type Release = { id: string; notes: string[] }
 
 export const RELEASES: Release[] = [
   {
+    id: '2026-10-13-portion-priors',
+    notes: [
+      'Photo estimates learn from your corrections: when you keep changing an amount (e.g. rice), the AI is told your usual portion.',
+    ],
+  },
+  {
     id: '2026-10-13-goal-push',
     notes: [
       "New notification around 6:30 pm when fiber or protein is still short, with what's at home that helps. Turn it off in Settings → Notifications.",

@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.analysis.models import AnalysisJob
 from app.analysis.photos import shrink_jpeg
+from app.analysis.priors import portion_priors, priors_hint
 from app.analysis.schemas import AnalysisItem, AnalysisResult, MatchedIngredient
 from app.nutrition.macros import total
 from app.nutrition.matching import match_ingredient
@@ -80,14 +81,15 @@ async def run_analysis(
         else:
             jpeg = shrink_jpeg((photo_dir / job.photo_path).read_bytes(), vision_max_px)
         if job.kind == "meal":
+            hint = priors_hint(await portion_priors(session, job.household_id))
             if jpeg is None:
                 messages = [
                     {"role": "system", "content": MEAL_TEXT_PROMPT},
-                    {"role": "user", "content": job.description or ""},
+                    {"role": "user", "content": "\n".join(filter(None, [job.description, hint]))},
                 ]
                 provider, analysis = await chain.chat_json(messages, MealAnalysis)
             else:
-                provider, analysis = await chain.analyze_meal(jpeg)
+                provider, analysis = await chain.analyze_meal(jpeg, hint)
             job.raw = analysis.model_dump()
             job.result = (await ground(session, analysis)).model_dump()
         elif jpeg is None:
