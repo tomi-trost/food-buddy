@@ -41,6 +41,8 @@ Then: M3's second comparison when enough of our plates are weighed. Family membe
 
 **Units (2026-10-13):** amounts are stored in grams everywhere; hand-picked ingredients can be shown/typed as pieces/slices/cloves or ml (`api/app/nutrition/units.py`: grams per piece or density, exposed as `unit` + `unit_grams`; web `lib/units.ts`). Add a food there to count it.
 
+**Stalled jobs (2026-10-13):** a deploy restarts the worker and used to strand a running analysis ("doing" forever). `app/maintenance.py` retries jobs of dead workers every 2 min (push worker). Scanned snacks can be counted in pieces (`household_product.piece_g`, logged `per: piece`).
+
 **Order of work (set by Tomi 2026-10-13); after this we're done for a while:**
 1. ~~Evening push when a goal isn't hit yet~~ done 2026-10-13: `goal_reminder` (16:30 UTC, kind `goal`), fiber/protein still short + up to 3 rich items at home for the bigger gap; skipped on days with nothing logged; kcal left out on purpose
 2. ~~Household portion priors~~ done 2026-10-13: `app/analysis/priors.py` compares the model's grams with what we posted (per plate) over the last 40 posted analyses; an ingredient seen ≥2× with a median correction >15% goes into the photo/typed prompt as "usual portions" (max 8)

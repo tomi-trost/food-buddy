@@ -34,6 +34,7 @@ class HouseholdProduct(Base):
     kind: Mapped[str] = mapped_column(String(10))  # sweet|savory|fruit|drink
     per100: Mapped[dict] = mapped_column(JSONB)
     amount: Mapped[float] = mapped_column(Float)  # grams we usually eat
+    piece_g: Mapped[float | None] = mapped_column(Float)  # set when we count it in pieces
     updated_by: Mapped[int | None] = mapped_column(ForeignKey("app_user.id", ondelete="SET NULL"))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()

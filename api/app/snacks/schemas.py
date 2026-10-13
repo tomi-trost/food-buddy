@@ -68,11 +68,18 @@ class SnackIn(BaseModel):
     save: bool = False  # also keep it in our snacks (with the photo, if any)
     saved_id: int | None = None  # logged from our snacks
     barcode: str | None = Field(default=None, pattern=r"^\d{8,14}$")  # scanned: remembered
+    piece_g: float | None = Field(default=None, gt=0, le=1000)  # scanned and counted in pieces
 
     @model_validator(mode="after")
-    def barcode_needs_scanned_per_100g(self):
-        if self.barcode is not None and (self.source != "barcode" or self.per != "100g"):
-            raise ValueError("A barcode comes with a scanned snack per 100 g")
+    def barcode_needs_scanned_values(self):
+        if self.barcode is None:
+            if self.piece_g is not None:
+                raise ValueError("piece_g only comes with a scanned product")
+            return self
+        if self.source != "barcode":
+            raise ValueError("A barcode comes with a scanned snack")
+        if (self.per == "piece") != (self.piece_g is not None):
+            raise ValueError("A scanned snack is per 100 g, or per piece with the piece weight")
         return self
 
 

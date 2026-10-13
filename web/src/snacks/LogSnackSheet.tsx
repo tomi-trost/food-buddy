@@ -5,7 +5,9 @@ import { useFoodUpload } from '../add/upload'
 import { api, ApiError } from '../api/client'
 import type { Nutrients, SavedSnack, SnackKind } from '../api/types'
 import { todayISO } from '../lib/dates'
-import { type ProductSnack, productSnack, unknownProduct } from '../lib/barcode'
+import { guessPieceG, piecesIn, type ProductSnack, productSnack, scannedAmount, unknownProduct } from '../lib/barcode'
+import { scale } from '../lib/macros'
+import { Stepper } from '../ui/Stepper'
 import { isTreatKind, KIND_EMOJI, KIND_LABEL, SNACK_KINDS } from '../lib/snacks'
 import { Icon } from '../ui/Icon'
 import { Photo } from '../ui/Photo'
@@ -35,7 +37,8 @@ type Draft = {
   amount: number
   perUnit: Nutrients
   saved?: SavedSnack
-  scanned?: { code: string; quantity: string; missingValues: boolean; remembered: boolean } // from a barcode
+  // from a barcode: perUnit is per 100 g; amount is grams, or pieces while pieceG is set
+  scanned?: { code: string; quantity: string; missingValues: boolean; remembered: boolean; pieceG: number | null; servingG: number | null }
 }
 
 const fromSaved = (s: SavedSnack): Draft => ({
@@ -60,8 +63,8 @@ function LogSnack({ onClose, saved, scan }: { onClose: () => void; saved?: Saved
     mutationFn: (d: Draft) =>
       api.logSnack({
         eaten_on: todayISO(), name: d.name, emoji: d.emoji, kind: d.kind, source: d.saved ? 'saved' : d.scanned ? 'barcode' : 'list',
-        per: d.per, amount: d.amount, per_unit: d.perUnit, saved_id: d.saved?.id, save: !!d.scanned && save,
-        barcode: d.scanned?.code,
+        ...(d.scanned ? scannedAmount(d.perUnit, d.amount, d.scanned.pieceG) : { per: d.per, amount: d.amount, per_unit: d.perUnit }),
+        saved_id: d.saved?.id, save: !!d.scanned && save, barcode: d.scanned?.code,
       }),
     onSuccess: (logged) => {
       qc.invalidateQueries({ queryKey: ['day'] })
@@ -86,7 +89,7 @@ function LogSnack({ onClose, saved, scan }: { onClose: () => void; saved?: Saved
   }
   const pickScanned = (p: ProductSnack, from: { code: string; quantity: string; remembered: boolean }) =>
     pick({ name: p.name, emoji: KIND_EMOJI[p.kind], kind: p.kind, per: p.per, amount: p.amount, perUnit: p.perUnit,
-      scanned: { ...from, missingValues: p.missingValues } })
+      scanned: { ...from, missingValues: p.missingValues, pieceG: p.pieceG, servingG: p.servingG } })
 
   if (draft) {
     const scanned = draft.scanned
@@ -122,8 +125,33 @@ function LogSnack({ onClose, saved, scan }: { onClose: () => void; saved?: Saved
         {scanned && isTreatKind(draft.kind) && (
           <div className="sub row" style={{ gap: 6, marginBottom: 12 }}><Icon name="gift" size={16} /> Counts as a treat for your streak</div>
         )}
-        <SnackAmount per={draft.per} amount={draft.amount} perUnit={draft.perUnit} startEditing={scanned?.missingValues}
-          onAmount={(amount) => setDraft({ ...draft, amount })} onPerUnit={(perUnit) => setDraft({ ...draft, perUnit })} onValid={setValid} />
+        {scanned && (
+          <Toggle<'g' | 'pc'> label="Count in" value={scanned.pieceG ? 'pc' : 'g'}
+            options={[{ value: 'g', label: 'Grams' }, { value: 'pc', label: 'Pieces' }]}
+            onChange={(v) => {
+              if (v === 'pc' && !scanned.pieceG) {
+                const pieceG = guessPieceG(scanned.servingG)
+                setDraft({ ...draft, amount: piecesIn(draft.amount, pieceG), scanned: { ...scanned, pieceG } })
+              } else if (v === 'g' && scanned.pieceG) {
+                setDraft({ ...draft, amount: Math.max(1, Math.round(draft.amount * scanned.pieceG)), scanned: { ...scanned, pieceG: null } })
+              }
+            }} />
+        )}
+        {scanned?.pieceG ? (
+          <>
+            <SnackAmount per="piece" amount={draft.amount} perUnit={scale(draft.perUnit, scanned.pieceG)} startEditing={scanned.missingValues}
+              onAmount={(amount) => setDraft({ ...draft, amount })}
+              onPerUnit={(perPiece) => setDraft({ ...draft, perUnit: scale(perPiece, 10000 / scanned.pieceG!) })} onValid={setValid} />
+            <div className="card row">
+              <div className="sp"><h3>One piece</h3><div className="sub">weight from the pack; change it if yours differ</div></div>
+              <Stepper label="piece weight" value={scanned.pieceG} step={1} min={0.5} max={500} unit=" g" decimals={1}
+                onChange={(pieceG) => setDraft({ ...draft, scanned: { ...scanned, pieceG } })} />
+            </div>
+          </>
+        ) : (
+          <SnackAmount per={draft.per} amount={draft.amount} perUnit={draft.perUnit} startEditing={scanned?.missingValues}
+            onAmount={(amount) => setDraft({ ...draft, amount })} onPerUnit={(perUnit) => setDraft({ ...draft, perUnit })} onValid={setValid} />
+        )}
         {scanned && (
           <label className="switch-row card" style={{ marginBottom: 12 }}>
             <span className="sp"><b>Save to our snacks</b><small className="sub">Log it again in one tap, from Snacks under Meals</small></span>

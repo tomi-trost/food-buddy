@@ -273,6 +273,7 @@ export type SnackIn = {
   save?: boolean // also keep it in our snacks (with the photo, if any)
   saved_id?: number // logged from our snacks
   barcode?: string // scanned: the household remembers it as logged
+  piece_g?: number // scanned and counted (per: 'piece'): one piece weighs this
 }
 
 /** A packaged product from Open Food Facts, looked up by its barcode. */
@@ -282,6 +283,7 @@ export type Product = {
   brand: string
   quantity: string // pack size as printed, e.g. "400 g"
   serving_g: number | null
+  piece_g: number | null // counted in pieces last time: one piece weighs this
   image_url: string | null
   per100: Nutrients | null // null: OFF has no values, type them from the label
   kind: SnackKind // guessed from OFF's categories and the sugar

@@ -4,6 +4,13 @@ export type Release = { id: string; notes: string[] }
 
 export const RELEASES: Release[] = [
   {
+    id: '2026-10-13-snack-pieces',
+    notes: [
+      'Scanned snacks can be counted in pieces (3 cookies instead of 27 g). The app remembers it for next time.',
+      'A photo stuck on "analyzing" after an app update now restarts by itself within a few minutes.',
+    ],
+  },
+  {
     id: '2026-10-13-undo-steps',
     notes: [
       'Posted by mistake? The meal page offers Undo for 10 minutes: ingredients, shopping list and the photo go back.',

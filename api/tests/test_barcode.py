@@ -73,6 +73,7 @@ async def test_lookup_returns_label_values_per_100_g(client, auth, off):
         "brand": "Ferrero",
         "quantity": "400 g",
         "serving_g": 15.0,
+        "piece_g": None,
         "image_url": "https://images.openfoodfacts.org/nutella.jpg",
         "per100": {
             "kcal": 539.0,
@@ -257,6 +258,7 @@ async def test_logged_scan_is_remembered_and_used_next_time(client, auth, off):
         "brand": "",
         "quantity": "400 g",  # still from OFF's cached answer
         "serving_g": 20.0,  # what we ate last time
+        "piece_g": None,  # weighed, not counted
         "image_url": "https://images.openfoodfacts.org/nutella.jpg",
         "per100": {k: float(v) for k, v in FIXED.items()},
         "kind": "sweet",
@@ -275,6 +277,41 @@ async def test_logged_scan_is_remembered_and_used_next_time(client, auth, off):
         15.0,
         539.0,
     )
+
+
+async def test_counted_in_pieces_is_logged_per_piece_and_remembered(client, auth, off):
+    """Cookies: 3 pieces of 9 g instead of 27 g; next scan opens in pieces again."""
+    per_piece = {k: round(v * 9 / 100, 3) for k, v in FIXED.items()}  # 49.05 kcal a cookie
+    cookies = scanned(per="piece", amount=3, per_unit=per_piece, piece_g=9)
+    response = await client.post("/api/snacks", json=cookies, headers=auth)
+    assert response.status_code == 201, response.text
+    assert response.json()["kcal"] == round(3 * per_piece["kcal"], 1)
+
+    day = (await client.get("/api/day?date=2026-10-13", headers=auth)).json()
+    (entry,) = day["entries"]
+    assert (entry["per"], entry["servings"]) == ("piece", 3)  # edits later go in pieces too
+
+    body = (await client.get(f"/api/barcode/{CODE}", headers=auth)).json()
+    assert body["piece_g"] == 9
+    assert body["serving_g"] == 27  # grams eaten = 3 × 9 g
+    assert body["per100"]["kcal"] == 545  # per 100 g again, as in the pack
+
+    # weighed the next time: the piece weight is forgotten
+    await client.post("/api/snacks", json=scanned(amount=30), headers=auth)
+    body = (await client.get(f"/api/barcode/{CODE}", headers=auth)).json()
+    assert (body["piece_g"], body["serving_g"]) == (None, 30)
+
+
+async def test_pieces_need_the_piece_weight_and_a_barcode(client, auth, off):
+    bad = [
+        scanned(per="piece", amount=3),  # no piece weight
+        scanned(piece_g=9),  # per 100 g with a piece weight
+        scanned(barcode=None, per="piece", piece_g=9, source="list"),  # not scanned
+        scanned(per="piece", amount=3, piece_g=0),
+        scanned(per="piece", amount=3, piece_g=1001),
+    ]
+    for body in bad:
+        assert (await client.post("/api/snacks", json=body, headers=auth)).status_code == 422, body
 
 
 async def test_product_unknown_to_off_is_found_once_typed_in(client, auth, off):

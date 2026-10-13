@@ -12,7 +12,7 @@ vi.mock('../lib/barcodeReader', () => ({ readBarcode: vi.fn() }))
 const CODE = '8000500310427'
 const per100 = { kcal: 539, protein: 6.3, carbs: 57.5, fat: 30.9, fiber: 0, sugar: 56.3 }
 const nutella: Product = {
-  code: CODE, name: 'Nutella', brand: 'Ferrero', quantity: '400 g', serving_g: 15,
+  code: CODE, name: 'Nutella', brand: 'Ferrero', quantity: '400 g', serving_g: 15, piece_g: null,
   image_url: null, per100, kind: 'sweet', remembered: false, source: 'Open Food Facts',
 }
 
@@ -142,6 +142,37 @@ describe('Barcode scanner', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     const upload = fetch.mock.calls.find(([u]) => u === '/api/analyses')!
     expect((upload[1]!.body as FormData).get('kind')).toBe('label')
+  })
+
+  it('counts cookies in pieces: switch, set the piece weight, log per piece', async () => {
+    const { fetch, sheet } = setup({ ...nutella, name: 'Cookies', brand: '', serving_g: 9 })
+    typeCode(sheet, CODE)
+    await within(sheet).findByDisplayValue('Cookies')
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Pieces' }))
+    expect(within(sheet).getByRole('textbox', { name: 'amount' })).toHaveValue('1') // 9 g = 1 cookie
+    expect(within(sheet).getByRole('textbox', { name: 'piece weight' })).toHaveValue('9')
+    const amount = within(sheet).getByRole('textbox', { name: 'amount' })
+    fireEvent.focus(amount)
+    fireEvent.change(amount, { target: { value: '3' } })
+    fireEvent.blur(amount)
+    expect(within(sheet).getByText('Values per piece')).toBeInTheDocument()
+
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Log snack' }))
+    await waitFor(() => expect(fetch.mock.calls.some(([u]) => u === '/api/snacks')).toBe(true))
+    const [, init] = fetch.mock.calls.find(([u]) => u === '/api/snacks')!
+    const body = JSON.parse(String(init!.body))
+    expect(body).toMatchObject({ per: 'piece', amount: 3, piece_g: 9, barcode: CODE })
+    expect(body.per_unit.kcal).toBeCloseTo(539 * 0.09)
+  })
+
+  it('switches back to grams keeping the amount', async () => {
+    const { sheet } = setup({ ...nutella, remembered: true, serving_g: 27, piece_g: 9, source: 'Our values' })
+    typeCode(sheet, CODE)
+    expect(await within(sheet).findByRole('textbox', { name: 'amount' })).toHaveValue('3') // opens in pieces
+    expect(within(sheet).getByRole('button', { name: 'Pieces' })).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Grams' }))
+    expect(within(sheet).getByRole('textbox', { name: 'amount' })).toHaveValue('27')
+    expect(within(sheet).queryByRole('textbox', { name: 'piece weight' })).not.toBeInTheDocument()
   })
 
   it('uses our remembered values, and a corrected name is sent along', async () => {

@@ -144,10 +144,25 @@ async def remembered(
 
 
 async def remember(
-    session: AsyncSession, user: User, code: str, name: str, kind: str, per100: dict, amount: float
+    session: AsyncSession,
+    user: User,
+    code: str,
+    name: str,
+    kind: str,
+    per100: dict,
+    amount: float,
+    piece_g: float | None = None,
 ) -> None:
-    """Keep a scanned product as just logged (the caller commits)."""
-    values = {"name": name, "kind": kind, "per100": per100, "amount": amount, "updated_by": user.id}
+    """Keep a scanned product as just logged (the caller commits). `amount` in grams;
+    `piece_g` when it was counted in pieces (None = weighed)."""
+    values = {
+        "name": name,
+        "kind": kind,
+        "per100": per100,
+        "amount": amount,
+        "piece_g": piece_g,
+        "updated_by": user.id,
+    }
     stmt = insert(HouseholdProduct).values(household_id=user.household_id, code=code, **values)
     stmt = stmt.on_conflict_do_update(
         index_elements=["household_id", "code"], set_={**values, "updated_at": func.now()}

@@ -21,6 +21,7 @@ class ProductOut(BaseModel):
     brand: str
     quantity: str  # pack size as printed, e.g. "400 g"
     serving_g: float | None
+    piece_g: float | None = None  # we counted it in pieces last time: one piece weighs this
     image_url: str | None
     per100: NutrientsOut | None  # None: OFF has no energy value, the user types the label
     kind: SnackKind  # guessed from OFF's categories and the sugar
@@ -40,6 +41,7 @@ async def product_by_barcode(code: Barcode, session: Session, user: CurrentUser)
             brand="",  # already in our name
             quantity=off.get("quantity", ""),
             serving_g=ours.amount,
+            piece_g=ours.piece_g,
             image_url=off.get("image_url"),
             per100=ours.per100,
             kind=ours.kind,
