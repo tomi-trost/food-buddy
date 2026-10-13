@@ -48,6 +48,10 @@ Then: M3's second comparison when enough of our plates are weighed. Family membe
 2. ~~Household portion priors~~ done 2026-10-13: `app/analysis/priors.py` compares the model's grams with what we posted (per plate) over the last 40 posted analyses; an ingredient seen ≥2× with a median correction >15% goes into the photo/typed prompt as "usual portions" (max 8)
 3. ~~Client-side photo resize; HEIC~~ done 2026-10-13: `web/src/lib/photoResize.ts` (1280 px JPEG before upload, original as fallback) + server reads HEIC (`pillow-heif`); still to confirm on the iPhone (camera + library photo)
 4. ~~Undo after posting + edit recipe steps~~ done 2026-10-13: `api/app/meals/undo.py` (`meal.undo` records stock taken + "ran out" added on post; `POST /api/meals/{id}/undo` for 10 min, only who posted, not once the partner logged it; photo reopens with ratings); steps in Edit meal (`steps_source` 'ours' = the model never rewrites them)
+**Start here next session (added by Tomi 2026-10-13, before #5):**
+- a. Recipe step editor readability (Edit meal → Steps, `web/src/meals/StepsEditor.tsx`): steps sit at the default textarea height (grow them to fit the text) and the ↑ ↓ ✕ buttons aren't grouped nicely.
+- b. Ingredient search jumps around: while typing in the ingredient picker (`web/src/ui/IngredientPicker.tsx`, inside a `Sheet`) the view sometimes scrolls down the list or moves up and becomes unreadable (likely the iPhone keyboard + sheet scroll when results change). Reproduce on the phone first.
+
 5. Plan: variety (no same breakfast all week) and who cooks each meal — **both optional** (off unless chosen); also choose meal-prep day
 6. Sensible default buy quantities per ingredient (instead of 250 g)
 7. Offline write queue
