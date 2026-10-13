@@ -1,6 +1,6 @@
-import { fireEvent, screen, within } from '@testing-library/react'
+import { act, fireEvent, screen, within } from '@testing-library/react'
 import { Route } from 'react-router'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { tokenStore } from '../api/client'
 import { card, me, meal } from '../test/fixtures'
 import { jsonResponse, mockFetch, renderAt } from '../test/utils'
@@ -170,6 +170,62 @@ describe('MealPage', () => {
     fireEvent.click(within(sheet).getByRole('button', { name: 'Log 552 kcal' }))
     await screen.findByText('Logged')
     expect(cooked).toMatchObject({ meal_type: 'lunch', servings_eaten: 1, cooked: false, used_up: [] })
+  })
+})
+
+describe('MealPage undo', () => {
+  const routes = (
+    <>
+      <Route path="/meals/:id" element={<MealPage />} />
+      <Route path="/analysis/:id" element={<p>check photo</p>} />
+      <Route path="/" element={<p>home</p>} />
+    </>
+  )
+  const undoApi = (undo: Response | (() => Response), current = meal({ undo_until: new Date(Date.now() + 5 * 60_000).toISOString() })) =>
+    mockFetch((url, init) => {
+      if (url === '/api/auth/me') return jsonResponse(me())
+      if (url === '/api/meals/3/undo' && init?.method === 'POST') return typeof undo === 'function' ? undo() : undo
+      return jsonResponse(current)
+    })
+
+  it('takes the post back and returns to the photo', async () => {
+    const fetch = undoApi(() => jsonResponse({ analysis_id: 5 }))
+    renderAt('/meals/3', routes)
+    const card = await screen.findByRole('region', { name: 'Undo post' })
+    fireEvent.click(within(card).getByRole('button', { name: 'Undo' }))
+    expect(await screen.findByText('check photo')).toBeInTheDocument()
+    expect(fetch).toHaveBeenCalledWith('/api/meals/3/undo', expect.objectContaining({ method: 'POST' }))
+  })
+
+  it('goes home for a meal without photo', async () => {
+    undoApi(() => jsonResponse({ analysis_id: null }))
+    renderAt('/meals/3', routes)
+    fireEvent.click(within(await screen.findByRole('region', { name: 'Undo post' })).getByRole('button', { name: 'Undo' }))
+    expect(await screen.findByText('home')).toBeInTheDocument()
+  })
+
+  it('explains a refused undo', async () => {
+    undoApi(() => jsonResponse({ detail: 'Ana logged it too, so it stays' }, 409))
+    renderAt('/meals/3', routes)
+    fireEvent.click(within(await screen.findByRole('region', { name: 'Undo post' })).getByRole('button', { name: 'Undo' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Ana logged it too, so it stays')
+  })
+
+  it('has no undo once the time is up or for the partner', async () => {
+    undoApi(jsonResponse({}), meal({ undo_until: null }))
+    renderAt('/meals/3', routes)
+    expect(await screen.findByRole('heading', { name: 'Chicken rice bowl' })).toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Undo post' })).not.toBeInTheDocument()
+  })
+
+  it('hides the undo when the time runs out while looking', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    undoApi(jsonResponse({}), meal({ undo_until: new Date(Date.now() + 1000).toISOString() }))
+    renderAt('/meals/3', routes)
+    expect(await screen.findByRole('region', { name: 'Undo post' })).toBeInTheDocument()
+    await act(async () => { vi.advanceTimersByTime(1500) })
+    expect(screen.queryByRole('region', { name: 'Undo post' })).not.toBeInTheDocument()
+    vi.useRealTimers()
   })
 })
 

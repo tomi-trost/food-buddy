@@ -4,6 +4,13 @@ export type Release = { id: string; notes: string[] }
 
 export const RELEASES: Release[] = [
   {
+    id: '2026-10-13-undo-steps',
+    notes: [
+      'Posted by mistake? The meal page offers Undo for 10 minutes: ingredients, shopping list and the photo go back.',
+      'Edit meal → Steps: change, reorder, add or remove recipe steps.',
+    ],
+  },
+  {
     id: '2026-10-13-units',
     notes: ['Eggs, fruit, bread slices and the like are counted in pieces, and drinks, milk and oils in ml, instead of grams.'],
   },

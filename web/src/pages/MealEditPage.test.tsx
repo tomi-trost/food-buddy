@@ -63,6 +63,33 @@ describe('MealEditPage', () => {
     })
   })
 
+  it('edits, reorders, removes and adds recipe steps', async () => {
+    const fetch = api()
+    render()
+    const first = await screen.findByLabelText('Step 1')
+    expect(first).toHaveValue('Cook rice.')
+    fireEvent.change(first, { target: { value: 'Cook the rice for 12 min.' } })
+    fireEvent.click(screen.getByLabelText('Move step 2 up'))
+    expect(screen.getByLabelText('Step 1')).toHaveValue('Serve.')
+    expect(screen.getByLabelText('Move step 1 up')).toBeDisabled()
+    fireEvent.click(screen.getByRole('button', { name: '+ Add step' }))
+    fireEvent.change(screen.getByLabelText('Step 3'), { target: { value: '  Add sesame.  ' } })
+    fireEvent.click(screen.getByLabelText('Remove step 1'))
+    fireEvent.click(screen.getByRole('button', { name: '+ Add step' })) // left empty: dropped
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    expect(await screen.findByText('meal page')).toBeInTheDocument()
+    expect(bodyOf(fetch, 'PATCH')!.body.steps).toEqual(['Cook the rice for 12 min.', 'Add sesame.'])
+  })
+
+  it('needs at least one step with text', async () => {
+    api(meal({ steps: ['Only step.'] }))
+    render()
+    expect(await screen.findByLabelText('Remove step 1')).toBeDisabled()
+    fireEvent.change(screen.getByLabelText('Step 1'), { target: { value: '   ' } })
+    expect(screen.getByRole('button', { name: 'Save changes' })).toBeDisabled()
+  })
+
   it('recalculates per portion as ingredients and portions change, and saves typed-in values', async () => {
     const fetch = api()
     render()

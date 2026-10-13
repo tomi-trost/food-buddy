@@ -27,9 +27,12 @@ class Meal(TimestampMixin, Base):
     portions: Mapped[int]
     cost: Mapped[float | None] = mapped_column(Float)  # manual override; None → from prices
     steps: Mapped[list[str]] = mapped_column(ARRAY(Text), default=list)
-    steps_source: Mapped[str] = mapped_column(String(10), default="template")  # template|model
+    steps_source: Mapped[str] = mapped_column(String(10), default="template")  # template|model|ours
     # Per portion, typed in by us; replaces the values calculated from the ingredients
     nutrients_override: Mapped[dict | None] = mapped_column(JSONB)
+    # Set on post: the photo it came from, stock taken out and "ran out" items added, so the
+    # post can be undone for UNDO_MINUTES (see meals.undo)
+    undo: Mapped[dict | None] = mapped_column(JSONB)
 
     ingredients: Mapped[list["MealIngredient"]] = relationship(
         back_populates="meal", cascade="all, delete-orphan", lazy="selectin"

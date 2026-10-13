@@ -6,6 +6,7 @@ import type { Meal, MealPatch, MealType, Nutrients } from '../api/types'
 import { MEAL_TYPE_LABEL } from '../lib/dates'
 import { scale } from '../lib/macros'
 import { NutritionOverride } from '../meals/NutritionOverride'
+import { cleanSteps, StepsEditor } from '../meals/StepsEditor'
 import { IngredientChips } from '../snap/IngredientChips'
 import { type PlateItem, plateNutrients, recipeCost } from '../snap/plate'
 import { Icon } from '../ui/Icon'
@@ -43,6 +44,8 @@ function EditForm({ meal, close }: { meal: Meal; close: React.ReactNode }) {
   const [override, setOverride] = useState<Nutrients | null>(meal.nutrients_overridden ? meal.per_portion : null)
   const [valuesOk, setValuesOk] = useState(true)
   const [deleting, setDeleting] = useState(false)
+  const [steps, setSteps] = useState<string[]>(meal.steps.length ? meal.steps : [''])
+  const stepsChanged = JSON.stringify(cleanSteps(steps)) !== JSON.stringify(meal.steps)
 
   const estimate = Math.round(recipeCost(items, 1) * 100) / 100
   const calculated = scale(plateNutrients(items), 100 / portions)
@@ -60,6 +63,7 @@ function EditForm({ meal, close }: { meal: Meal; close: React.ReactNode }) {
         name: name.trim(), types, prep_friendly: prepFriendly, prep_minutes: prepMinutes, portions, cost,
         items: resolved.map((i) => ({ ingredient_id: i.ingredient!.id, grams: i.grams })),
         per_portion: override,
+        ...(stepsChanged ? { steps: cleanSteps(steps) } : {}), // untouched: the model may still write them
       }
       return api.patchMeal(meal.id, patch)
     },
@@ -117,6 +121,9 @@ function EditForm({ meal, close }: { meal: Meal; close: React.ReactNode }) {
         </div>
         {cost !== null && <button type="button" className="textbtn" onClick={() => setCost(null)}>Use the estimate ({estimate.toFixed(2)} €)</button>}
       </div>
+      <h2>Steps</h2>
+      <StepsEditor steps={steps} onChange={setSteps} />
+
       <div className="card row">
         <div className="sp">
           <h3>Prep-friendly</h3>
@@ -128,7 +135,7 @@ function EditForm({ meal, close }: { meal: Meal; close: React.ReactNode }) {
       </div>
 
       {save.isError && <p className="error" role="alert">{save.error.message}</p>}
-      <button className="btn" disabled={save.isPending || !name.trim() || resolved.length === 0 || !valuesOk} onClick={() => save.mutate()}>
+      <button className="btn" disabled={save.isPending || !name.trim() || resolved.length === 0 || !valuesOk || !cleanSteps(steps).length} onClick={() => save.mutate()}>
         {save.isPending ? 'Saving…' : 'Save changes'}
       </button>
       {resolved.length === 0 && <p className="sub">A meal needs at least one ingredient.</p>}

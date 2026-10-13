@@ -8,6 +8,7 @@ import { ago, againLabel, FILL_LABEL, fillTip } from '../lib/meals'
 import { AddToPlanSheet } from '../meals/AddToPlanSheet'
 import { CookSheet } from '../meals/CookSheet'
 import { RateSheet } from '../meals/RateSheet'
+import { UndoPost } from '../meals/UndoPost'
 import { Avatar } from '../ui/Avatar'
 import { Icon } from '../ui/Icon'
 import { MacroTiles } from '../ui/Macro'
@@ -55,6 +56,7 @@ export function MealPage() {
       {meal.isError && <p className="error" role="alert">{meal.error.message}</p>}
       {m && me && (
         <>
+          <UndoPost meal={m} />
           <Photo url={m.photo_url} emoji={m.emoji} seed={m.id} alt={m.name} />
           <h1 style={{ margin: '12px 0 8px' }}>{m.name}</h1>
           <div className="chips">

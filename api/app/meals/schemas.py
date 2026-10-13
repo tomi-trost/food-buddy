@@ -93,8 +93,21 @@ class MealPatch(BaseModel):
         default=None, min_length=1, max_length=40, description="grams for the whole recipe"
     )
     per_portion: NutrientsIn | None = None
+    steps: list[str] | None = Field(default=None, min_length=1, max_length=30)
 
     _items = field_validator("items")(_unique_ingredients)
+
+    @field_validator("steps")
+    @classmethod
+    def _clean_steps(cls, steps: list[str] | None) -> list[str] | None:
+        if steps is None:
+            return None
+        cleaned = [s.strip() for s in steps if s.strip()]
+        if not cleaned:
+            raise ValueError("at least one step")
+        if any(len(s) > 500 for s in cleaned):
+            raise ValueError("a step can have at most 500 characters")
+        return cleaned
 
 
 class RatingIn(BaseModel):
@@ -162,3 +175,4 @@ class MealOut(MealStats):
     logged_count: int  # food-log entries (both of us) that deleting the meal can remove
     ratings: list[RatingOut]
     created_at: datetime
+    undo_until: datetime | None  # set for whoever posted it, while the post can be undone

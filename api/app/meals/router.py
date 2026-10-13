@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Response, status
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
 
 from app.auth.deps import CurrentUser, Session
 from app.config import get_settings
@@ -16,6 +17,7 @@ from app.meals.service import (
     update_meal,
 )
 from app.meals.tasks import generate_recipe
+from app.meals.undo import undo_post
 from app.push.notify import RATE_AFTER_MIN
 from app.push.tasks import notify_partner_rated, notify_suggested, remind_rate
 from app.suggestions.service import suggest
@@ -97,3 +99,14 @@ async def get_meal_photo(meal_id: int, user: CurrentUser, session: Session) -> F
     if not meal.photo_path:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "This meal has no photo")
     return FileResponse(get_settings().photo_dir / meal.photo_path, media_type="image/jpeg")
+
+
+class Undone(BaseModel):
+    analysis_id: int | None  # the photo to check again; None = typed in without a photo
+
+
+@router.post("/{meal_id}/undo")
+async def undo_meal(meal_id: int, user: CurrentUser, session: Session) -> Undone:
+    """Take back a post right after it (see meals.undo)."""
+    meal = await get_own_meal(session, user, meal_id)
+    return Undone(analysis_id=await undo_post(session, user, meal))

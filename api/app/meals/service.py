@@ -1,5 +1,5 @@
 from collections import defaultdict
-from datetime import date
+from datetime import UTC, date, datetime
 
 from fastapi import HTTPException, status
 from sqlalchemy import delete, func, select
@@ -23,6 +23,7 @@ from app.meals.schemas import (
     RatingIn,
     RatingOut,
 )
+from app.meals.undo import ran_out_of, stock_of, undo_record, undo_until
 from app.nutrition.macros import Nutrients, total
 from app.nutrition.models import Ingredient
 from app.nutrition.schemas import IngredientOut, NutrientsOut
@@ -126,7 +127,15 @@ async def meal_out(session: AsyncSession, user: User, meal: Meal) -> MealOut:
             for m in members
         ],
         created_at=meal.created_at,
+        undo_until=_undo_until_for(meal, user),
     )
+
+
+def _undo_until_for(meal: Meal, user: User) -> datetime | None:
+    until = undo_until(meal)
+    if until is None or meal.created_by != user.id or datetime.now(UTC) > until:
+        return None
+    return until
 
 
 async def meal_cards(session: AsyncSession, user: User) -> list[MealCard]:
@@ -244,6 +253,9 @@ async def post_meal(session: AsyncSession, user: User, body: MealCreate) -> Meal
     session.add(meal)
     await session.flush()
 
+    touched = set(recipe) | set(body.used_up)
+    stock_before = await stock_of(session, user.household_id, touched)
+    ran_before = await ran_out_of(session, user.household_id)
     if body.eaten:  # saved for later: only the recipe goes into the library
         session.add(CookLog(meal_id=meal.id, user_id=user.id, cooked_on=body.eaten_on))
         log = FoodLog(
@@ -263,6 +275,14 @@ async def post_meal(session: AsyncSession, user: User, body: MealCreate) -> Meal
 
         await deduct(session, user.household_id, recipe)
         await mark_used_up(session, user.household_id, body.used_up)
+        await session.flush()
+    meal.undo = undo_record(
+        analysis.id if analysis else None,
+        stock_before,
+        await stock_of(session, user.household_id, touched),
+        ran_before,
+        await ran_out_of(session, user.household_id),
+    )
     if analysis:
         close(analysis, meal_id=meal.id)
         await move_early_ratings(session, analysis, meal.id)
@@ -289,6 +309,8 @@ async def update_meal(session: AsyncSession, meal: Meal, body: MealPatch) -> Non
         meal.prep_minutes = body.prep_minutes
     if body.portions is not None:
         meal.portions = body.portions
+    if body.steps is not None:
+        meal.steps, meal.steps_source = body.steps, "ours"  # the model won't overwrite them
     await session.flush()
     await _refresh_logs(session, meal)
     await session.commit()

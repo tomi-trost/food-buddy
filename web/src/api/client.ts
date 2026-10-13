@@ -149,6 +149,7 @@ export const api = {
   async deleteMeal(id: number, keepLog: boolean) {
     await request(`/meals/${id}?keep_log=${keepLog}`, { method: 'DELETE' })
   },
+  undoMeal: (id: number) => json<{ analysis_id: number | null }>(`/meals/${id}/undo`, { method: 'POST' }),
   unrateMeal: (id: number) => json<Meal>(`/meals/${id}/rating`, { method: 'DELETE' }),
   day: (date: string) => json<Day>(`/day?date=${date}`),
   editLog: (id: number, patch: LogPatch) => json<LogEntry>(`/log/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),
