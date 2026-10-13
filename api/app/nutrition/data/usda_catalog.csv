@@ -4,7 +4,7 @@ Eggplant,🍆,Produce,7,"aubergine,eggplants",169228,"Eggplant, raw",25.0,0.98,5
 Bell pepper,🫑,Produce,10,"red pepper,red bell pepper,sweet pepper,capsicum",170108,"Peppers, sweet, red, raw",26.0,0.99,6.03,0.3,2.1,4.2
 Green bell pepper,🫑,Produce,10,green pepper,170427,"Peppers, sweet, green, raw",20.0,0.86,4.64,0.17,1.7,2.4
 Yellow bell pepper,🫑,Produce,10,yellow pepper,169383,"Peppers, sweet, yellow, raw",27.0,1.0,6.32,0.21,0.9,0.0
-Chili pepper,🌶️,Produce,10,"chili,chilli,hot pepper,red chili,chili flakes",170106,"Peppers, hot chili, red, raw",40.0,1.87,8.81,0.44,1.5,5.3
+Chili pepper,🌶️,Produce,10,"chili,chilli,hot pepper,red chili",170106,"Peppers, hot chili, red, raw",40.0,1.87,8.81,0.44,1.5,5.3
 Carrot,🥕,Produce,21,"carrots,grated carrot",170393,"Carrots, raw",41.0,0.93,9.58,0.24,2.8,4.74
 Cucumber,🥒,Produce,7,cucumbers,168409,"Cucumber, with peel, raw",15.0,0.65,3.63,0.11,0.5,1.67
 Lettuce,🥬,Produce,5,"salad,green salad,mixed greens,salad leaves,romaine",169247,"Lettuce, cos or romaine, raw",17.0,1.23,3.29,0.3,2.1,1.19
@@ -110,6 +110,7 @@ Hazelnuts,🌰,Pantry,180,hazelnut,170581,"Nuts, hazelnuts or filberts",628.0,14
 Cashews,🌰,Pantry,180,cashew,170162,"Nuts, cashew nuts, raw",553.0,18.22,30.19,43.85,3.3,5.91
 Pine nuts,🌰,Pantry,90,pignoli,170591,"Nuts, pine nuts, dried",673.0,13.69,13.08,68.37,3.7,3.59
 Pistachios,🌰,Pantry,180,pistachio,170184,"Nuts, pistachio nuts, raw",560.0,20.16,27.17,45.32,10.6,7.66
+Mixed nuts,🥜,Pantry,180,"nuts,nut mix",170585,"Nuts, mixed nuts, dry roasted, with peanuts, without salt added",607.0,19.5,22.42,53.5,6.4,5.0
 Peanuts,🥜,Pantry,180,peanut,173806,"Peanuts, all types, dry-roasted, without salt",587.0,24.35,21.26,49.66,8.4,4.9
 Peanut butter,🥜,Pantry,180,,172470,"Peanut butter, smooth style, without salt",598.0,22.21,22.31,51.36,5.0,10.49
 Sunflower seeds,🌻,Pantry,180,,170562,"Seeds, sunflower seed kernels, dried",584.0,20.78,20.0,51.46,8.6,2.62
@@ -127,6 +128,7 @@ Ground pork,🥩,Meat,2,"pork mince,minced pork",167903,"Pork, fresh, ground, co
 Bacon,🥓,Meat,7,streaky bacon,168322,"Pork, cured, bacon, pre-sliced, cooked, pan-fried",468.0,33.92,1.7,35.09,0.0,0.0
 Ham,🍖,Meat,7,"cooked ham,prosciutto cotto",173864,"Ham, sliced, regular (approximately 11% fat)",164.0,16.6,3.63,8.8,1.3,1.0
 Salami,🍖,Meat,30,,174603,"Salami, Italian, pork",425.0,21.7,1.2,37.0,0.0,1.2
+Pepperoni,🍕,Meat,21,,174575,"Pepperoni, beef and pork, sliced",504.0,19.25,1.18,46.28,0.0,0.0
 Sausage,🌭,Meat,3,"sausages,bratwurst",174586,"Sausage, Italian, pork, mild, cooked, pan-fried",324.0,18.4,1.86,26.4,0.0,1.42
 Hot dog,🌭,Meat,7,"frankfurter,wurstel",173862,"Frankfurter, beef, unheated",315.0,11.69,2.97,28.1,0.0,1.17
 Lamb,🥩,Meat,3,lamb chop,172480,"Lamb, composite of trimmed retail cuts, separable lean and fat, trimmed to 1/4"" fat, choice, cooked",294.0,24.52,0.0,20.94,0.0,0.0
@@ -157,7 +159,7 @@ Sour cream,🥛,Dairy,14,,171257,"Cream, sour, cultured",198.0,2.44,4.63,19.35,0
 Skim milk,🥛,Dairy,7,low-fat milk,171269,"Milk, nonfat, fluid, with added vitamin A and vitamin D (fat free or skim)",34.0,3.37,4.96,0.08,0.0,5.09
 Egg whites,🥚,Dairy,4,egg white,172183,"Egg, white, raw, fresh",52.0,10.9,0.73,0.17,0.0,0.71
 Pesto,🌿,Pantry,14,"basil pesto,pesto sauce,pesto genovese",171579,"Sauce, pesto, ready-to-serve, refrigerated",418.0,9.83,10.09,37.6,1.8,6.33
-Tomato sauce,🍅,Pantry,7,"marinara,passata,pasta sauce,sugo",171192,"Sauce, pasta, spaghetti/marinara, ready-to-serve",50.0,1.39,7.43,1.61,1.8,4.91
+Tomato sauce,🍅,Pantry,7,"marinara,passata,pasta sauce,sugo,pizza sauce",171192,"Sauce, pasta, spaghetti/marinara, ready-to-serve",50.0,1.39,7.43,1.61,1.8,4.91
 Mayonnaise,🫙,Pantry,60,mayo,171009,"Salad dressing, mayonnaise, regular",680.0,0.96,0.57,74.85,0.0,0.57
 Ketchup,🍅,Pantry,180,,168556,Catsup,101.0,1.04,27.4,0.1,0.3,21.27
 Mustard,🫙,Pantry,365,dijon mustard,172234,"Mustard, prepared, yellow",60.0,3.74,5.83,3.34,4.0,0.92
@@ -176,14 +178,20 @@ Paprika,🧂,Pantry,365,,171329,"Spices, paprika",282.0,14.14,53.99,12.89,34.9,1
 Cinnamon,🧂,Pantry,365,,171320,"Spices, cinnamon, ground",247.0,3.99,80.59,1.24,53.1,2.17
 Curry paste,🫙,Pantry,180,curry powder,170924,"Spices, curry powder",325.0,14.29,55.83,14.01,53.2,2.76
 Oregano,🌿,Pantry,365,"dried oregano,italian herbs",171328,"Spices, oregano, dried",265.0,9.0,68.92,4.28,42.5,4.09
+Thyme,🌿,Pantry,365,dried thyme,170938,"Spices, thyme, dried",276.0,9.11,63.94,7.43,37.0,1.71
+Cumin,🧂,Pantry,365,"ground cumin,cumin seeds",170923,"Spices, cumin seed",375.0,17.81,44.24,22.27,10.5,2.25
+Turmeric,🧂,Pantry,365,ground turmeric,172231,"Spices, turmeric, ground",312.0,9.68,67.14,3.25,22.7,3.21
+Chili flakes,🌶️,Pantry,365,"chilli flakes,red pepper flakes,crushed red pepper,dried red pepper flakes,cayenne,cayenne pepper",170932,"Spices, pepper, red or cayenne",318.0,12.01,56.63,17.27,27.2,10.34
 Stock,🍲,Pantry,3,"broth,vegetable broth,chicken broth,bouillon",174536,"Soup, chicken broth, ready-to-serve",6.0,0.64,0.44,0.21,0.0,0.43
 Hot sauce,🌶️,Pantry,365,"sriracha,tabasco",171186,"Sauce, hot chile, sriracha",93.0,1.93,19.16,0.93,2.2,15.11
 Teriyaki sauce,🫙,Pantry,365,,171167,"Sauce, teriyaki, ready-to-serve",89.0,5.93,15.56,0.02,0.1,14.1
 BBQ sauce,🫙,Pantry,180,barbecue sauce,174523,"Sauce, barbecue",172.0,0.82,40.77,0.63,0.9,33.24
+Salsa,🍅,Pantry,14,"tomato salsa,salsa sauce",174524,"Sauce, salsa, ready-to-serve",29.0,1.52,6.64,0.17,1.9,4.01
 Dark chocolate,🍫,Pantry,365,chocolate,170273,"Chocolate, dark, 70-85% cacao solids",598.0,7.79,45.9,42.63,10.9,23.99
 Milk chocolate,🍫,Pantry,365,,167587,"Candies, milk chocolate",535.0,7.65,59.4,29.66,3.4,51.5
 Ice cream,🍨,Dairy,90,gelato,167575,"Ice creams, vanilla",207.0,3.5,23.6,11.0,0.7,21.22
 Cookies,🍪,Pantry,90,"biscuits,cookie",172716,"Cookies, chocolate chip, commercially prepared, regular, higher fat, enriched",492.0,5.1,65.36,24.72,2.0,32.9
+Muffin,🧁,Pantry,4,"muffins,blueberry muffin",172765,"Muffins, blueberry, commercially prepared (Includes mini-muffins)",375.0,4.49,53.0,16.07,1.1,31.47
 Cake,🍰,Pantry,4,sponge cake,172704,"Cake, pound, commercially prepared, butter (includes fresh and frozen)",353.0,5.0,53.64,13.96,0.6,33.36
 Chips,🥔,Pantry,90,"crisps,potato chips",169677,"Snacks, potato chips, plain, salted",532.0,6.39,53.83,33.98,3.1,0.33
 Popcorn,🍿,Pantry,90,,167959,"Snacks, popcorn, air-popped",387.0,12.94,77.78,4.54,14.5,0.87

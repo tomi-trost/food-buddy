@@ -1,6 +1,16 @@
 from datetime import datetime
 
-from sqlalchemy import ARRAY, DateTime, Float, Integer, String, Text, UniqueConstraint, func
+from sqlalchemy import (
+    ARRAY,
+    Boolean,
+    DateTime,
+    Float,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base
@@ -8,7 +18,11 @@ from app.nutrition.macros import Nutrients
 
 
 class Ingredient(Base):
-    """Nutrition per 100 g. `aliases` are lowercase alternative names used for matching."""
+    """Nutrition per 100 g. `aliases` are lowercase alternative names used for matching.
+
+    `curated` rows (mock, hand-picked catalog, custom) match fuzzily; the rest of USDA/Ciqual
+    only by exact name or alias, and rank below curated rows in search.
+    """
 
     __tablename__ = "ingredient"
     __table_args__ = (UniqueConstraint("source", "name"),)
@@ -27,6 +41,8 @@ class Ingredient(Base):
     category: Mapped[str] = mapped_column(String(20), default="Pantry")  # Meat|Produce|Dairy|Pantry
     price_per_100g: Mapped[float] = mapped_column(Float, default=0)  # EUR; 0 = unknown
     shelf_days: Mapped[int] = mapped_column(Integer, default=7)
+    curated: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
+    ref: Mapped[str] = mapped_column(String(20), default="", server_default="")  # source row id
 
     @property
     def location(self) -> str:

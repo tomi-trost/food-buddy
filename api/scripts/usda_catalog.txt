@@ -10,7 +10,7 @@ Eggplant | 🍆 | Produce | 7 | aubergine, eggplants | Eggplant, raw
 Bell pepper | 🫑 | Produce | 10 | red pepper, red bell pepper, sweet pepper, capsicum | Peppers, sweet, red, raw
 Green bell pepper | 🫑 | Produce | 10 | green pepper | Peppers, sweet, green, raw
 Yellow bell pepper | 🫑 | Produce | 10 | yellow pepper | Peppers, sweet, yellow, raw
-Chili pepper | 🌶️ | Produce | 10 | chili, chilli, hot pepper, red chili, chili flakes | Peppers, hot chili, red, raw
+Chili pepper | 🌶️ | Produce | 10 | chili, chilli, hot pepper, red chili | Peppers, hot chili, red, raw
 Carrot | 🥕 | Produce | 21 | carrots, grated carrot | Carrots, raw
 Cucumber | 🥒 | Produce | 7 | cucumbers | Cucumber, with peel, raw
 Lettuce | 🥬 | Produce | 5 | salad, green salad, mixed greens, salad leaves, romaine | Lettuce, cos or romaine, raw
@@ -122,6 +122,7 @@ Hazelnuts | 🌰 | Pantry | 180 | hazelnut | Nuts, hazelnuts or filberts
 Cashews | 🌰 | Pantry | 180 | cashew | Nuts, cashew nuts, raw
 Pine nuts | 🌰 | Pantry | 90 | pignoli | Nuts, pine nuts, dried
 Pistachios | 🌰 | Pantry | 180 | pistachio | Nuts, pistachio nuts, raw
+Mixed nuts | 🥜 | Pantry | 180 | nuts, nut mix | Nuts, mixed nuts, dry roasted, with peanuts, without salt added
 Peanuts | 🥜 | Pantry | 180 | peanut | Peanuts, all types, dry-roasted, without salt
 Peanut butter | 🥜 | Pantry | 180 | | Peanut butter, smooth style, without salt
 Sunflower seeds | 🌻 | Pantry | 180 | | Seeds, sunflower seed kernels, dried
@@ -141,6 +142,7 @@ Ground pork | 🥩 | Meat | 2 | pork mince, minced pork | Pork, fresh, ground, c
 Bacon | 🥓 | Meat | 7 | streaky bacon | Pork, cured, bacon, pre-sliced, cooked, pan-fried
 Ham | 🍖 | Meat | 7 | cooked ham, prosciutto cotto | Ham, sliced, regular (approximately 11% fat)
 Salami | 🍖 | Meat | 30 | | Salami, Italian, pork
+Pepperoni | 🍕 | Meat | 21 | | Pepperoni, beef and pork, sliced
 Sausage | 🌭 | Meat | 3 | sausages, bratwurst | Sausage, Italian, pork, mild, cooked, pan-fried
 Hot dog | 🌭 | Meat | 7 | frankfurter, wurstel | Frankfurter, beef, unheated
 Lamb | 🥩 | Meat | 3 | lamb chop | Lamb, composite of trimmed retail cuts, separable lean and fat, trimmed to 1/4" fat, choice, cooked
@@ -175,7 +177,7 @@ Egg whites | 🥚 | Dairy | 4 | egg white | Egg, white, raw, fresh
 
 ## Fats, sauces, condiments
 Pesto | 🌿 | Pantry | 14 | basil pesto, pesto sauce, pesto genovese | Sauce, pesto, ready-to-serve, refrigerated
-Tomato sauce | 🍅 | Pantry | 7 | marinara, passata, pasta sauce, sugo | Sauce, pasta, spaghetti/marinara, ready-to-serve
+Tomato sauce | 🍅 | Pantry | 7 | marinara, passata, pasta sauce, sugo, pizza sauce | Sauce, pasta, spaghetti/marinara, ready-to-serve
 Mayonnaise | 🫙 | Pantry | 60 | mayo | Salad dressing, mayonnaise, regular
 Ketchup | 🍅 | Pantry | 180 | | Catsup
 Mustard | 🫙 | Pantry | 365 | dijon mustard | Mustard, prepared, yellow
@@ -194,16 +196,22 @@ Paprika | 🧂 | Pantry | 365 | | Spices, paprika
 Cinnamon | 🧂 | Pantry | 365 | | Spices, cinnamon, ground
 Curry paste | 🫙 | Pantry | 180 | curry powder | Spices, curry powder
 Oregano | 🌿 | Pantry | 365 | dried oregano, italian herbs | Spices, oregano, dried
+Thyme | 🌿 | Pantry | 365 | dried thyme | Spices, thyme, dried
+Cumin | 🧂 | Pantry | 365 | ground cumin, cumin seeds | Spices, cumin seed
+Turmeric | 🧂 | Pantry | 365 | ground turmeric | Spices, turmeric, ground
+Chili flakes | 🌶️ | Pantry | 365 | chilli flakes, red pepper flakes, crushed red pepper, dried red pepper flakes, cayenne, cayenne pepper | Spices, pepper, red or cayenne
 Stock | 🍲 | Pantry | 3 | broth, vegetable broth, chicken broth, bouillon | Soup, chicken broth, ready-to-serve
 Hot sauce | 🌶️ | Pantry | 365 | sriracha, tabasco | Sauce, hot chile, sriracha
 Teriyaki sauce | 🫙 | Pantry | 365 | | Sauce, teriyaki, ready-to-serve
 BBQ sauce | 🫙 | Pantry | 180 | barbecue sauce | Sauce, barbecue
+Salsa | 🍅 | Pantry | 14 | tomato salsa, salsa sauce | Sauce, salsa, ready-to-serve
 
 ## Sweets, snacks, drinks
 Dark chocolate | 🍫 | Pantry | 365 | chocolate | Chocolate, dark, 70-85% cacao solids
 Milk chocolate | 🍫 | Pantry | 365 | | Candies, milk chocolate
 Ice cream | 🍨 | Dairy | 90 | gelato | Ice creams, vanilla
 Cookies | 🍪 | Pantry | 90 | biscuits, cookie | Cookies, chocolate chip, commercially prepared, regular, higher fat, enriched
+Muffin | 🧁 | Pantry | 4 | muffins, blueberry muffin | Muffins, blueberry, commercially prepared (Includes mini-muffins)
 Cake | 🍰 | Pantry | 4 | sponge cake | Cake, pound, commercially prepared, butter (includes fresh and frozen)
 Chips | 🥔 | Pantry | 90 | crisps, potato chips | Snacks, potato chips, plain, salted
 Popcorn | 🍿 | Pantry | 90 | | Snacks, popcorn, air-popped

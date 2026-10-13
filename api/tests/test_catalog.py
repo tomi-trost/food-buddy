@@ -17,6 +17,7 @@ async def full(session):
 
 
 ALCOHOL = {"Beer", "Wine"}  # energy mostly from alcohol, not macros
+SPECIFIC_FACTORS = {"Chili flakes"}  # USDA's own Atwater factors: 27% fibre counts much less
 
 
 def all_rows() -> list[dict]:
@@ -40,7 +41,7 @@ def test_catalog_rows_are_sane():
         assert r["kcal"] <= 900, r["name"]  # per 100 g; pure fat is ~884
         assert r["protein"] + r["carbs"] + r["fat"] <= 100.5, r["name"]
         # energy agrees with the macros (EU label factors), so no column got mixed up
-        if r["name"] not in ALCOHOL:
+        if r["name"] not in ALCOHOL | SPECIFIC_FACTORS:
             estimate = kcal_from_macros(r)
             assert abs(r["kcal"] - estimate) <= max(25, 0.15 * r["kcal"]), (r["name"], estimate)
         assert r["sugar"] <= r["carbs"] + 0.5, r["name"]

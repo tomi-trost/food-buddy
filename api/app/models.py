@@ -2,6 +2,7 @@
 
 from app.analysis.models import AnalysisJob, AnalysisRating
 from app.auth.models import Household, User
+from app.barcode.models import OffProduct
 from app.db import Base
 from app.inventory.models import InventoryItem, RanOut
 from app.logs.models import FoodLog
@@ -26,6 +27,7 @@ __all__ = [
     "Meal",
     "MealIngredient",
     "MealSuggestion",
+    "OffProduct",
     "PlanApproval",
     "PlanSlot",
     "PlanWeek",

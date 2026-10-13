@@ -1,13 +1,16 @@
 """Map a free-text ingredient name (from the vision model) to an Ingredient row.
 
 Heuristic, in order:
-1. exact name or alias (case-insensitive) → score 1.0
-2. trigram match over the name and every alias: accept when a whole known term appears in the
-   phrase ("grilled chicken breast" → "Chicken breast", word_similarity ≥ 0.8) or the strings
-   are close overall (similarity ≥ 0.5). Sharing one word ("mystery sauce" / "soy sauce") is not
-   enough: no match beats a wrong match, the user picks the ingredient instead.
-   Ties go to the term closest to the whole phrase ("ground black pepper": "black pepper" beats
-   "pepper"), then to the shorter name.
+1. exact name or alias (case-insensitive) → score 1.0; hand-picked rows first, then the full
+   USDA/Ciqual import ("coconut oil" is its own row there, not "Coconut")
+2. trigram match over the name and every alias of the hand-picked rows only: accept when a
+   whole known term appears in the phrase ("grilled chicken breast" → "Chicken breast",
+   word_similarity ≥ 0.8) or the strings are close overall (similarity ≥ 0.5). Sharing one
+   word ("mystery sauce" / "soy sauce") is not enough: no match beats a wrong match, the user
+   picks the ingredient instead. Ties go to the term closest to the whole phrase ("ground
+   black pepper": "black pepper" beats "pepper"), then to the shorter name. The ~10,000
+   imported rows have long database names ("Squash, summer, zucchini, includes skin, raw")
+   that fuzzy-match too much (decision 0022).
 """
 
 import re
@@ -28,6 +31,7 @@ _FUZZY = text(
                similarity(t.term, :q) AS sim, word_similarity(t.term, :q) AS wsim
         FROM ingredient i
         CROSS JOIN LATERAL unnest(array_append(i.aliases, lower(i.name))) AS t(term)
+        WHERE i.curated
     ) s
     WHERE wsim >= :min_wsim OR sim >= :min_sim
     ORDER BY score DESC, sim DESC, len
@@ -54,6 +58,7 @@ async def match_ingredient(session: AsyncSession, name: str) -> Match | None:
     exact = await session.scalar(
         select(Ingredient)
         .where((func.lower(Ingredient.name) == query) | (query == any_(Ingredient.aliases)))
+        .order_by(Ingredient.curated.desc(), Ingredient.id)
         .limit(1)
     )
     if exact is not None:

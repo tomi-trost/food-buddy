@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     vapid_private_key: str | None = None
     vapid_subject: str | None = None
 
+    # Open Food Facts barcode lookups; OFF asks for an app name and a contact in the User-Agent.
+    off_url: str = "https://world.openfoodfacts.org"
+    off_user_agent: str = "FoodBuddy/0.1 (+https://food-buddy.web-corner.cc)"
+
     # Tried in order; set as JSON, e.g.
     # VISION_PROVIDERS='[{"name":"local","url":"http://ollama:11434/v1","model":"qwen3-vl:4b-instruct"}]'
     vision_providers: list[VisionProviderConfig] = [

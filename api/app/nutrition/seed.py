@@ -1,10 +1,12 @@
-"""Seed the ingredient table: the mock's list plus the USDA and Ciqual catalogs of common foods.
+"""Seed the ingredient table: the mock's list, the hand-picked USDA and Ciqual catalogs of common
+foods, and the rest of both databases (not curated: exact matches only, decision 0022).
 
 Run: python -m app.nutrition.seed (the api container does this on every start; idempotent).
 """
 
 import asyncio
 import csv
+import gzip
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
@@ -97,7 +99,18 @@ MOCK_INGREDIENTS = [
     ),
     SeedIngredient("Tomatoes", "🍅", "Produce", 18, 0.9, 3.9, 0.2, 1.2, 2.6, 0.3, 7, ["tomato"]),
     SeedIngredient(
-        "Beef mince", "🥩", "Meat", 250, 26, 0, 15, 0, 0, 1.1, 3, ["ground beef", "minced beef"]
+        "Beef mince",
+        "🥩",
+        "Meat",
+        250,
+        26,
+        0,
+        15,
+        0,
+        0,
+        1.1,
+        3,
+        ["ground beef", "minced beef", "ground meat", "minced meat"],
     ),
     SeedIngredient("Parmesan", "🧀", "Dairy", 350, 25, 1, 28, 0, 0, 1.4, 30, ["parmesan cheese"]),
     SeedIngredient(
@@ -155,6 +168,31 @@ def catalog(source: str) -> list[dict]:
                 **{k: float(r[k]) for k in NUMBERS},
                 "price_per_100g": 0,  # unknown until someone enters a price
                 "source": source,
+                "ref": r["ref"],
+                "curated": True,
+            }
+            for r in csv.DictReader(f)
+        ]
+
+
+# Everything else from USDA SR Legacy and Ciqual, built by `scripts/build_catalog.py full`.
+FULL_FILE = CATALOG_DIR / "full_foods.csv.gz"
+
+
+def full_foods() -> list[dict]:
+    with gzip.open(FULL_FILE, "rt", newline="", encoding="utf-8") as f:
+        return [
+            {
+                "name": r["name"],
+                "emoji": r["emoji"],
+                "category": r["category"],
+                "shelf_days": int(r["shelf_days"]),
+                "aliases": [a for a in r["aliases"].split(",") if a],
+                **{k: float(r[k]) for k in NUMBERS},
+                "price_per_100g": 0,
+                "source": r["source"],
+                "ref": r["ref"],
+                "curated": False,
             }
             for r in csv.DictReader(f)
         ]
@@ -169,13 +207,21 @@ async def seed_catalog(session: AsyncSession) -> None:
         await _upsert(session, catalog(source))
 
 
+async def seed_full(session: AsyncSession) -> None:
+    await _upsert(session, full_foods())
+
+
+CHUNK = 2000  # rows per statement: Postgres takes at most 65,535 parameters
+
+
 async def _upsert(session: AsyncSession, rows: list[dict]) -> None:
-    stmt = insert(Ingredient).values(rows)
-    updatable = {k for k in rows[0] if k not in ("name", "source")}
-    stmt = stmt.on_conflict_do_update(
-        index_elements=["source", "name"], set_={k: stmt.excluded[k] for k in updatable}
-    )
-    await session.execute(stmt)
+    for start in range(0, len(rows), CHUNK):
+        stmt = insert(Ingredient).values(rows[start : start + CHUNK])
+        updatable = {k for k in rows[0] if k not in ("name", "source")}
+        stmt = stmt.on_conflict_do_update(
+            index_elements=["source", "name"], set_={k: stmt.excluded[k] for k in updatable}
+        )
+        await session.execute(stmt)
     await session.commit()
 
 
@@ -183,6 +229,7 @@ async def _main() -> None:
     async with SessionLocal() as session:
         await seed_mock(session)
         await seed_catalog(session)
+        await seed_full(session)
 
 
 if __name__ == "__main__":

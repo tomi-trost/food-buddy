@@ -106,9 +106,9 @@ Shared conventions for all sections:
 ## M4 — Nutrition data
 
 - [x] Curated catalog of ~250 common foods from USDA SR Legacy + Ciqual with aliases, fiber + sugar; unmatched names logged (2026-10-12, decision 0021)
-- [ ] Import the rest of USDA FoodData Central (Foundation + SR Legacy) and Ciqual; aliases
-- [ ] Open Food Facts barcode lookup endpoint (cached)
-- [ ] Matching quality tests on a fixed list of model outputs → expected ingredients
+- [x] Import the rest of USDA SR Legacy and Ciqual (~9,950 rows), searchable; matched only by exact generated short names, hand-picked rows first (2026-10-13, decision 0022). Foundation Foods left out (mostly repeats SR Legacy)
+- [x] Open Food Facts barcode lookup endpoint `GET /api/barcode/{code}`, cached 30 days (unknown: 1 day), stale answer when OFF is down (2026-10-13). Scanner UI still open
+- [x] Matching quality tests: all 236 names from the 2026-10-12 benchmark → expected ingredient or none (`api/tests/test_matching_quality.py`; 222 match, 14 generic/non-food stay unmatched)
 
 ## M5 — Hardening & extras
 

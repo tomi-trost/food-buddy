@@ -16,7 +16,8 @@ async def search_ingredients(
     q: str = "",
     limit: int = Query(default=30, ge=1, le=100),
 ) -> list[IngredientOut]:
-    """Prefix matches first, then fuzzy ones; empty query lists everything by name."""
+    """Hand-picked foods before the full USDA/Ciqual import; within each prefix matches first,
+    then fuzzy ones. An empty query lists everything by name."""
     query = normalize(q)
     stmt = select(Ingredient)
     if query:
@@ -35,12 +36,13 @@ async def search_ingredients(
             ),
         )
         stmt = stmt.where(prefix | contains | fuzzy | any_word).order_by(
+            Ingredient.curated.desc(),
             prefix.desc(),
             contains.desc(),
             func.word_similarity(query, name).desc(),
             Ingredient.name,
         )
     else:
-        stmt = stmt.order_by(Ingredient.name)
+        stmt = stmt.order_by(Ingredient.curated.desc(), Ingredient.name)
     rows = await session.scalars(stmt.limit(limit))
     return [IngredientOut.of(i) for i in rows]
