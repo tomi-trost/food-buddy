@@ -26,7 +26,7 @@ describe('SettingsSheet', () => {
     renderAt('/', routes)
 
     fireEvent.click(await screen.findByLabelText('More kcal goal'))
-    await waitFor(() => expect(screen.getByRole('group', { name: 'kcal goal' })).toHaveTextContent('2250'))
+    await waitFor(() => expect(screen.getByRole('textbox', { name: 'kcal goal' })).toHaveValue('2250'))
     const patch = fetch.mock.calls.find(([, init]) => init?.method === 'PATCH')!
     expect(patch[0]).toBe('/api/auth/me')
     expect(JSON.parse(String(patch[1]!.body))).toEqual({ goal_kcal: 2250 })

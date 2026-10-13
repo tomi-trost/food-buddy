@@ -67,7 +67,7 @@ describe('Barcode scanner', () => {
     expect(lookups(fetch)[0][0]).toBe(`/api/barcode/${CODE}`)
     expect(within(sheet).getByText('From Open Food Facts · 400 g pack. Check them against the label, we remember your changes.')).toBeInTheDocument()
     expect(within(sheet).getByRole('button', { name: 'Sweet' })).toHaveAttribute('aria-pressed', 'true')
-    expect(within(sheet).getByText('15 g')).toBeInTheDocument()
+    expect(within(sheet).getByRole('textbox', { name: 'amount' })).toHaveValue('15')
 
     fireEvent.click(within(sheet).getByRole('switch'))
     fireEvent.click(within(sheet).getByRole('button', { name: 'Log snack' }))
@@ -149,7 +149,7 @@ describe('Barcode scanner', () => {
     typeCode(sheet, CODE)
     const name = await within(sheet).findByDisplayValue('Nutella (ours)')
     expect(within(sheet).getByText('Your values from last time. Change them if this one was different.')).toBeInTheDocument()
-    expect(within(sheet).getByText('20 g')).toBeInTheDocument()
+    expect(within(sheet).getByRole('textbox', { name: 'amount' })).toHaveValue('20')
 
     fireEvent.change(name, { target: { value: '' } })
     expect(within(sheet).getByRole('button', { name: 'Log snack' })).toBeDisabled() // a name is needed

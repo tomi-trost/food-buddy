@@ -97,9 +97,9 @@ describe('snap flow', () => {
     expect(screen.getByLabelText('Dish name')).toHaveValue('Chicken rice bowl')
     expect(screen.getByRole('button', { name: 'Lunch' })).toHaveAttribute('aria-pressed', 'true')
     // plate cost 1.35 + 0.40 = 1.75 × 2 portions = 3.5 → 4 €
-    expect(screen.getByRole('group', { name: 'cost' })).toHaveTextContent('4 €')
+    expect(screen.getByRole('textbox', { name: 'cost' })).toHaveValue('4')
     fireEvent.click(screen.getByLabelText('More portions made')) // 5.25 → 5 €
-    expect(screen.getByRole('group', { name: 'cost' })).toHaveTextContent('5 €')
+    expect(screen.getByRole('textbox', { name: 'cost' })).toHaveValue('5')
     fireEvent.click(screen.getByRole('button', { name: /🍚 Rice \(cooked\)/ }))
     expect(screen.getByText(/Prep: wash and chop rice \(cooked\), chicken breast\./)).toBeInTheDocument()
 

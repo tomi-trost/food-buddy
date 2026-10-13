@@ -63,7 +63,12 @@ h3 { margin: 0; font-size: 15px; font-weight: 600; }
 .field input, .input { min-height: 46px; padding: 0 12px; border-radius: var(--r2); border: 1px solid var(--line2); background: var(--surface); color: var(--ink); font: inherit; font-size: 16px; width: 100%; } /* <16px makes iOS zoom on focus */
 .stepper { display: flex; align-items: center; gap: 8px; }
 .stepper button { width: 40px; height: 40px; border-radius: var(--r); background: var(--surface2); font-size: 20px; }
-.stepper b { min-width: 54px; text-align: center; }
+.stepper-value { min-width: 54px; display: flex; align-items: baseline; justify-content: center; gap: 2px; font-weight: 650; }
+/* the value is a field: tap to type an exact number (16 px so iOS doesn't zoom in) */
+.stepper-value input { width: auto; min-width: 2ch; max-width: 7ch; padding: 4px 2px; border: 0; border-bottom: 1.5px dashed var(--line2);
+  background: none; color: inherit; font: inherit; font-size: 16px; text-align: center; border-radius: 0; }
+.stepper-value input:focus { outline: none; border-bottom: 1.5px solid var(--accent); }
+.stepper-value span { font-size: 14px; color: var(--ink2); font-weight: 500; }
 .seg { display: flex; background: var(--surface2); border-radius: var(--r); padding: 3px; margin-bottom: 14px; }
 .seg button { flex: 1; padding: 9px; border-radius: 6px; font-size: 14px; min-height: 40px; color: var(--ink2); }
 .seg button[aria-pressed='true'] { background: var(--surface); color: var(--ink); font-weight: 600; }

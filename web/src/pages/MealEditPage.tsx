@@ -113,7 +113,7 @@ function EditForm({ meal, close }: { meal: Meal; close: React.ReactNode }) {
             <h3>Ingredient cost</h3>
             <div className="sub">{cost === null ? 'estimated from prices' : 'your amount'}</div>
           </div>
-          <Stepper label="cost" value={cost ?? Math.round(estimate)} step={1} min={0} max={1000} unit=" €" onChange={setCost} />
+          <Stepper label="cost" value={cost ?? Math.round(estimate)} step={1} min={0} max={1000} unit=" €" decimals={2} onChange={setCost} />
         </div>
         {cost !== null && <button type="button" className="textbtn" onClick={() => setCost(null)}>Use the estimate ({estimate.toFixed(2)} €)</button>}
       </div>

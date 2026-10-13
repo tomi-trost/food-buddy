@@ -15,12 +15,60 @@ describe('Stepper', () => {
   it('steps within bounds and disables at the edges', () => {
     render(<StepperHarness />)
     fireEvent.click(screen.getByLabelText('More portions'))
-    expect(screen.getByRole('group', { name: 'portions' })).toHaveTextContent('3')
+    expect(screen.getByRole('textbox', { name: 'portions' })).toHaveValue('3')
     expect(screen.getByLabelText('More portions')).toBeDisabled()
     fireEvent.click(screen.getByLabelText('Less portions'))
     fireEvent.click(screen.getByLabelText('Less portions'))
-    expect(screen.getByRole('group', { name: 'portions' })).toHaveTextContent('1')
+    expect(screen.getByRole('textbox', { name: 'portions' })).toHaveValue('1')
     expect(screen.getByLabelText('Less portions')).toBeDisabled()
+  })
+})
+
+describe('Stepper typing', () => {
+  function Typed({ step = 25, decimals }: { step?: number; decimals?: number }) {
+    const [v, setV] = useState(150)
+    return <><Stepper label="grams" value={v} onChange={setV} step={step} min={5} max={500} unit="g" decimals={decimals} /><output>{v}</output></>
+  }
+  const field = () => screen.getByRole('textbox', { name: 'grams' })
+  const type = (text: string, key?: string) => {
+    fireEvent.focus(field())
+    fireEvent.change(field(), { target: { value: text } })
+    if (key) fireEvent.keyDown(field(), { key })
+    fireEvent.blur(field())
+  }
+
+  it('takes an exact typed value, finer than the step', () => {
+    render(<Typed />)
+    type('137', 'Enter')
+    expect(screen.getByRole('status')).toHaveTextContent('137')
+    expect(field()).toHaveValue('137')
+    fireEvent.click(screen.getByLabelText('More grams'))
+    expect(screen.getByRole('status')).toHaveTextContent('162') // steps go on from the typed value
+  })
+
+  it('rounds to whole numbers unless decimals are allowed, and accepts a comma', () => {
+    render(<Typed />)
+    type('42.6')
+    expect(screen.getByRole('status')).toHaveTextContent('43')
+  })
+
+  it('keeps decimals when allowed', () => {
+    render(<Typed decimals={2} />)
+    type('7,456')
+    expect(screen.getByRole('status')).toHaveTextContent('7.46')
+  })
+
+  it('clamps to the bounds and puts the old value back for nonsense', () => {
+    render(<Typed />)
+    type('9000')
+    expect(screen.getByRole('status')).toHaveTextContent('500')
+    type('1')
+    expect(screen.getByRole('status')).toHaveTextContent('5')
+    type('abc')
+    expect(screen.getByRole('status')).toHaveTextContent('5')
+    expect(field()).toHaveValue('5')
+    type('')
+    expect(field()).toHaveValue('5')
   })
 })
 

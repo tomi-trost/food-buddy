@@ -61,7 +61,7 @@ export function Details({ items, state, set, onPost, posting, error }: {
             <h3>Ingredient cost</h3>
             <div className="sub">auto-estimated</div>
           </div>
-          <Stepper label="cost" value={state.cost} step={1} min={0} max={1000} unit=" €"
+          <Stepper label="cost" value={state.cost} step={1} min={0} max={1000} unit=" €" decimals={2}
             onChange={(cost) => set({ cost })} />
         </div>
         <div className="row" style={{ marginTop: 10 }}>

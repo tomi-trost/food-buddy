@@ -4,6 +4,10 @@ export type Release = { id: string; notes: string[] }
 
 export const RELEASES: Release[] = [
   {
+    id: '2026-10-13-typed-amounts',
+    notes: ['Tap the number between − and + to type an exact value (grams, portions, cost, goals…).'],
+  },
+  {
     id: '2026-10-13-portion-priors',
     notes: [
       'Photo estimates learn from your corrections: when you keep changing an amount (e.g. rice), the AI is told your usual portion.',
