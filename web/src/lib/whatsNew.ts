@@ -4,6 +4,13 @@ export type Release = { id: string; notes: string[] }
 
 export const RELEASES: Release[] = [
   {
+    id: '2026-10-14-access-loop',
+    notes: [
+      "Fixed the endless reloading after entering Cloudflare's e-mail code: the code now sticks and the app opens normally.",
+      'Without a connection the app stays open with what was last loaded instead of jumping to the login page.',
+    ],
+  },
+  {
     id: '2026-10-13-snack-pieces',
     notes: [
       'Scanned snacks can be counted in pieces (3 cookies instead of 27 g). The app remembers it for next time.',

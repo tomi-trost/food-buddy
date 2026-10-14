@@ -1,6 +1,6 @@
 import { screen, within } from '@testing-library/react'
 import { Route } from 'react-router'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App'
 import { tokenStore } from './api/client'
 import { me } from './test/fixtures'
@@ -32,5 +32,32 @@ describe('old /snap links', () => {
     serve()
     renderAt('/snap?kind=snack', <Route path="*" element={<App />} />)
     expect(await screen.findByRole('dialog', { name: 'Log a snack' })).toBeInTheDocument()
+  })
+})
+
+describe('signed-in screens when /me fails', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('go to login when the token is no longer valid', async () => {
+    mockFetch(() => jsonResponse({ detail: 'Not authenticated' }, 401))
+    renderAt('/', <Route path="*" element={<App />} />)
+    expect(await screen.findByRole('form', { name: 'Log in' })).toBeInTheDocument()
+    expect(tokenStore.get()).toBeNull()
+  })
+
+  it("stay in the app while offline instead of bouncing to login", async () => {
+    vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new TypeError('Load failed'))))
+    renderAt('/', <Route path="*" element={<App />} />)
+    expect(await screen.findByRole('status')).toHaveTextContent(/offline/)
+    expect(screen.queryByRole('form', { name: 'Log in' })).not.toBeInTheDocument()
+    expect(tokenStore.get()).toBe('tok')
+  })
+
+  it("show why on the login page when Cloudflare Access still won't let us through", async () => {
+    vi.stubGlobal('location', { ...window.location, pathname: '/', search: '?reauth=1', assign: vi.fn() })
+    mockFetch(() => ({ type: 'opaqueredirect', status: 0, ok: false }) as Response)
+    renderAt('/', <Route path="*" element={<App />} />)
+    expect(await screen.findByText(/access check didn't stick/)).toBeInTheDocument()
+    expect(screen.getByRole('form', { name: 'Log in' })).toBeInTheDocument()
   })
 })

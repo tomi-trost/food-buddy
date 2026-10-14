@@ -2,6 +2,7 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import { NETWORK_ONLY_PAGES } from './src/lib/swRoutes'
 
 export default defineConfig({
   plugins: [
@@ -22,7 +23,7 @@ export default defineConfig({
           { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
         ],
       },
-      workbox: { navigateFallbackDenylist: [/^\/api\//], importScripts: ['push-sw.js'] },
+      workbox: { navigateFallbackDenylist: NETWORK_ONLY_PAGES, importScripts: ['push-sw.js'] },
     }),
   ],
   server: { proxy: { '/api': 'http://localhost:8000' } },

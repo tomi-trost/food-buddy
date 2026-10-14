@@ -6,7 +6,8 @@ type Mode = 'login' | 'create' | 'join'
 
 export function LoginPage() {
   const navigate = useNavigate()
-  const from = (useLocation().state as { from?: string } | null)?.from ?? '/'
+  const state = useLocation().state as { from?: string; notice?: string } | null
+  const from = state?.from ?? '/'
   const [mode, setMode] = useState<Mode>('login')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -38,6 +39,7 @@ export function LoginPage() {
     <main className="app screen bare">
       <h1>Food Buddy</h1>
       <p className="sub">Snap your meal, see the macros, plan the week together.</p>
+      {state?.notice && <p className="error" role="status">{state.notice}</p>}
       <div className="seg" role="group" aria-label="Account">
         {(['login', 'create', 'join'] as const).map((m) => (
           <button key={m} type="button" aria-pressed={mode === m} onClick={() => setMode(m)}>

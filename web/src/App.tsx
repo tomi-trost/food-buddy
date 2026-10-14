@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { type ReactNode, useEffect } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate, useSearchParams } from 'react-router'
 import { AddFoodProvider, useAddFood } from './add/AddFood'
-import { api, tokenStore } from './api/client'
+import { AccessBlocked, api, ApiError, tokenStore } from './api/client'
 import { AppLayout, BareLayout } from './layout/AppLayout'
 import { applyTheme } from './lib/theme'
 import { AnalysisPage } from './pages/AnalysisPage'
@@ -20,11 +20,14 @@ function RequireAuth({ children }: { children: ReactNode }) {
   const location = useLocation()
   const navigate = useNavigate()
   const hasToken = !!tokenStore.get()
-  // A stale/invalid token shows up as 401 on /me: the client clears it, we go to login.
+  // A stale/invalid token shows up as 401 on /me: the client clears it, we go to login. Offline
+  // stays here (the banner says so); Access that won't let us through goes to login with why.
   const me = useQuery({ queryKey: ['me'], queryFn: api.me, enabled: hasToken, staleTime: 60_000 })
   useEffect(() => {
-    if (me.isError) navigate('/login', { replace: true })
-  }, [me.isError, navigate])
+    const error = me.error
+    if (error instanceof AccessBlocked) navigate('/login', { replace: true, state: { notice: error.message } })
+    else if (error instanceof ApiError && error.status === 401) navigate('/login', { replace: true })
+  }, [me.error, navigate])
 
   if (!hasToken) return <Navigate to="/login" replace state={{ from: location.pathname }} />
   return children
