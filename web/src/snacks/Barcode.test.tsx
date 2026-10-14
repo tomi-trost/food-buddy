@@ -12,7 +12,7 @@ vi.mock('../lib/barcodeReader', () => ({ readBarcode: vi.fn() }))
 const CODE = '8000500310427'
 const per100 = { kcal: 539, protein: 6.3, carbs: 57.5, fat: 30.9, fiber: 0, sugar: 56.3 }
 const nutella: Product = {
-  code: CODE, name: 'Nutella', brand: 'Ferrero', quantity: '400 g', serving_g: 15, piece_g: null,
+  code: CODE, name: 'Nutella', brand: 'Ferrero', quantity: '400 g', per: '100g', serving_g: 15, piece_g: null,
   image_url: null, per100, kind: 'sweet', remembered: false, source: 'Open Food Facts',
 }
 
@@ -163,6 +163,37 @@ describe('Barcode scanner', () => {
     const body = JSON.parse(String(init!.body))
     expect(body).toMatchObject({ per: 'piece', amount: 3, piece_g: 9, barcode: CODE })
     expect(body.per_unit.kcal).toBeCloseTo(539 * 0.09)
+  })
+
+  it('counts a drink in ml, and cans as pieces of 330 ml', async () => {
+    const cola = { ...nutella, name: 'Coca-Cola', brand: '', quantity: '330 ml', per: '100ml' as const, serving_g: 330, kind: 'drink' as const }
+    const { fetch, sheet } = setup(cola)
+    typeCode(sheet, CODE)
+    await within(sheet).findByDisplayValue('Coca-Cola')
+    expect(within(sheet).getByRole('button', { name: 'ml' })).toHaveAttribute('aria-pressed', 'true')
+    expect(within(sheet).getByRole('textbox', { name: 'amount' })).toHaveValue('330')
+    expect(within(sheet).getByText('ml you drank')).toBeInTheDocument()
+    expect(within(sheet).getByText('Values per 100 ml')).toBeInTheDocument()
+
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Pieces' }))
+    expect(within(sheet).getByRole('textbox', { name: 'amount' })).toHaveValue('1')
+    expect(within(sheet).getByRole('textbox', { name: 'piece weight' })).toHaveValue('330')
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Log snack' }))
+    await waitFor(() => expect(fetch.mock.calls.some(([u]) => u === '/api/snacks')).toBe(true))
+    const [, init] = fetch.mock.calls.find(([u]) => u === '/api/snacks')!
+    expect(JSON.parse(String(init!.body))).toMatchObject({ per: 'piece', amount: 1, piece_g: 330, piece_base: '100ml' })
+  })
+
+  it('switches a drink to grams keeping the numbers', async () => {
+    const { fetch, sheet } = setup({ ...nutella, per: '100ml', serving_g: 250 })
+    typeCode(sheet, CODE)
+    await within(sheet).findByDisplayValue('Ferrero Nutella')
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Grams' }))
+    expect(within(sheet).getByRole('textbox', { name: 'amount' })).toHaveValue('250')
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Log snack' }))
+    await waitFor(() => expect(fetch.mock.calls.some(([u]) => u === '/api/snacks')).toBe(true))
+    const [, init] = fetch.mock.calls.find(([u]) => u === '/api/snacks')!
+    expect(JSON.parse(String(init!.body))).toMatchObject({ per: '100g', amount: 250, per_unit: per100 })
   })
 
   it('switches back to grams keeping the amount', async () => {

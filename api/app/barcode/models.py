@@ -33,7 +33,8 @@ class HouseholdProduct(Base):
     name: Mapped[str] = mapped_column(String(120))
     kind: Mapped[str] = mapped_column(String(10))  # sweet|savory|fruit|drink
     per100: Mapped[dict] = mapped_column(JSONB)
-    amount: Mapped[float] = mapped_column(Float)  # grams we usually eat
+    per: Mapped[str] = mapped_column(String(5), default="100g", server_default="100g")  # | 100ml
+    amount: Mapped[float] = mapped_column(Float)  # grams (ml when per 100 ml) we usually eat
     piece_g: Mapped[float | None] = mapped_column(Float)  # set when we count it in pieces
     updated_by: Mapped[int | None] = mapped_column(ForeignKey("app_user.id", ondelete="SET NULL"))
     updated_at: Mapped[datetime] = mapped_column(

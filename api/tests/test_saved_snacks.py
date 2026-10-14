@@ -11,7 +11,7 @@ TIRAMISU = {"kcal": 420, "protein": 7, "carbs": 38, "fat": 26, "fiber": 0.5, "su
 
 
 async def save_from_photo(client, auth, session) -> dict:
-    answer = {"name": "Tiramisu", "kind": "sweet", "pieces": 1, "per_piece": TIRAMISU}
+    answer = {"name": "Tiramisu", "kind": "sweet", "unit": "piece", "amount": 1, "values": TIRAMISU}
     job, _ = await analyze(client, auth, session, "snack", answer)
     body = snack(
         name="Tiramisu", emoji="🍰", source="photo", per_unit=TIRAMISU, analysis_id=job["id"]

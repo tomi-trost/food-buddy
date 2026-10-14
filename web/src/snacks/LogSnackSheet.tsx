@@ -3,12 +3,12 @@ import { useState } from 'react'
 import { PhotoInput } from '../add/PhotoInput'
 import { useFoodUpload } from '../add/upload'
 import { api, ApiError } from '../api/client'
-import type { Nutrients, SavedSnack, SnackKind } from '../api/types'
+import type { Nutrients, SavedSnack, SnackKind, SnackPer } from '../api/types'
 import { todayISO } from '../lib/dates'
 import { guessPieceG, piecesIn, type ProductSnack, productSnack, scannedAmount, unknownProduct } from '../lib/barcode'
 import { scale } from '../lib/macros'
 import { Stepper } from '../ui/Stepper'
-import { isTreatKind, KIND_EMOJI, KIND_LABEL, SNACK_KINDS } from '../lib/snacks'
+import { isTreatKind, KIND_EMOJI, KIND_LABEL, perLabel, SNACK_KINDS } from '../lib/snacks'
 import { Icon } from '../ui/Icon'
 import { Photo } from '../ui/Photo'
 import { Sheet } from '../ui/Sheet'
@@ -33,11 +33,12 @@ type Draft = {
   name: string
   emoji: string
   kind: SnackKind
-  per: 'piece' | '100g'
+  per: SnackPer
   amount: number
   perUnit: Nutrients
   saved?: SavedSnack
-  // from a barcode: perUnit is per 100 g; amount is grams, or pieces while pieceG is set
+  // from a barcode: per is 100g or 100ml and perUnit per 100 g/ml; amount is grams/ml, or pieces
+  // while pieceG is set (one piece in grams/ml)
   scanned?: { code: string; quantity: string; missingValues: boolean; remembered: boolean; pieceG: number | null; servingG: number | null }
 }
 
@@ -63,7 +64,7 @@ function LogSnack({ onClose, saved, scan }: { onClose: () => void; saved?: Saved
     mutationFn: (d: Draft) =>
       api.logSnack({
         eaten_on: todayISO(), name: d.name, emoji: d.emoji, kind: d.kind, source: d.saved ? 'saved' : d.scanned ? 'barcode' : 'list',
-        ...(d.scanned ? scannedAmount(d.perUnit, d.amount, d.scanned.pieceG) : { per: d.per, amount: d.amount, per_unit: d.perUnit }),
+        ...(d.scanned ? scannedAmount(d.perUnit, d.amount, d.scanned.pieceG, d.per === '100ml' ? '100ml' : '100g') : { per: d.per, amount: d.amount, per_unit: d.perUnit }),
         saved_id: d.saved?.id, save: !!d.scanned && save, barcode: d.scanned?.code,
       }),
     onSuccess: (logged) => {
@@ -126,15 +127,18 @@ function LogSnack({ onClose, saved, scan }: { onClose: () => void; saved?: Saved
           <div className="sub row" style={{ gap: 6, marginBottom: 12 }}><Icon name="gift" size={16} /> Counts as a treat for your streak</div>
         )}
         {scanned && (
-          <Toggle<'g' | 'pc'> label="Count in" value={scanned.pieceG ? 'pc' : 'g'}
-            options={[{ value: 'g', label: 'Grams' }, { value: 'pc', label: 'Pieces' }]}
+          <Toggle<'g' | 'ml' | 'pc'> label="Count in" value={scanned.pieceG ? 'pc' : draft.per === '100ml' ? 'ml' : 'g'}
+            options={[{ value: 'g', label: 'Grams' }, { value: 'ml', label: 'ml' }, { value: 'pc', label: 'Pieces' }]}
             onChange={(v) => {
-              if (v === 'pc' && !scanned.pieceG) {
-                const pieceG = guessPieceG(scanned.servingG)
+              if (v === 'pc') {
+                if (scanned.pieceG) return
+                const pieceG = guessPieceG(scanned.servingG, draft.per === '100ml')
                 setDraft({ ...draft, amount: piecesIn(draft.amount, pieceG), scanned: { ...scanned, pieceG } })
-              } else if (v === 'g' && scanned.pieceG) {
-                setDraft({ ...draft, amount: Math.max(1, Math.round(draft.amount * scanned.pieceG)), scanned: { ...scanned, pieceG: null } })
+                return
               }
+              const per = v === 'ml' ? '100ml' : '100g' // the values stay: about 1 g per ml
+              const amount = scanned.pieceG ? Math.max(1, Math.round(draft.amount * scanned.pieceG)) : draft.amount
+              setDraft({ ...draft, per, amount, scanned: { ...scanned, pieceG: null } })
             }} />
         )}
         {scanned?.pieceG ? (
@@ -143,8 +147,8 @@ function LogSnack({ onClose, saved, scan }: { onClose: () => void; saved?: Saved
               onAmount={(amount) => setDraft({ ...draft, amount })}
               onPerUnit={(perPiece) => setDraft({ ...draft, perUnit: scale(perPiece, 10000 / scanned.pieceG!) })} onValid={setValid} />
             <div className="card row">
-              <div className="sp"><h3>One piece</h3><div className="sub">weight from the pack; change it if yours differ</div></div>
-              <Stepper label="piece weight" value={scanned.pieceG} step={1} min={0.5} max={500} unit=" g" decimals={1}
+              <div className="sp"><h3>One piece</h3><div className="sub">{draft.per === '100ml' ? 'ml' : 'weight'} from the pack; change it if yours differ</div></div>
+              <Stepper label="piece weight" value={scanned.pieceG} step={1} min={0.5} max={2000} unit={draft.per === '100ml' ? ' ml' : ' g'} decimals={1}
                 onChange={(pieceG) => setDraft({ ...draft, scanned: { ...scanned, pieceG } })} />
             </div>
           </>
@@ -231,7 +235,7 @@ function LogSnack({ onClose, saved, scan }: { onClose: () => void; saved?: Saved
               <button key={s.id} style={{ width: '100%', textAlign: 'left' }} disabled={log.isPending} onClick={() => pick(fromSaved(s))}>
                 <Photo url={s.photo_url} emoji={s.emoji} seed={s.id} alt="" style={{ width: 36, height: 36, aspectRatio: '1', fontSize: 20, flex: 'none' }} />
                 <span className="sp">{s.name}<div className="sub">{KIND_LABEL[s.kind]}</div></span>
-                <span className="sub">{Math.round(s.per_unit.kcal)} kcal / {s.per === 'piece' ? 'piece' : '100 g'}</span>
+                <span className="sub">{Math.round(s.per_unit.kcal)} kcal / {perLabel(s.per)}</span>
               </button>
             ))}
           </div>

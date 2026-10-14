@@ -18,14 +18,17 @@ class NutrientsIn(BaseModel):
 
 
 class SnackPhotoAnswer(BaseModel):
-    """Vision model answer for a snack photo: values for ONE piece/portion."""
+    """Vision model answer for a snack photo or description: counted things (cookies, fruit,
+    bars) in pieces with values for ONE piece; spooned or poured ones (pudding, yogurt, nuts)
+    in grams and drinks in ml, with values per 100 g / 100 ml."""
 
     model_config = ConfigDict(extra="forbid")
 
     name: str = Field(min_length=1, max_length=80)
     kind: SnackKind
-    pieces: float = Field(gt=0, le=50, description="how many pieces are visible")
-    per_piece: NutrientsIn
+    unit: Literal["piece", "g", "ml"]
+    amount: float = Field(gt=0, le=2000, description="how many pieces, or grams / ml")
+    values: NutrientsIn = Field(description="for ONE piece, or per 100 g / 100 ml")
 
 
 class LabelAnswer(BaseModel):
@@ -39,7 +42,11 @@ class LabelAnswer(BaseModel):
     name: str = Field(min_length=1, max_length=80, description="product name if visible")
     kind: SnackKind
     values_per_grams: float = Field(gt=0, le=2000, description="the amount the values refer to")
+    values_unit: Literal["g", "ml"] = Field(description="ml when printed per 100 ml / ml serving")
     values: NutrientsIn
+
+
+Per = Literal["piece", "100g", "100ml"]  # values per piece (amount = pieces), or per 100 g / ml
 
 
 class SnackResult(BaseModel):
@@ -47,12 +54,9 @@ class SnackResult(BaseModel):
 
     name: str
     kind: SnackKind
-    per: Literal["piece", "100g"]
+    per: Per
     amount: float
     per_unit: NutrientsIn
-
-
-Per = Literal["piece", "100g"]
 
 
 class SnackIn(BaseModel):
@@ -69,6 +73,7 @@ class SnackIn(BaseModel):
     saved_id: int | None = None  # logged from our snacks
     barcode: str | None = Field(default=None, pattern=r"^\d{8,14}$")  # scanned: remembered
     piece_g: float | None = Field(default=None, gt=0, le=1000)  # scanned and counted in pieces
+    piece_base: Literal["100g", "100ml"] = "100g"  # counted: what a piece's weight is in
 
     @model_validator(mode="after")
     def barcode_needs_scanned_values(self):

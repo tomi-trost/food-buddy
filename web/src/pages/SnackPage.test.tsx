@@ -77,6 +77,41 @@ describe('SnackPage', () => {
     expect(screen.getByLabelText('kcal')).toHaveValue('80')
   })
 
+  it('weighs a snack the model counted in pieces, through one portion\'s weight', async () => {
+    const pudding = analysisJob({
+      kind: 'snack', status: 'done',
+      snack: { name: 'Chia pudding', kind: 'sweet', per: 'piece', amount: 1, per_unit: { kcal: 300, protein: 9, carbs: 30, fat: 15, fiber: 12, sugar: 15 } },
+    })
+    const fetch = serve(() => pudding, (url) => (url === '/api/snacks' ? jsonResponse({ id: 1 }, 201) : undefined))
+    renderAt('/snack/5', routes)
+    fireEvent.click(await screen.findByRole('button', { name: 'Grams' }))
+    expect(screen.getByRole('heading', { name: 'Values per 100 g' })).toBeInTheDocument()
+    const weight = screen.getByRole('textbox', { name: 'piece weight' })
+    fireEvent.focus(weight)
+    fireEvent.change(weight, { target: { value: '200' } }) // one jar: 200 g
+    fireEvent.blur(weight)
+    expect(screen.getByTestId('macro-kcal')).toHaveTextContent('150') // still 100 g eaten: half the jar
+
+    fireEvent.click(screen.getByRole('button', { name: 'Log snack' }))
+    expect(await screen.findByText('home')).toBeInTheDocument()
+    const [, init] = fetch.mock.calls.find(([url]) => url === '/api/snacks')!
+    const body = JSON.parse(String(init!.body))
+    expect(body).toMatchObject({ per: '100g', amount: 100 })
+    expect(body.per_unit.kcal).toBe(150)
+  })
+
+  it('shows a drink in ml', async () => {
+    serve(() => analysisJob({
+      kind: 'snack', status: 'done',
+      snack: { name: 'Cola', kind: 'drink', per: '100ml', amount: 330, per_unit: { kcal: 42, protein: 0, carbs: 10.6, fat: 0, fiber: 0, sugar: 10.6 } },
+    }))
+    renderAt('/snack/5', routes)
+    expect(await screen.findByRole('heading', { name: 'Values per 100 ml' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'ml' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByText('ml you drank')).toBeInTheDocument()
+    expect(screen.queryByRole('textbox', { name: 'piece weight' })).not.toBeInTheDocument()
+  })
+
   it('logs the snack with its photo so it leaves the "to check" list', async () => {
     const fetch = serve(() => COOKIE, (url) => (url === '/api/snacks' ? jsonResponse({ id: 1 }, 201) : undefined))
     renderAt('/snack/5', routes)

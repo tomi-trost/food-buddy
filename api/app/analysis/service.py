@@ -129,6 +129,7 @@ async def analyze_snack(chain: VisionChain, kind: str, jpeg: bytes):
 
 
 DEFAULT_LABEL_PORTION_G = 45  # a typical bar/pack portion; the user adjusts it
+DEFAULT_LABEL_PORTION_ML = 250  # a glass
 
 
 def snack_result(answer: SnackPhotoAnswer | LabelAnswer) -> SnackResult:
@@ -139,14 +140,18 @@ def snack_result(answer: SnackPhotoAnswer | LabelAnswer) -> SnackResult:
         return SnackResult(
             name=answer.name,
             kind=answer.kind,
-            per="100g",
-            amount=answer.values_per_grams if printed_serving else DEFAULT_LABEL_PORTION_G,
+            per="100ml" if answer.values_unit == "ml" else "100g",
+            amount=answer.values_per_grams
+            if printed_serving
+            else DEFAULT_LABEL_PORTION_ML
+            if answer.values_unit == "ml"
+            else DEFAULT_LABEL_PORTION_G,
             per_unit=per_100g,
         )
     return SnackResult(
         name=answer.name,
         kind=answer.kind,
-        per="piece",
-        amount=answer.pieces,
-        per_unit=answer.per_piece,
+        per={"piece": "piece", "g": "100g", "ml": "100ml"}[answer.unit],
+        amount=answer.amount,
+        per_unit=answer.values,
     )

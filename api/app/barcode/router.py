@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, HTTPException, Path, status
 from pydantic import BaseModel
@@ -20,6 +20,7 @@ class ProductOut(BaseModel):
     name: str
     brand: str
     quantity: str  # pack size as printed, e.g. "400 g"
+    per: Literal["100g", "100ml"] = "100g"  # per100 and serving_g are per 100 ml / ml (drinks)
     serving_g: float | None
     piece_g: float | None = None  # we counted it in pieces last time: one piece weighs this
     image_url: str | None
@@ -40,6 +41,7 @@ async def product_by_barcode(code: Barcode, session: Session, user: CurrentUser)
             name=ours.name,
             brand="",  # already in our name
             quantity=off.get("quantity", ""),
+            per=ours.per,
             serving_g=ours.amount,
             piece_g=ours.piece_g,
             image_url=off.get("image_url"),
@@ -57,5 +59,7 @@ async def product_by_barcode(code: Barcode, session: Session, user: CurrentUser)
         ) from None
     if product is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Product not found in Open Food Facts")
-    # answers cached before `kind` existed get it guessed from the sugar alone
-    return ProductOut(code=code, **{"kind": service.snack_kind([], product["per100"]), **product})
+    # answers cached before `kind`/`per` existed: kind guessed from the sugar, per from the pack
+    kind = product.get("kind") or service.snack_kind([], product["per100"])
+    per = product.get("per") or service.measure(product["quantity"], kind)
+    return ProductOut(code=code, **{**product, "kind": kind, "per": per})

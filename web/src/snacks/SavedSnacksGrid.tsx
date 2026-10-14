@@ -4,7 +4,7 @@ import { PhotoInput } from '../add/PhotoInput'
 import { useFoodUpload } from '../add/upload'
 import { api } from '../api/client'
 import type { SavedSnack } from '../api/types'
-import { KIND_LABEL } from '../lib/snacks'
+import { KIND_LABEL, perLabel } from '../lib/snacks'
 import { Icon } from '../ui/Icon'
 import { Photo } from '../ui/Photo'
 import { LogSnackSheet, SAVED_SNACKS } from './LogSnackSheet'
@@ -24,7 +24,7 @@ export function SavedSnacksGrid() {
             <Photo url={s.photo_url} emoji={s.emoji} seed={s.id} alt={s.name} />
             <div className="b">
               <h3>{s.name}</h3>
-              <div className="sub">{KIND_LABEL[s.kind]} · {Math.round(s.per_unit.kcal)} kcal / {s.per === 'piece' ? 'piece' : '100 g'}</div>
+              <div className="sub">{KIND_LABEL[s.kind]} · {Math.round(s.per_unit.kcal)} kcal / {perLabel(s.per)}</div>
             </div>
           </button>
         ))}

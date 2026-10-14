@@ -5,7 +5,7 @@ import { scale } from './macros'
 
 const per100 = { kcal: 539, protein: 6.3, carbs: 57.5, fat: 30.9, fiber: 0, sugar: 56.3 }
 const product = (over: Partial<Product> = {}): Product => ({
-  code: '8000500310427', name: 'Nutella', brand: 'Ferrero', quantity: '400 g', serving_g: 15, piece_g: null,
+  code: '8000500310427', name: 'Nutella', brand: 'Ferrero', quantity: '400 g', per: '100g', serving_g: 15, piece_g: null,
   image_url: null, per100, kind: 'sweet', remembered: false, source: 'Open Food Facts', ...over,
 })
 
@@ -55,6 +55,22 @@ describe('productSnack', () => {
   })
 })
 
+describe('drinks', () => {
+  it('open in ml when the product is per 100 ml', () => {
+    expect(productSnack(product({ per: '100ml', serving_g: 330 }))).toMatchObject({ per: '100ml', amount: 330 })
+  })
+
+  it('log per 100 ml, or per piece with the piece in ml', () => {
+    expect(scannedAmount(per100, 330, null, '100ml')).toEqual({ per: '100ml', amount: 330, per_unit: per100 })
+    expect(scannedAmount(per100, 2, 330, '100ml')).toMatchObject({ per: 'piece', piece_g: 330, piece_base: '100ml' })
+  })
+
+  it('a can is one piece', () => {
+    expect(guessPieceG(330, true)).toBe(330)
+    expect(guessPieceG(330)).toBe(10)
+  })
+})
+
 describe('unknownProduct', () => {
   it('starts nameless with zero values to type in, per 100 g', () => {
     expect(unknownProduct()).toEqual({
@@ -84,7 +100,7 @@ describe('counting scanned products in pieces', () => {
   })
 
   it('logs per piece with the piece weight, or per 100 g with grams', () => {
-    expect(scannedAmount(per100, 3, 9)).toEqual({ per: 'piece', amount: 3, per_unit: scale(per100, 9), piece_g: 9 })
+    expect(scannedAmount(per100, 3, 9)).toEqual({ per: 'piece', amount: 3, per_unit: scale(per100, 9), piece_g: 9, piece_base: '100g' })
     expect(scannedAmount(per100, 27, null)).toEqual({ per: '100g', amount: 27, per_unit: per100 })
   })
 })

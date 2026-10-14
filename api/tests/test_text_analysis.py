@@ -50,7 +50,7 @@ async def test_typed_meal_is_estimated_from_text_and_grounded(client, auth, seed
 
 async def test_typed_snack_gives_values_per_piece(client, auth, session, queue):
     job = (await describe(client, auth, kind="snack", text="2 slices of tiramisu")).json()
-    answer = {"name": "Tiramisu", "kind": "sweet", "pieces": 2, "per_piece": TIRAMISU}
+    answer = {"name": "Tiramisu", "kind": "sweet", "unit": "piece", "amount": 2, "values": TIRAMISU}
     seen = []
     await process(session, job["id"], vision_transport(answer, seen=seen))
 

@@ -1,5 +1,8 @@
 import type { Nutrients, Product, SnackIn, SnackKind } from '../api/types'
 import { scale } from './macros'
+import { piecesIn } from './snacks'
+
+export { piecesIn }
 
 const NO_VALUES: Nutrients = { kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0 }
 
@@ -12,9 +15,9 @@ export function cleanBarcode(text: string): string | null {
 export type ProductSnack = {
   name: string
   kind: SnackKind
-  per: '100g'
-  amount: number // grams, or pieces when pieceG is set
-  perUnit: Nutrients // always per 100 g
+  per: '100g' | '100ml' // drinks in ml
+  amount: number // grams / ml, or pieces when pieceG is set
+  perUnit: Nutrients // always per 100 g / 100 ml
   missingValues: boolean // OFF has no values: the user types them from the label
   pieceG: number | null // counted in pieces (cookies): one piece weighs this; null = weighed
   servingG: number | null // the pack's serving: a first guess for one piece
@@ -25,7 +28,7 @@ export const unknownProduct = (): ProductSnack => ({
   name: '', kind: 'savory', per: '100g', amount: 100, perUnit: NO_VALUES, missingValues: true, pieceG: null, servingG: null,
 })
 
-/** A scanned product as a snack draft: per 100 g, one serving eaten. */
+/** A scanned product as a snack draft: per 100 g (drinks: 100 ml), one serving eaten. */
 export function productSnack(p: Product): ProductSnack {
   const brand = p.brand && !p.name.toLowerCase().includes(p.brand.toLowerCase()) ? p.brand : ''
   const name = [brand, p.name].filter(Boolean).join(' ') || `Product ${p.code}`
@@ -34,7 +37,7 @@ export function productSnack(p: Product): ProductSnack {
   return {
     name: name.slice(0, 120),
     kind: p.kind,
-    per: '100g',
+    per: p.per ?? '100g',
     amount: pieceG ? piecesIn(p.serving_g ?? pieceG, pieceG) : serving,
     perUnit: p.per100 ?? NO_VALUES,
     missingValues: p.per100 === null,
@@ -43,14 +46,15 @@ export function productSnack(p: Product): ProductSnack {
   }
 }
 
-/** How many pieces `grams` is, in halves, at least half a piece. */
-export const piecesIn = (grams: number, pieceG: number) => Math.max(0.5, Math.round((grams / pieceG) * 2) / 2)
-
 /** First guess for one piece when switching to counting: the pack's serving, else 10 g. */
-export const guessPieceG = (servingG: number | null) => (servingG && servingG <= 200 ? Math.round(servingG * 10) / 10 : 10)
+export const guessPieceG = (servingG: number | null, ml = false) =>
+  servingG && servingG <= (ml ? 1000 : 200) ? Math.round(servingG * 10) / 10 : 10 // a 330 ml can is one piece
 
-/** What gets logged: per 100 g with grams, or per piece with the count and the piece weight. */
-export function scannedAmount(per100: Nutrients, amount: number, pieceG: number | null): Pick<SnackIn, 'per' | 'amount' | 'per_unit' | 'piece_g'> {
-  if (!pieceG) return { per: '100g', amount, per_unit: per100 }
-  return { per: 'piece', amount, per_unit: scale(per100, pieceG), piece_g: pieceG }
+/** What gets logged: per 100 g/ml with grams/ml, or per piece with the count and the piece
+ *  weight (in grams or ml, `base`). */
+export function scannedAmount(
+  per100: Nutrients, amount: number, pieceG: number | null, base: '100g' | '100ml' = '100g',
+): Pick<SnackIn, 'per' | 'amount' | 'per_unit' | 'piece_g' | 'piece_base'> {
+  if (!pieceG) return { per: base, amount, per_unit: per100 }
+  return { per: 'piece', amount, per_unit: scale(per100, pieceG), piece_g: pieceG, piece_base: base }
 }

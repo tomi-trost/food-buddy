@@ -72,6 +72,7 @@ async def test_lookup_returns_label_values_per_100_g(client, auth, off):
         "name": "Nutella",
         "brand": "Ferrero",
         "quantity": "400 g",
+        "per": "100g",
         "serving_g": 15.0,
         "piece_g": None,
         "image_url": "https://images.openfoodfacts.org/nutella.jpg",
@@ -257,6 +258,7 @@ async def test_logged_scan_is_remembered_and_used_next_time(client, auth, off):
         "name": "Nutella (ours)",
         "brand": "",
         "quantity": "400 g",  # still from OFF's cached answer
+        "per": "100g",
         "serving_g": 20.0,  # what we ate last time
         "piece_g": None,  # weighed, not counted
         "image_url": "https://images.openfoodfacts.org/nutella.jpg",
@@ -300,6 +302,61 @@ async def test_counted_in_pieces_is_logged_per_piece_and_remembered(client, auth
     await client.post("/api/snacks", json=scanned(amount=30), headers=auth)
     body = (await client.get(f"/api/barcode/{CODE}", headers=auth)).json()
     assert (body["piece_g"], body["serving_g"]) == (None, 30)
+
+
+COLA = {
+    "product_name": "Coca-Cola",
+    "brands": "Coca-Cola",
+    "quantity": "330 ml",
+    "serving_quantity": "330",
+    "categories_tags": ["en:beverages", "en:sodas"],
+    "nutriments": {"energy-kcal_100g": 42, "carbohydrates_100g": 10.6, "sugars_100g": 10.6},
+}
+
+
+async def test_drink_is_counted_in_ml(client, auth, off):
+    off.set(product=COLA)
+    body = (await client.get(f"/api/barcode/{CODE}", headers=auth)).json()
+    assert (body["per"], body["kind"], body["serving_g"]) == ("100ml", "drink", 330)
+
+    can = scanned(name="Coca-Cola", kind="drink", per="100ml", amount=330, per_unit=body["per100"])
+    logged = await client.post("/api/snacks", json=can, headers=auth)
+    assert logged.status_code == 201, logged.text
+    assert logged.json()["kcal"] == 138.6
+
+    again = (await client.get(f"/api/barcode/{CODE}", headers=auth)).json()
+    assert (again["remembered"], again["per"], again["serving_g"]) == (True, "100ml", 330)
+
+    # switched to grams once: remembered that way
+    await client.post("/api/snacks", json=can | {"per": "100g", "amount": 200}, headers=auth)
+    again = (await client.get(f"/api/barcode/{CODE}", headers=auth)).json()
+    assert (again["per"], again["serving_g"]) == ("100g", 200)
+
+
+async def test_counted_drink_remembers_ml(client, auth, off):
+    """Cans counted in pieces: the piece is 330 ml, values back per 100 ml."""
+    off.set(product=COLA)
+    per_can = {"kcal": 138.6, "protein": 0, "carbs": 35, "fat": 0, "fiber": 0, "sugar": 35}
+    cans = scanned(per="piece", amount=2, per_unit=per_can, piece_g=330, piece_base="100ml")
+    assert (await client.post("/api/snacks", json=cans, headers=auth)).status_code == 201
+    body = (await client.get(f"/api/barcode/{CODE}", headers=auth)).json()
+    assert (body["per"], body["piece_g"], body["per100"]["kcal"]) == ("100ml", 330, 42)
+
+
+@pytest.mark.parametrize(
+    ("quantity", "kind", "per"),
+    [
+        ("330 ml", "drink", "100ml"),
+        ("1,5 L", "drink", "100ml"),
+        ("25cl", "drink", "100ml"),
+        ("400 g", "sweet", "100g"),
+        ("1 kg", "drink", "100g"),  # e.g. cocoa powder filed under beverages
+        ("", "drink", "100ml"),
+        ("6 x", "savory", "100g"),
+    ],
+)
+def test_measure_follows_the_pack_size(quantity, kind, per):
+    assert service.measure(quantity, kind) == per
 
 
 async def test_pieces_need_the_piece_weight_and_a_barcode(client, auth, off):

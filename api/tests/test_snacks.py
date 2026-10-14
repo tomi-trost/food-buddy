@@ -127,7 +127,13 @@ async def analyze(client, auth, session, kind, answer):
 
 
 async def test_snack_photo_analysis(client, auth, session):
-    answer = {"name": "Chocolate chip cookie", "kind": "sweet", "pieces": 2, "per_piece": COOKIE}
+    answer = {
+        "name": "Chocolate chip cookie",
+        "kind": "sweet",
+        "unit": "piece",
+        "amount": 2,
+        "values": COOKIE,
+    }
     job, seen = await analyze(client, auth, session, "snack", answer)
     assert job["status"] == "done" and job["result"] is None
     assert job["snack"] == {
@@ -137,12 +143,12 @@ async def test_snack_photo_analysis(client, auth, session):
         "amount": 2,
         "per_unit": COOKIE,
     }
-    assert "ONE piece" in seen[0].content.decode()
+    assert "values for ONE piece" in seen[0].content.decode()
 
 
 async def test_snack_photo_of_fruit(client, auth, session):
     pear = {"kcal": 100, "protein": 0.6, "carbs": 27, "fat": 0.2, "fiber": 5.5, "sugar": 17}
-    answer = {"name": "Pear", "kind": "fruit", "pieces": 1, "per_piece": pear}
+    answer = {"name": "Pear", "kind": "fruit", "unit": "piece", "amount": 1, "values": pear}
     job, seen = await analyze(client, auth, session, "snack", answer)
     assert job["snack"]["kind"] == "fruit"
     sent = seen[0].content.decode()
@@ -152,7 +158,13 @@ async def test_snack_photo_of_fruit(client, auth, session):
 
 async def test_label_analysis_suggests_a_portion(client, auth, session):
     per100 = {"kcal": 450, "protein": 7, "carbs": 58, "fat": 20, "fiber": 5, "sugar": 26}
-    answer = {"name": "Oat bar", "kind": "sweet", "values_per_grams": 100, "values": per100}
+    answer = {
+        "name": "Oat bar",
+        "kind": "sweet",
+        "values_per_grams": 100,
+        "values_unit": "g",
+        "values": per100,
+    }
     job, seen = await analyze(client, auth, session, "label", answer)
     assert job["snack"] == {
         "name": "Oat bar",
@@ -167,7 +179,13 @@ async def test_label_analysis_suggests_a_portion(client, auth, session):
 async def test_label_values_per_serving_are_normalised_to_100g(client, auth, session):
     """Labels often print values per serving (e.g. "200 g, a glass"): convert to per 100 g."""
     per200 = {"kcal": 133.6, "protein": 6, "carbs": 9.4, "fat": 8, "fiber": 0, "sugar": 0}
-    answer = {"name": "Ryazhenka", "kind": "drink", "values_per_grams": 200, "values": per200}
+    answer = {
+        "name": "Ryazhenka",
+        "kind": "drink",
+        "values_per_grams": 200,
+        "values_unit": "g",
+        "values": per200,
+    }
     job, seen = await analyze(client, auth, session, "label", answer)
     assert job["snack"]["per_unit"] == {
         "kcal": 66.8,
@@ -179,6 +197,43 @@ async def test_label_values_per_serving_are_normalised_to_100g(client, auth, ses
     }
     assert job["snack"]["amount"] == 200  # suggest the serving the label is printed for
     assert "daily value" in seen[0].content.decode()
+
+
+async def test_spooned_snack_is_counted_in_grams(client, auth, session):
+    """Chia pudding is eaten from a jar: grams with values per 100 g, not "1 piece"."""
+    per100 = {"kcal": 160, "protein": 5, "carbs": 15, "fat": 8, "fiber": 7, "sugar": 8}
+    answer = {"name": "Chia pudding", "kind": "sweet", "unit": "g", "amount": 200, "values": per100}
+    job, seen = await analyze(client, auth, session, "snack", answer)
+    assert (job["snack"]["per"], job["snack"]["amount"]) == ("100g", 200)
+    assert job["snack"]["per_unit"] == per100
+    sent = seen[0].content.decode()
+    assert "pudding" in sent and '"ml"' in sent  # explained, and in the answer schema
+
+
+async def test_drink_photo_is_counted_in_ml(client, auth, session):
+    cola = {"kcal": 42, "protein": 0, "carbs": 10.6, "fat": 0, "fiber": 0, "sugar": 10.6}
+    answer = {"name": "Cola", "kind": "drink", "unit": "ml", "amount": 330, "values": cola}
+    job, _ = await analyze(client, auth, session, "snack", answer)
+    assert (job["snack"]["per"], job["snack"]["amount"]) == ("100ml", 330)
+
+
+async def test_label_per_100_ml_suggests_a_glass(client, auth, session):
+    per100 = {"kcal": 42, "protein": 0, "carbs": 10.6, "fat": 0, "fiber": 0, "sugar": 10.6}
+    answer = {"name": "Cola", "kind": "drink", "values_per_grams": 100, "values_unit": "ml",
+              "values": per100}  # fmt: skip
+    job, seen = await analyze(client, auth, session, "label", answer)
+    assert (job["snack"]["per"], job["snack"]["amount"]) == ("100ml", 250)
+    assert "values_unit" in seen[0].content.decode()
+
+
+async def test_ml_snack_scales_like_grams(client, auth):
+    cola = {"kcal": 42, "protein": 0, "carbs": 10.6, "fat": 0, "fiber": 0, "sugar": 10.6}
+    body = snack(name="Cola", kind="drink", per="100ml", amount=330, per_unit=cola)
+    logged = await client.post("/api/snacks", json=body, headers=auth)
+    assert logged.status_code == 201, logged.text
+    assert (logged.json()["kcal"], logged.json()["sugar"]) == (138.6, 35)
+    bad = await client.post("/api/snacks", json=body | {"per": "100l"}, headers=auth)
+    assert bad.status_code == 422
 
 
 async def test_unknown_analysis_kind_rejected(client, auth):

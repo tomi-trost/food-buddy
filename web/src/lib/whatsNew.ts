@@ -4,6 +4,13 @@ export type Release = { id: string; notes: string[] }
 
 export const RELEASES: Release[] = [
   {
+    id: '2026-10-14-snack-units',
+    notes: [
+      'Snacks now come in the right unit: a chia pudding in grams, a Coca-Cola in ml, cookies in pieces.',
+      'Switch it on the snack screen with "Count in" (grams, ml or pieces). Scanned drinks remember ml.',
+    ],
+  },
+  {
     id: '2026-10-14-icon',
     notes: [
       'New app icon: a table for two. iPhone keeps the old one until you remove Food Buddy from the Home Screen and add it again from Safari (your data stays).',

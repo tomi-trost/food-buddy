@@ -110,10 +110,13 @@ export type AnalysisResult = {
 
 export type SnackKind = 'sweet' | 'savory' | 'fruit' | 'drink' // fruit never counts as a treat
 
+/** Values per piece (amount = pieces), or per 100 g / 100 ml (amount = grams / ml). */
+export type SnackPer = 'piece' | '100g' | '100ml'
+
 export type SnackResult = {
   name: string
   kind: SnackKind
-  per: 'piece' | '100g'
+  per: SnackPer
   amount: number
   per_unit: Nutrients
 }
@@ -236,8 +239,8 @@ export type LogEntry = {
   nutrients: Nutrients
   logged_at: string // ISO time it was logged: places snacks between the meals
   servings: number // portions (meals), pieces or grams (snacks)
-  per: 'piece' | '100g' | null // snacks
-  per_unit: Nutrients | null // snacks: values per piece / per 100 g
+  per: SnackPer | null // snacks
+  per_unit: Nutrients | null // snacks: values per piece / per 100 g / per 100 ml
 }
 
 /** Meals: portions and which meal it was. Snacks: amount and values per unit. */
@@ -266,7 +269,7 @@ export type SnackIn = {
   emoji: string
   kind: SnackKind
   source: 'list' | 'photo' | 'label' | 'saved' | 'barcode'
-  per: 'piece' | '100g'
+  per: SnackPer
   amount: number
   per_unit: Nutrients
   analysis_id?: number
@@ -274,6 +277,7 @@ export type SnackIn = {
   saved_id?: number // logged from our snacks
   barcode?: string // scanned: the household remembers it as logged
   piece_g?: number // scanned and counted (per: 'piece'): one piece weighs this
+  piece_base?: '100g' | '100ml' // …in grams or ml
 }
 
 /** A packaged product from Open Food Facts, looked up by its barcode. */
@@ -282,6 +286,7 @@ export type Product = {
   name: string
   brand: string
   quantity: string // pack size as printed, e.g. "400 g"
+  per: '100g' | '100ml' // drinks: per100 and serving_g are per 100 ml / ml
   serving_g: number | null
   piece_g: number | null // counted in pieces last time: one piece weighs this
   image_url: string | null
@@ -299,7 +304,7 @@ export type SavedSnack = {
   name: string
   emoji: string
   kind: SnackKind
-  per: 'piece' | '100g'
+  per: SnackPer
   amount: number
   per_unit: Nutrients
   photo_url: string | null

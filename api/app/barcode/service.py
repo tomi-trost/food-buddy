@@ -4,6 +4,7 @@ Known products are kept 30 days, unknown codes 1 day (someone may add them to OF
 can't be reached, a stale cached answer is better than none.
 """
 
+import re
 from datetime import UTC, datetime, timedelta
 
 import httpx
@@ -37,6 +38,7 @@ SWEET_CATEGORIES = {
 }  # fmt: skip
 FRUIT_CATEGORIES = {"en:fresh-fruits", "en:dried-fruits", "en:fruits"}  # not juices or jams
 SWEET_SUGAR = 15  # g per 100 g: sweet without a telling category (e.g. cereal bars)
+PACK_UNIT = re.compile(r"\d\s*(ml|cl|dl|l|g|kg)\b", re.IGNORECASE)  # "330 ml", "1,5 L", "400g"
 
 
 class OffUnavailable(Exception):
@@ -81,17 +83,28 @@ def snack_kind(categories: list[str], per100: dict[str, float] | None) -> str:
     return "savory"
 
 
+def measure(quantity: str, kind: str) -> str:
+    """Count it in ml (values per 100 ml, as OFF gives them for drinks) or grams: the pack size
+    decides ("330 ml", "400 g"), else drinks are ml."""
+    if found := PACK_UNIT.search(quantity):
+        return "100g" if found.group(1).lower() in ("g", "kg") else "100ml"
+    return "100ml" if kind == "drink" else "100g"
+
+
 def product_of(raw: dict) -> dict:
     """The parts of an OFF product we keep."""
     values = per100(raw.get("nutriments") or {})
+    quantity = (raw.get("quantity") or "").strip()
+    kind = snack_kind(raw.get("categories_tags") or [], values)
     return {
         "name": (raw.get("product_name") or raw.get("product_name_en") or "").strip(),
         "brand": (raw.get("brands") or "").split(",")[0].strip(),
-        "quantity": (raw.get("quantity") or "").strip(),
+        "quantity": quantity,
         "serving_g": _number(raw.get("serving_quantity")),
         "image_url": raw.get("image_front_small_url") or None,
         "per100": values,
-        "kind": snack_kind(raw.get("categories_tags") or [], values),
+        "per": measure(quantity, kind),
+        "kind": kind,
     }
 
 
@@ -152,13 +165,15 @@ async def remember(
     per100: dict,
     amount: float,
     piece_g: float | None = None,
+    per: str = "100g",
 ) -> None:
-    """Keep a scanned product as just logged (the caller commits). `amount` in grams;
-    `piece_g` when it was counted in pieces (None = weighed)."""
+    """Keep a scanned product as just logged (the caller commits). `per100` and `amount` in
+    grams, or ml when `per` is 100ml; `piece_g` when it was counted in pieces (None = weighed)."""
     values = {
         "name": name,
         "kind": kind,
         "per100": per100,
+        "per": per,
         "amount": amount,
         "piece_g": piece_g,
         "updated_by": user.id,

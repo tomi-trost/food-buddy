@@ -2,10 +2,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { api, ApiError } from '../api/client'
-import type { AnalysisJob, SnackKind, SnackResult } from '../api/types'
+import type { AnalysisJob, SnackKind, SnackPer, SnackResult } from '../api/types'
 import { OPEN_ANALYSES } from '../layout/PendingBanner'
 import { todayISO } from '../lib/dates'
-import { amountStep, isTreatKind, KIND_EMOJI as EMOJI, KIND_LABEL, SNACK_KINDS, snackNutrients } from '../lib/snacks'
+import {
+  amountStep, amountUnit, type Crossed, crossedValues, isTreatKind, KIND_EMOJI as EMOJI, KIND_LABEL, perLabel, SNACK_KINDS,
+  snackNutrients, switchPer,
+} from '../lib/snacks'
 import { SAVED_SNACKS } from '../snacks/LogSnackSheet'
 import { Icon } from '../ui/Icon'
 import { MacroTiles } from '../ui/Macro'
@@ -99,12 +102,25 @@ function SnackForm({ analysisId, photoUrl, label, initial, close }: {
   const qc = useQueryClient()
   const toast = useToast()
   const [snack, setSnack] = useState(initial)
-  useEffect(() => setSnack(initial), [initial])
+  const [crossed, setCrossed] = useState<Crossed | null>(null) // counted the other way than the model/label said
+  useEffect(() => {
+    setSnack(initial)
+    setCrossed(null)
+  }, [initial])
   const [editing, setEditing] = useState(false)
   const [valuesOk, setValuesOk] = useState(true)
   const [save, setSave] = useState(false)
   const values = snackNutrients(snack)
-  const unit = snack.per === 'piece' ? (snack.amount === 1 ? ' piece' : ' pieces') : ' g'
+  const countIn = (to: SnackPer) => {
+    const next = switchPer(snack, to, crossed)
+    setSnack((s) => ({ ...s, ...next.snack }))
+    setCrossed(next.crossed)
+  }
+  const setPieceG = (pieceG: number) => {
+    const c = { ...crossed!, pieceG }
+    setCrossed(c)
+    setSnack((s) => ({ ...s, per_unit: crossedValues(c, s.per) }))
+  }
 
   const log = useMutation({
     mutationFn: () =>
@@ -136,19 +152,21 @@ function SnackForm({ analysisId, photoUrl, label, initial, close }: {
           <h1 style={{ fontSize: 20 }}>{snack.name}</h1>
           <div className="sub">
             {label
-              ? `Per 100 g: ${Math.round(snack.per_unit.kcal)} kcal · ${snack.per_unit.sugar} g sugar — double-check the values`
+              ? `Per ${perLabel(snack.per)}: ${Math.round(snack.per_unit.kcal)} kcal · ${snack.per_unit.sugar} g sugar — double-check the values`
               : 'We think this is the snack — change the type if wrong'}
           </div>
         </div>
       </div>
       <Toggle<SnackKind> label="Snack type" value={snack.kind} onChange={(kind) => setSnack((s) => ({ ...s, kind }))}
         options={SNACK_KINDS.map((k) => ({ value: k, label: KIND_LABEL[k] }))} />
+      <Toggle<SnackPer> label="Count in" value={snack.per} onChange={countIn}
+        options={[{ value: '100g', label: 'Grams' }, { value: '100ml', label: 'ml' }, { value: 'piece', label: 'Pieces' }]} />
       <MacroTiles values={values} label="This snack" />
       <section className="card" style={{ marginTop: 14 }}>
         <div className="row">
           <div className="sp">
-            <h3>{snack.per === 'piece' ? 'Values per piece' : 'Values per 100 g'}</h3>
-            <div className="sub">{label ? 'as read from the label' : 'estimated from the photo'}</div>
+            <h3>Values per {perLabel(snack.per)}</h3>
+            <div className="sub">{crossed ? 'from one piece’s weight' : label ? 'as read from the label' : 'estimated from the photo'}</div>
           </div>
           <button type="button" className="btn ghost" style={{ width: 'auto', padding: '0 14px' }} aria-expanded={editing}
             disabled={!valuesOk} onClick={() => setEditing((e) => !e)}>
@@ -158,16 +176,26 @@ function SnackForm({ analysisId, photoUrl, label, initial, close }: {
         {editing && (
           <NutrientFields initial={snack.per_unit} onChange={(n) => {
             setValuesOk(n !== null)
-            if (n) setSnack((s) => ({ ...s, per_unit: n }))
+            if (n) {
+              setSnack((s) => ({ ...s, per_unit: n }))
+              setCrossed(null) // typed in for this unit: no more converting
+            }
           }} />
         )}
         {!valuesOk && <p className="error" role="alert">Fix the values marked in red.</p>}
       </section>
       <div className="card row" style={{ marginTop: 14 }}>
-        <div className="sp"><h3>Amount</h3><div className="sub">{label ? 'portion you ate' : 'how many'}</div></div>
-        <Stepper label="amount" value={snack.amount} step={amountStep(snack.per)} min={amountStep(snack.per)} max={2000} unit={unit}
-          onChange={(amount) => setSnack((s) => ({ ...s, amount }))} />
+        <div className="sp"><h3>Amount</h3><div className="sub">{snack.per === 'piece' ? 'how many' : snack.per === '100ml' ? 'ml you drank' : 'grams you ate'}</div></div>
+        <Stepper label="amount" value={snack.amount} step={amountStep(snack.per)} min={amountStep(snack.per)} max={2000}
+          unit={amountUnit(snack.per, snack.amount)} onChange={(amount) => setSnack((s) => ({ ...s, amount }))} />
       </div>
+      {crossed && (
+        <div className="card row">
+          <div className="sp"><h3>One piece</h3><div className="sub">how much one piece or portion weighs</div></div>
+          <Stepper label="piece weight" value={crossed.pieceG} step={5} min={1} max={2000} unit={snack.per === '100ml' || crossed.from === '100ml' ? ' ml' : ' g'}
+            onChange={setPieceG} />
+        </div>
+      )}
       {isTreatKind(snack.kind) && (
         <div className="sub row" style={{ gap: 6, marginBottom: 12 }}><Icon name="gift" size={16} /> Counts as a treat for your streak</div>
       )}

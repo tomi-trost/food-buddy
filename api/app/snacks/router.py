@@ -75,11 +75,12 @@ async def log_snack(body: SnackIn, user: CurrentUser, session: Session) -> Logge
     session.add(entry)
     if body.barcode is not None:
         values, grams = body.per_unit.model_dump(), body.amount
-        if body.piece_g:  # counted: remember per 100 g and the grams eaten, like a weighed one
+        if body.piece_g:  # counted: remember per 100 g/ml and the amount eaten, like a weighed one
             values = {k: round(v * 100 / body.piece_g, 2) for k, v in values.items()}
             grams = body.amount * body.piece_g
+        per = body.piece_base if body.piece_g else body.per
         await remember(
-            session, user, body.barcode, entry.name, body.kind, values, grams, body.piece_g
+            session, user, body.barcode, entry.name, body.kind, values, grams, body.piece_g, per
         )
     kept = await saved.save(session, user, body, photo_path) if body.save else from_list
     if from_list is not None:
