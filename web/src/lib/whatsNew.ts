@@ -4,6 +4,12 @@ export type Release = { id: string; notes: string[] }
 
 export const RELEASES: Release[] = [
   {
+    id: '2026-10-14-icon',
+    notes: [
+      'New app icon: a table for two. iPhone keeps the old one until you remove Food Buddy from the Home Screen and add it again from Safari (your data stays).',
+    ],
+  },
+  {
     id: '2026-10-14-access-loop',
     notes: [
       "Fixed the endless reloading after entering Cloudflare's e-mail code: the code now sticks and the app opens normally.",

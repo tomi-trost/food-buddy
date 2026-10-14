@@ -9,7 +9,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'prompt', // a new build waits until "Reload" in the update popup (layout/UpdatePrompt.tsx)
-      includeAssets: ['apple-touch-icon.png'],
+      includeAssets: ['apple-touch-icon.png'], // icons: drawn in icons/*.svg, rendered by icons/render.sh
       manifest: {
         name: 'Food Buddy',
         short_name: 'Food Buddy',
@@ -20,7 +20,8 @@ export default defineConfig({
         start_url: '/',
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
-          { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
+          { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: 'icon-512-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
       workbox: { navigateFallbackDenylist: NETWORK_ONLY_PAGES, importScripts: ['push-sw.js'] },
