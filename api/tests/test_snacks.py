@@ -88,7 +88,7 @@ async def test_log_scanned_snack_saves_it(client, auth, session):
     response = await client.post("/api/snacks", json=body | {"save": True}, headers=auth)
     assert response.status_code == 201
     assert response.json()["kcal"] == 80.8  # 15 g of 539 kcal / 100 g
-    assert response.json()["saved_id"] is not None
+    assert response.json()["meal_id"] is not None  # a product meal in our snacks
     row = await session.scalar(select(FoodLog))
     assert (row.source, row.per, row.servings) == ("barcode", "100g", 15)
 

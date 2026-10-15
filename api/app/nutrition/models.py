@@ -5,6 +5,7 @@ from sqlalchemy import (
     Boolean,
     DateTime,
     Float,
+    ForeignKey,
     Integer,
     String,
     Text,
@@ -22,6 +23,10 @@ class Ingredient(Base):
 
     `curated` rows (mock, hand-picked catalog, custom) match fuzzily; the rest of USDA/Ciqual
     only by exact name or alias, and rank below curated rows in search.
+
+    Rows with a `household_id` are that household's products (0025, `source` = h<id>): found
+    only by its own ingredient search, never by the model's matching. `unit` / `unit_grams`
+    say how they are counted (else the hand-picked tables in `units`).
     """
 
     __tablename__ = "ingredient"
@@ -43,6 +48,9 @@ class Ingredient(Base):
     shelf_days: Mapped[int] = mapped_column(Integer, default=7)
     curated: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
     ref: Mapped[str] = mapped_column(String(20), default="", server_default="")  # source row id
+    household_id: Mapped[int | None] = mapped_column(ForeignKey("household.id", ondelete="CASCADE"))
+    unit: Mapped[str | None] = mapped_column(String(5))  # g | ml | pc
+    unit_grams: Mapped[float | None] = mapped_column(Float)
 
     @property
     def location(self) -> str:

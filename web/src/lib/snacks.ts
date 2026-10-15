@@ -14,21 +14,28 @@ export const isTreat = (e: Pick<LogEntry, 'kind' | 'snack_kind' | 'is_reward'>) 
 
 type Amounted = Pick<SnackResult, 'per' | 'amount' | 'per_unit'>
 
-/** Values for the amount eaten: pieces × per-piece, or grams/ml × per-100 / 100. */
+/** Counted one by one (pieces, portions); else weighed in grams / ml. */
+export const isCounted = (per: SnackPer) => per === 'piece' || per === 'portion'
+
+/** Values for the amount eaten: pieces/portions × per-one, or grams/ml × per-100 / 100. */
 export function snackNutrients(s: Amounted): Nutrients {
-  return scale(s.per_unit, s.per === 'piece' ? s.amount * 100 : s.amount)
+  return scale(s.per_unit, isCounted(s.per) ? s.amount * 100 : s.amount)
 }
 
-export const amountStep = (per: SnackPer) => (per === 'piece' ? 0.5 : 5)
+export const amountStep = (per: SnackPer) => (isCounted(per) ? 0.5 : 5)
 
-/** "piece", "100 g", "100 ml": what the values are for. */
-export const perLabel = (per: SnackPer) => (per === 'piece' ? 'piece' : per === '100ml' ? '100 ml' : '100 g')
+/** "portion", "piece", "100 g", "100 ml": what the values are for. */
+export const perLabel = (per: SnackPer) => (isCounted(per) ? per : per === '100ml' ? '100 ml' : '100 g')
 
-/** Stepper suffix for an amount: " piece(s)", " g", " ml". */
+/** Stepper suffix for an amount: " piece(s)", " portion(s)", " g", " ml". */
 export function amountUnit(per: SnackPer, amount: number): string {
-  if (per === 'piece') return amount === 1 ? ' piece' : ' pieces'
+  if (isCounted(per)) return ` ${per}${amount === 1 ? '' : 's'}`
   return per === '100ml' ? ' ml' : ' g'
 }
+
+/** "how many pieces", "ml you drank"…: what the amount stepper asks. */
+export const amountHint = (per: SnackPer) =>
+  per === 'piece' ? 'how many pieces' : per === 'portion' ? 'how many portions' : per === '100ml' ? 'ml you drank' : 'grams you ate'
 
 /** How many pieces `grams` is, in halves, at least half a piece. */
 export const piecesIn = (grams: number, pieceG: number) => Math.max(0.5, Math.round((grams / pieceG) * 2) / 2)

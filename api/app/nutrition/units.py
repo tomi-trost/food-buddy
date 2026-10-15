@@ -104,8 +104,12 @@ TABLES: list[tuple[Unit, dict[str, float]]] = [
 ]  # fmt: skip
 
 
-def unit_of(name: str, curated: bool) -> tuple[Unit, float]:
-    """(unit, grams per unit) for an ingredient; grams when nothing is known."""
+def unit_of(name: str, curated: bool, own: tuple[str | None, float | None] = (None, None)):
+    """(unit, grams per unit) for an ingredient; grams when nothing is known. `own` is the
+    row's own unit (household products, 0025)."""
+    unit, grams = own
+    if unit in ("ml", "pc") and grams:
+        return unit, grams
     if curated:
         key = name.strip().lower()
         for unit, table in TABLES:

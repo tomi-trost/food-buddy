@@ -4,6 +4,14 @@ export type Release = { id: string; notes: string[] }
 
 export const RELEASES: Release[] = [
   {
+    id: '2026-10-14-snacks-are-meals',
+    notes: [
+      'Snacks are meals now: a home-made chia pudding gets its ingredients, portions and ratings like any meal. Pick "Snack" when you add food.',
+      'Our snacks live under Meals → Snacks. Scanned or label products saved there show their pack values, and come out of what\'s at home when you have one.',
+      'Your saved snacks moved over by themselves.',
+    ],
+  },
+  {
     id: '2026-10-14-snack-units',
     notes: [
       'Snacks now come in the right unit: a chia pudding in grams, a Coca-Cola in ml, cookies in pieces.',

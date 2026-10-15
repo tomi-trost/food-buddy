@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { doneJob, ING } from '../test/fixtures'
-import { addIngredient, byWeight, fromAnalysis, plateNutrients, recipeCost, replaceIngredient, toMealCreate, unresolved } from './plate'
+import { addIngredient, byWeight, fromAnalysis, plateNutrients, recipeCost, replaceIngredient, snackCount, toMealCreate, unresolved } from './plate'
 
 const items = () => fromAnalysis(doneJob().result!)
 
@@ -47,5 +47,24 @@ describe('plate', () => {
       portions: 2, servingsEaten: 1, cost: null, usedUp: [2], analysisId: 5,
     })
     expect(body).toMatchObject({ eaten: false, eaten_on: null, used_up: [] })
+  })
+})
+
+describe('snackCount', () => {
+  const item = (ingredient: (typeof ING)[string], grams = 50) => ({ key: String(ingredient.id), name: ingredient.name, grams, ingredient })
+  const cookie = { ...ING.chicken, id: 30, name: 'Cookies', unit: 'pc' as const, unit_grams: 12 }
+
+  it('counts one countable thing in pieces, one liquid in ml, anything mixed in portions', () => {
+    expect(snackCount([item(cookie)])).toEqual({ per: 'piece', pieceG: 12 })
+    expect(snackCount([item(ING.oil)])).toEqual({ per: '100ml', pieceG: 100 })
+    expect(snackCount([item(ING.rice), item(cookie)])).toEqual({ per: 'portion', pieceG: 100 })
+    expect(snackCount([])).toEqual({ per: 'portion', pieceG: 100 })
+  })
+
+  it('sends snack fields only for snacks', () => {
+    const base = { items: [item(cookie)], name: 'Cookies', eaten: true, eatenOn: '2026-10-14', prepMinutes: 1, portions: 1,
+      servingsEaten: 1, cost: null, usedUp: [], analysisId: null, snack: { kind: 'sweet' as const, per: 'piece' as const, pieceG: 12 } }
+    expect(toMealCreate({ ...base, mealType: 'snack' })).toMatchObject({ meal_type: 'snack', snack_kind: 'sweet', per: 'piece', piece_g: 12 })
+    expect(toMealCreate({ ...base, mealType: 'lunch' })).not.toHaveProperty('snack_kind')
   })
 })

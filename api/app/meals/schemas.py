@@ -4,9 +4,10 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.nutrition.schemas import IngredientOut, NutrientsOut
-from app.snacks.schemas import NutrientsIn
+from app.snacks.schemas import NutrientsIn, SnackKind
 
-MealType = Literal["breakfast", "lunch", "dinner"]
+MealType = Literal["breakfast", "lunch", "dinner", "snack"]  # snacks are meals too (0025)
+MealPer = Literal["portion", "piece", "100g", "100ml"]  # how a snack is logged
 Fill = Literal["hungry", "right", "heavy"]
 
 
@@ -36,8 +37,16 @@ class MealCreate(BaseModel):
     used_up: list[int] = Field(default_factory=list)
     analysis_id: int | None = None
     per_portion: NutrientsIn | None = None  # typed-in values instead of the ingredients' ones
+    snack_kind: SnackKind | None = None  # snacks: required
+    per: MealPer = "portion"  # snacks: how it's logged from now on
+    piece_g: float | None = Field(default=None, gt=0, le=2000)  # per = piece
 
     _servings = field_validator("servings_eaten")(_half_steps)
+
+    @model_validator(mode="after")
+    def snack_fields(self) -> "MealCreate":
+        _check_snack(self.meal_type == "snack", self.snack_kind, self.per, self.piece_g)
+        return self
 
     @model_validator(mode="after")
     def consistent_ids(self) -> "MealCreate":
@@ -55,12 +64,15 @@ class MealCreate(BaseModel):
 
 class CookIn(BaseModel):
     """ "I ate this meal again": cooked now (recipe leaves stock) or from what's already made
-    (leftovers, or my partner cooked and logged it), so stock isn't taken twice."""
+    (leftovers, or my partner cooked and logged it), so stock isn't taken twice.
+
+    A snack is logged by `amount` in the meal's unit (pieces, grams, ml, portions)."""
 
     meal_type: MealType
     eaten: bool = True  # False = save for later: library only, no log/stock/reminder
     eaten_on: date | None = None  # required when eaten
     servings_eaten: float = Field(default=1, gt=0, le=10)
+    amount: float | None = Field(default=None, gt=0, le=5000)  # snacks; default one portion
     cooked: bool = True
     used_up: list[int] = Field(default_factory=list)
 
@@ -70,7 +82,18 @@ class CookIn(BaseModel):
     def used_up_needs_cooking(self) -> "CookIn":
         if not self.cooked and self.used_up:
             raise ValueError("Only a meal cooked now can use up ingredients")
+        if self.amount is not None and self.meal_type != "snack":
+            raise ValueError("An amount is for snacks; meals are logged in portions")
         return self
+
+
+def _check_snack(snack: bool, kind: str | None, per: str, piece_g: float | None) -> None:
+    if snack and kind is None:
+        raise ValueError("A snack needs its type (sweet, savory, fruit or drink)")
+    if not snack and per != "portion":
+        raise ValueError("Only snacks are counted in pieces, grams or ml")
+    if (per == "piece") != (piece_g is not None):
+        raise ValueError("Pieces come with the weight of one piece")
 
 
 def _unique_ingredients(items: list[ItemIn] | None) -> list[ItemIn] | None:
@@ -94,8 +117,18 @@ class MealPatch(BaseModel):
     )
     per_portion: NutrientsIn | None = None
     steps: list[str] | None = Field(default=None, min_length=1, max_length=30)
+    snack_kind: SnackKind | None = None
+    per: MealPer | None = None  # with piece_g when it's piece
+    piece_g: float | None = Field(default=None, gt=0, le=2000)
+    product_per100: NutrientsIn | None = None  # products: the values on the pack
 
     _items = field_validator("items")(_unique_ingredients)
+
+    @model_validator(mode="after")
+    def piece_weight(self) -> "MealPatch":
+        if self.piece_g is not None and self.per not in ("piece", None):
+            raise ValueError("A piece weight comes with counting in pieces")
+        return self
 
     @field_validator("steps")
     @classmethod
@@ -138,7 +171,16 @@ class MealStats(BaseModel):
     last_cooked: date | None
 
 
-class MealCard(MealStats):
+class SnackInfo(BaseModel):
+    snack_kind: SnackKind | None
+    per: MealPer
+    piece_g: float | None
+    is_product: bool
+    per_unit: NutrientsOut  # values for one portion/piece, or per 100 g / ml (see `per`)
+    portion_g: float  # grams one portion weighs (whole recipe ÷ portions)
+
+
+class MealCard(MealStats, SnackInfo):
     """Feed item."""
 
     id: int
@@ -155,7 +197,7 @@ class MealCard(MealStats):
     created_at: datetime
 
 
-class MealOut(MealStats):
+class MealOut(MealStats, SnackInfo):
     id: int
     name: str
     emoji: str

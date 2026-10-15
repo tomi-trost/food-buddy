@@ -1,4 +1,4 @@
-import type { AnalysisResult, Ingredient, MealCreate, MealType, Nutrients } from '../api/types'
+import type { AnalysisResult, Ingredient, MealCreate, MealKind, MealPer, Nutrients, SnackKind } from '../api/types'
 import { scale, sum } from '../lib/macros'
 
 /** One line on the verdict. Grams are for ONE plate (what the photo shows). */
@@ -47,10 +47,22 @@ export function replaceIngredient(items: PlateItem[], key: string, ingredient: I
   return addIngredient(rest, ingredient, target.grams)
 }
 
+/** How to count a snack from what's in it: one countable thing (cookies) in pieces, one liquid
+ *  in ml, anything mixed (chia pudding) in portions. */
+export function snackCount(items: PlateItem[]): { per: MealPer; pieceG: number } {
+  const resolved = items.filter((i) => i.ingredient && i.grams > 0)
+  const only = resolved.length === 1 ? resolved[0].ingredient! : null
+  if (only && (only.unit === 'pc' || only.unit === 'slice')) return { per: 'piece', pieceG: only.unit_grams }
+  if (only && only.unit === 'ml') return { per: '100ml', pieceG: 100 }
+  return { per: 'portion', pieceG: 100 }
+}
+
+export type SnackChoice = { kind: SnackKind; per: MealPer; pieceG: number }
+
 export function toMealCreate(args: {
   items: PlateItem[]
   name: string
-  mealType: MealType
+  mealType: MealKind
   eaten: boolean
   eatenOn: string
   prepMinutes: number
@@ -60,6 +72,7 @@ export function toMealCreate(args: {
   usedUp: number[]
   analysisId: number | null
   perPortion?: Nutrients | null // typed-in values instead of the ingredients'
+  snack?: SnackChoice // when mealType is snack
 }): MealCreate {
   const resolved = args.items.filter((i) => i.ingredient && i.grams > 0)
   return {
@@ -76,5 +89,8 @@ export function toMealCreate(args: {
     used_up: args.eaten ? args.usedUp.filter((id) => resolved.some((i) => i.ingredient!.id === id)) : [],
     analysis_id: args.analysisId,
     per_portion: args.perPortion ?? null,
+    ...(args.mealType === 'snack' && args.snack
+      ? { snack_kind: args.snack.kind, per: args.snack.per, piece_g: args.snack.per === 'piece' ? args.snack.pieceG : null }
+      : {}),
   }
 }

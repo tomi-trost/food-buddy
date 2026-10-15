@@ -21,7 +21,9 @@ export type Ingredient = {
   unit_grams: number // grams per piece/slice/clove, g per ml, or 1
 }
 
-export type MealType = 'breakfast' | 'lunch' | 'dinner'
+export type MealType = 'breakfast' | 'lunch' | 'dinner' // what the weekly plan fills
+/** Snacks are meals too (decision 0025). */
+export type MealKind = MealType | 'snack'
 
 export type AnalysisItem = {
   name: string
@@ -43,12 +45,24 @@ export type Rating = {
 
 export type MealStats = { score: number | null; cooked_count: number; last_cooked: string | null }
 
-export type MealCard = MealStats & {
+/** How a meal is logged as a snack: per portion, per piece of piece_g grams, or per 100 g / ml. */
+export type MealPer = 'portion' | 'piece' | '100g' | '100ml'
+
+export type SnackInfo = {
+  snack_kind: SnackKind | null // set while it's a snack
+  per: MealPer
+  piece_g: number | null
+  is_product: boolean // scanned / label: one ingredient with the pack's values
+  per_unit: Nutrients // values for one portion / piece, or per 100 g / ml
+  portion_g: number // grams in one portion
+}
+
+export type MealCard = MealStats & SnackInfo & {
   id: number
   name: string
   emoji: string
   photo_url: string | null
-  types: MealType[]
+  types: MealKind[]
   tags: string[]
   prep_minutes: number
   portions: number
@@ -58,12 +72,12 @@ export type MealCard = MealStats & {
   created_at: string
 }
 
-export type Meal = MealStats & {
+export type Meal = MealStats & SnackInfo & {
   id: number
   name: string
   emoji: string
   photo_url: string | null
-  types: MealType[]
+  types: MealKind[]
   tags: string[]
   prep_minutes: number
   portions: number
@@ -81,12 +95,20 @@ export type Meal = MealStats & {
   undo_until: string | null // for whoever posted it, while the post can be undone
 }
 
-/** cooked: false = leftovers / my partner cooked it: logged, stock untouched. */
-export type CookIn = { meal_type: MealType; eaten_on: string; servings_eaten: number; cooked: boolean; used_up: number[] }
+/** cooked: false = leftovers / my partner cooked it: logged, stock untouched.
+ *  Snacks: `amount` in the meal's unit (pieces, grams, ml or portions). */
+export type CookIn = {
+  meal_type: MealKind
+  eaten_on: string
+  servings_eaten?: number
+  amount?: number
+  cooked: boolean
+  used_up: number[]
+}
 
 export type MealCreate = {
   name: string
-  meal_type: MealType
+  meal_type: MealKind
   eaten: boolean // false = save for later: library only, not logged
   eaten_on: string | null
   prep_minutes: number
@@ -97,6 +119,9 @@ export type MealCreate = {
   used_up: number[]
   analysis_id: number | null
   per_portion?: Nutrients | null // typed in instead of the ingredients' values
+  snack_kind?: SnackKind | null // snacks
+  per?: MealPer
+  piece_g?: number | null
 }
 
 export type AnalysisResult = {
@@ -111,7 +136,7 @@ export type AnalysisResult = {
 export type SnackKind = 'sweet' | 'savory' | 'fruit' | 'drink' // fruit never counts as a treat
 
 /** Values per piece (amount = pieces), or per 100 g / 100 ml (amount = grams / ml). */
-export type SnackPer = 'piece' | '100g' | '100ml'
+export type SnackPer = 'portion' | 'piece' | '100g' | '100ml'
 
 export type SnackResult = {
   name: string
@@ -135,7 +160,7 @@ export type AnalysisJob = {
   created_at: string
   finished_at: string | null
   closed: boolean // posted, logged or discarded
-  meal_type: MealType | null // chosen on the Snap screen
+  meal_type: MealKind | null // chosen on the Snap screen
   save_only: boolean // "for later": not eaten now
   meal_id: number | null
   my_rating: Rating | null // given while the photo was still being analyzed
@@ -217,7 +242,7 @@ export type Shopping = { plan_approved: boolean; items: ShoppingItem[]; in_stock
 /** Only the fields sent change. cost null = estimate again; per_portion null = calculate again. */
 export type MealPatch = Partial<{
   name: string
-  types: MealType[]
+  types: MealKind[]
   prep_friendly: boolean
   prep_minutes: number
   portions: number
@@ -225,6 +250,10 @@ export type MealPatch = Partial<{
   items: { ingredient_id: number; grams: number }[] // whole recipe
   per_portion: Nutrients | null
   steps: string[] // sets steps_source to 'ours'
+  snack_kind: SnackKind
+  per: MealPer
+  piece_g: number
+  product_per100: Nutrients // products: the pack's values
 }>
 
 export type LogEntry = {
@@ -273,8 +302,7 @@ export type SnackIn = {
   amount: number
   per_unit: Nutrients
   analysis_id?: number
-  save?: boolean // also keep it in our snacks (with the photo, if any)
-  saved_id?: number // logged from our snacks
+  save?: boolean // also keep it in our snacks: a product meal (with the photo, if any)
   barcode?: string // scanned: the household remembers it as logged
   piece_g?: number // scanned and counted (per: 'piece'): one piece weighs this
   piece_base?: '100g' | '100ml' // …in grams or ml
@@ -293,25 +321,12 @@ export type Product = {
   per100: Nutrients | null // null: OFF has no values, type them from the label
   kind: SnackKind // guessed from OFF's categories and the sugar
   remembered: boolean // our values (name, type, values, amount) from the last time we logged it
+  meal_id: number | null // in our snacks: logging it updates that product
   source: string
 }
 
-export type SnackLogged = { id: number; name: string; kcal: number; sugar: number; treat: boolean; saved_id: number | null }
+export type SnackLogged = { id: number; name: string; kcal: number; sugar: number; treat: boolean; meal_id: number | null }
 
-/** A snack the household logs again (home-made tiramisu…), shared by both of us. */
-export type SavedSnack = {
-  id: number
-  name: string
-  emoji: string
-  kind: SnackKind
-  per: SnackPer
-  amount: number
-  per_unit: Nutrients
-  photo_url: string | null
-  last_eaten_on: string | null
-}
-
-export type SavedSnackPatch = Partial<Pick<SavedSnack, 'name' | 'emoji' | 'kind' | 'per' | 'amount' | 'per_unit'>>
 
 export type Reward = {
   user_id: number
@@ -332,7 +347,7 @@ export type Suggestion = {
   id: number
   by: { id: number; name: string; color: string }
   meal: { id: number; name: string; emoji: string; photo_url: string | null; kcal_per_portion: number }
-  meal_type: MealType
+  meal_type: MealKind
   eaten_on: string
 }
 export type PushConfig = { enabled: boolean; public_key: string | null; off: PushKind[] }

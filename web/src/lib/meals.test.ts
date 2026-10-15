@@ -62,3 +62,15 @@ describe('pickable', () => {
     expect(pickable([], 'lunch', '')).toEqual([])
   })
 })
+
+describe('feed with snacks (0025)', () => {
+  const cards = [
+    card({ id: 1, types: ['dinner'] }),
+    card({ id: 2, types: ['snack'] }),
+    card({ id: 3, types: ['breakfast', 'snack'] }),
+  ]
+  it('keeps snack-only meals out of All and shows every snack under Snacks', () => {
+    expect(feed(cards, 'all', 'all', 'rating').map((m) => m.id).sort()).toEqual([1, 3])
+    expect(feed(cards, 'snack', 'all', 'rating').map((m) => m.id).sort()).toEqual([2, 3])
+  })
+})

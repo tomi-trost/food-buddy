@@ -85,7 +85,7 @@ async def create_analysis(
     user: CurrentUser,
     session: Session,
     kind: Literal["meal", "snack", "label"] = Form(default="meal"),
-    meal_type: Literal["breakfast", "lunch", "dinner"] | None = Form(default=None),
+    meal_type: Literal["breakfast", "lunch", "dinner", "snack"] | None = Form(default=None),
     save_only: bool = Form(default=False),
 ) -> AnalysisJobOut:
     settings = get_settings()
@@ -116,7 +116,7 @@ async def create_analysis(
 class TextIn(BaseModel):
     kind: Literal["meal", "snack"] = "meal"  # a label has to be photographed
     text: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
-    meal_type: Literal["breakfast", "lunch", "dinner"] | None = None
+    meal_type: Literal["breakfast", "lunch", "dinner", "snack"] | None = None
     save_only: bool = Field(default=False)
 
 

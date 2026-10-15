@@ -26,7 +26,7 @@ class IngredientOut(BaseModel):
 
     @classmethod
     def of(cls, ing: Ingredient) -> "IngredientOut":
-        unit, unit_grams = unit_of(ing.name, ing.curated)
+        unit, unit_grams = unit_of(ing.name, ing.curated, (ing.unit, ing.unit_grams))
         return cls(
             id=ing.id,
             name=ing.name,

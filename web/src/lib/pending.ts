@@ -26,7 +26,7 @@ export function banner(jobs: AnalysisJob[], meId: number | undefined): Banner | 
   if (!open.length) return null
   const job = [...open].sort((a, b) => RANK[a.status] - RANK[b.status])[0]
   const whose = job.by.id === meId ? 'your' : `${job.by.name}'s`
-  const noun = NOUN[job.kind]
+  const noun = job.meal_type === 'snack' ? NOUN.snack : NOUN[job.kind] // snacks are meals (0025)
   const base = { job, href: jobHref(job), busy: isBusy(job), more: open.length - 1 }
 
   if (job.status === 'failed') {

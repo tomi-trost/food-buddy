@@ -86,6 +86,7 @@ async def test_lookup_returns_label_values_per_100_g(client, auth, off):
         },
         "kind": "sweet",  # 56 g sugar per 100 g
         "remembered": False,
+        "meal_id": None,
         "source": "Open Food Facts",
     }
     assert off[0].url.path == f"/api/v2/product/{CODE}.json"
@@ -265,6 +266,7 @@ async def test_logged_scan_is_remembered_and_used_next_time(client, auth, off):
         "per100": {k: float(v) for k, v in FIXED.items()},
         "kind": "sweet",
         "remembered": True,
+        "meal_id": None,  # not saved to our snacks
         "source": "Our values",
     }
     assert len(off) == 1  # ours: OFF not asked again

@@ -3,19 +3,19 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { useAddFood } from '../add/AddFood'
 import { api, ApiError } from '../api/client'
-import type { AnalysisJob, AnalysisResult, MealType, Nutrients, Rating } from '../api/types'
+import type { AnalysisJob, AnalysisResult, MealKind, Nutrients, Rating } from '../api/types'
 import { OPEN_ANALYSES } from '../layout/PendingBanner'
 import { todayISO } from '../lib/dates'
 import { DEFAULT_RATING, RatingFields } from '../meals/RatingFields'
 import { Details, type DetailsState } from '../snap/Details'
-import { fromAnalysis, type PlateItem, recipeCost, toMealCreate } from '../snap/plate'
+import { fromAnalysis, type PlateItem, recipeCost, snackCount, toMealCreate } from '../snap/plate'
 import { Verdict } from '../snap/Verdict'
 import { Icon } from '../ui/Icon'
 import { Photo } from '../ui/Photo'
 import { useToast } from '../ui/Toast'
 
 const POLL_MS = 2000
-const TYPES: MealType[] = ['breakfast', 'lunch', 'dinner']
+const TYPES: MealKind[] = ['breakfast', 'lunch', 'dinner', 'snack']
 
 export function AnalysisPage() {
   const { id = '' } = useParams()
@@ -152,7 +152,7 @@ function SnapFlow({ analysisId, photoUrl, result, rated, chosenType, saveOnly, c
   photoUrl: string | null
   result: AnalysisResult
   rated: boolean // rated while waiting: the rating is already on the meal
-  chosenType: MealType | null // picked on the Snap screen
+  chosenType: MealKind | null // picked on the Snap screen
   saveOnly: boolean // "For later" on the Snap screen
   close: React.ReactNode
 }) {
@@ -164,14 +164,15 @@ function SnapFlow({ analysisId, photoUrl, result, rated, chosenType, saveOnly, c
   const [items, setItemsState] = useState<PlateItem[]>(() => fromAnalysis(result))
   const [servings, setServings] = useState(1)
   const [override, setOverride] = useState<Nutrients | null>(null)
-  const typeParam = params.get('type') as MealType | null
+  const typeParam = params.get('type') as MealKind | null
   const [details, setDetails] = useState<DetailsState>(() => ({
     name: result.dish.charAt(0).toUpperCase() + result.dish.slice(1),
     mealType: chosenType
-      ?? (typeParam && TYPES.includes(typeParam) ? typeParam : (result.meal_type === 'snack' ? 'lunch' : result.meal_type)),
+      ?? (typeParam && TYPES.includes(typeParam) ? typeParam : (TYPES.includes(result.meal_type as MealKind) ? result.meal_type as MealKind : 'lunch')),
+    snackKind: null,
+    ...snackCount(fromAnalysis(result)),
     eaten: !saveOnly,
-    prepMinutes: 30,
-    portions: 2,
+    ...(chosenType === 'snack' ? { prepMinutes: 5, portions: 1 } : { prepMinutes: 30, portions: 2 }),
     cost: 0,
     usedUp: [],
   }))
@@ -189,6 +190,7 @@ function SnapFlow({ analysisId, photoUrl, result, rated, chosenType, saveOnly, c
           items, name: details.name, mealType: details.mealType, eaten: details.eaten, eatenOn: todayISO(),
           prepMinutes: details.prepMinutes, portions: details.portions, servingsEaten: servings,
           cost: costTouched ? details.cost : null, usedUp: details.usedUp, analysisId, perPortion: override,
+          snack: details.snackKind ? { kind: details.snackKind, per: details.per, pieceG: details.pieceG } : undefined,
         }),
       ),
     onSuccess: (meal) => {

@@ -1,5 +1,7 @@
-import type { MealType } from '../api/types'
+import type { MealKind, MealPer, SnackKind } from '../api/types'
 import { MEAL_TYPE_LABEL } from '../lib/dates'
+import { isTreatKind, KIND_LABEL, SNACK_KINDS } from '../lib/snacks'
+import { Icon } from '../ui/Icon'
 import { templateSteps } from '../lib/recipe'
 import { Stepper } from '../ui/Stepper'
 import { Toggle } from '../ui/Toggle'
@@ -7,7 +9,10 @@ import { byWeight, type PlateItem } from './plate'
 
 export type DetailsState = {
   name: string
-  mealType: MealType
+  mealType: MealKind
+  snackKind: SnackKind | null // snacks: picked by us (treats depend on it)
+  per: MealPer // snacks: how it's logged from now on
+  pieceG: number // per = piece: one piece weighs this
   eaten: boolean // false = save for later (library only)
   prepMinutes: number
   portions: number
@@ -44,12 +49,13 @@ export function Details({ items, state, set, onPost, posting, error }: {
         Dish name
         <input value={state.name} maxLength={120} onChange={(e) => set({ name: e.target.value })} />
       </label>
-      <Toggle<MealType>
+      <Toggle<MealKind>
         label="Meal type"
         value={state.mealType}
         onChange={(mealType) => set({ mealType })}
-        options={(['breakfast', 'lunch', 'dinner'] as const).map((t) => ({ value: t, label: MEAL_TYPE_LABEL[t] }))}
+        options={(['breakfast', 'lunch', 'dinner', 'snack'] as const).map((t) => ({ value: t, label: MEAL_TYPE_LABEL[t] }))}
       />
+      {state.mealType === 'snack' && <SnackFields state={state} set={set} />}
       <div className="card row">
         <h3 className="sp">Prep time</h3>
         <Stepper label="prep time" value={state.prepMinutes} step={5} min={5} max={600} unit=" min"
@@ -100,9 +106,37 @@ export function Details({ items, state, set, onPost, posting, error }: {
         <div className="sub">A fuller recipe is written in the background after you {state.eaten ? 'post' : 'save'}.</div>
       </div>
       {error && <p className="error" role="alert">{error}</p>}
-      <button className="btn" disabled={posting || !state.name.trim()} onClick={onPost}>
-        {state.eaten ? (posting ? 'Posting…' : 'Post meal') : posting ? 'Saving…' : 'Save meal'}
+      <button className="btn" disabled={posting || !state.name.trim() || (state.mealType === 'snack' && !state.snackKind)} onClick={onPost}>
+        {state.eaten ? (posting ? 'Posting…' : state.mealType === 'snack' ? 'Post snack' : 'Post meal') : posting ? 'Saving…' : 'Save meal'}
       </button>
+      {state.mealType === 'snack' && !state.snackKind && <p className="sub">Pick the snack type first.</p>}
+    </>
+  )
+}
+
+const PER_LABEL: Record<MealPer, string> = { portion: 'Portions', piece: 'Pieces', '100g': 'Grams', '100ml': 'ml' }
+
+/** A snack's type (treats depend on it) and how it's counted when logged again (0025). */
+export function SnackFields({ state, set }: {
+  state: Pick<DetailsState, 'snackKind' | 'per' | 'pieceG'>
+  set: (patch: Partial<DetailsState>) => void
+}) {
+  return (
+    <>
+      <Toggle<SnackKind> label="Snack type" value={state.snackKind ?? ('' as SnackKind)} onChange={(snackKind) => set({ snackKind })}
+        options={SNACK_KINDS.map((k) => ({ value: k, label: KIND_LABEL[k] }))} />
+      {isTreatKind(state.snackKind) && (
+        <div className="sub row" style={{ gap: 6, margin: '-4px 0 12px' }}><Icon name="gift" size={16} /> Counts as a treat for your streak</div>
+      )}
+      <Toggle<MealPer> label="Count it in" value={state.per} onChange={(per) => set({ per })}
+        options={(Object.keys(PER_LABEL) as MealPer[]).map((p) => ({ value: p, label: PER_LABEL[p] }))} />
+      {state.per === 'piece' && (
+        <div className="card row">
+          <div className="sp"><h3>One piece</h3><div className="sub">how much one piece weighs</div></div>
+          <Stepper label="piece weight" value={state.pieceG} step={5} min={1} max={2000} unit=" g" decimals={1}
+            onChange={(pieceG) => set({ pieceG })} />
+        </div>
+      )}
     </>
   )
 }

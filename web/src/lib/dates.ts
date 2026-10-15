@@ -10,5 +10,5 @@ export function guessMealType(now = new Date()): 'breakfast' | 'lunch' | 'dinner
   return h < 11 ? 'breakfast' : h < 16 ? 'lunch' : 'dinner'
 }
 
-export const MEAL_TYPE_LABEL = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' } as const
-export const MEAL_TYPE_SHORT = { breakfast: 'Bfast', lunch: 'Lunch', dinner: 'Dinner' } as const
+export const MEAL_TYPE_LABEL = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snack' } as const
+export const MEAL_TYPE_SHORT = { breakfast: 'Bfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snack' } as const

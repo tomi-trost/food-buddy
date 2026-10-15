@@ -1,4 +1,4 @@
-import type { Fill, MealCard, MealType, Rating } from '../api/types'
+import type { Fill, MealCard, MealKind, Rating } from '../api/types'
 
 /** "Today" / "Yesterday" / "N days ago" between two YYYY-MM-DD dates. */
 export function ago(dateISO: string | null, todayISO: string): string {
@@ -24,16 +24,17 @@ export function fillTip(ratings: (Rating | null)[]): string | null {
 
 export const scoreOf = (r: Rating) => (r.taste + r.again + r.effort) / 3
 
-export type FeedType = 'all' | MealType
+export type FeedType = 'all' | MealKind
 export type FeedSeg = 'all' | 'top' | 'quick' | 'cheap'
 export type FeedSort = 'rating' | 'recent' | 'cooked'
 
 export const SORT_LABEL: Record<FeedSort, string> = { rating: 'Top rated', recent: 'Most recent', cooked: 'Most cooked' }
 export const NEXT_SORT: Record<FeedSort, FeedSort> = { rating: 'recent', recent: 'cooked', cooked: 'rating' }
 
-/** Mock filters: Top rated ≥ 4.3, ≤ 30 min, ≤ 4 € per portion. */
+/** Mock filters: Top rated ≥ 4.3, ≤ 30 min, ≤ 4 € per portion. "All" is the meals: snacks have
+ *  their own tab (a snack that's also a breakfast shows in both). */
 export function feed(cards: MealCard[], type: FeedType, seg: FeedSeg, sort: FeedSort): MealCard[] {
-  let list = cards.filter((m) => type === 'all' || m.types.includes(type))
+  let list = cards.filter((m) => (type === 'all' ? m.types.some((t) => t !== 'snack') : m.types.includes(type)))
   if (seg === 'quick') list = list.filter((m) => m.prep_minutes <= 30)
   if (seg === 'top') list = list.filter((m) => (m.score ?? 0) >= 4.3)
   if (seg === 'cheap') list = list.filter((m) => m.cost / m.portions <= 4)
@@ -49,7 +50,7 @@ export function feed(cards: MealCard[], type: FeedType, seg: FeedSeg, sort: Feed
 
 /** Meals to pick for a slot: name contains the query; ones made for this meal type first,
  *  then the most recently cooked. */
-export function pickable(cards: MealCard[], type: MealType, query: string): MealCard[] {
+export function pickable(cards: MealCard[], type: MealKind, query: string): MealCard[] {
   const q = query.trim().toLowerCase()
   return cards
     .filter((m) => m.name.toLowerCase().includes(q))

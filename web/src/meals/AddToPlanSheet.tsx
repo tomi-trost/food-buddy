@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
 import { api } from '../api/client'
-import type { Meal, MealType } from '../api/types'
+import type { Meal, MealKind, MealType } from '../api/types'
 import { MEAL_TYPE_LABEL, MEAL_TYPE_SHORT } from '../lib/dates'
 import { DAY_NAMES } from '../lib/plan'
 import { Sheet } from '../ui/Sheet'
@@ -52,7 +52,7 @@ function Row({ day, slots, mealId, types, onPick }: {
   day: number
   slots: { meal_type: MealType; mode: string; meal: { id: number; name: string; emoji: string } | null }[]
   mealId: number
-  types: MealType[]
+  types: MealKind[]
   onPick: (t: MealType) => void
 }) {
   return (

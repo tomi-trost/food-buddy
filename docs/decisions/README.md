@@ -23,5 +23,6 @@
 | [0019](0019-zero-cost-open-source.md) | Zero cost and open source | accepted |
 | [0020](0020-backups-backblaze-b2.md) | Nightly restic backups to Backblaze B2 (free tier) | accepted |
 | [0021](0021-usda-ingredient-catalog.md) | Curated catalog of common foods from USDA and Ciqual | accepted |
+| [0025](0025-snacks-are-meals.md) | Snacks are meals (products as one-ingredient meals) | accepted |
 
 Template: Context · Decision · Alternatives · Consequences.

@@ -37,9 +37,9 @@ class LogEntry(BaseModel):
     meal_id: int | None
     nutrients: NutrientsOut
     logged_at: datetime  # when it was logged: places snacks between the meals
-    servings: float  # portions (meals), pieces or grams (snacks)
-    per: str | None  # snacks: piece | 100g
-    per_unit: NutrientsOut | None  # snacks: values per piece / per 100 g
+    servings: float  # portions (meals), amount (snacks: portions, pieces, grams or ml)
+    per: str | None  # snacks: portion | piece | 100g | 100ml
+    per_unit: NutrientsOut | None  # snacks: values per portion / piece / 100 g / 100 ml
 
 
 class LogPatch(BaseModel):
@@ -148,6 +148,11 @@ async def edit_entry(
         if body.servings is not None:
             entry.servings = body.servings
         if body.per_unit is not None:
+            if entry.meal_id is not None:
+                raise HTTPException(
+                    status.HTTP_422_UNPROCESSABLE_CONTENT,
+                    "This snack's values are edited on the snack, under Meals",
+                )
             entry.per_unit = body.per_unit.model_dump()
         entry.set_nutrients(snack_nutrients(entry))
     await session.commit()

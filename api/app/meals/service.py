@@ -1,4 +1,5 @@
 from collections import defaultdict
+from dataclasses import asdict
 from datetime import UTC, date, datetime
 
 from fastapi import HTTPException, status
@@ -10,7 +11,8 @@ from app.auth.models import User
 from app.auth.service import household_members
 from app.inventory.service import deduct, mark_used_up
 from app.logs.models import FoodLog
-from app.meals.models import CookLog, Meal, MealIngredient
+from app.logs.service import snack_nutrients
+from app.meals.models import TYPES, CookLog, Meal, MealIngredient
 from app.meals.recipes import template_steps
 from app.meals.schemas import (
     CookIn,
@@ -22,6 +24,7 @@ from app.meals.schemas import (
     MealPatch,
     RatingIn,
     RatingOut,
+    SnackInfo,
 )
 from app.meals.undo import ran_out_of, stock_of, undo_record, undo_until
 from app.nutrition.macros import Nutrients, total
@@ -47,6 +50,77 @@ def per_portion(meal: Meal) -> Nutrients:
     if meal.nutrients_override is not None:
         return Nutrients(**meal.nutrients_override)
     return calculated_per_portion(meal)
+
+
+def portion_grams(meal: Meal) -> float:
+    return sum(mi.grams for mi in meal.ingredients) / meal.portions
+
+
+def grams_per_amount(meal: Meal) -> float:
+    """Grams in an amount of 1 as the meal is logged: a portion, a piece, or 1 g / ml."""
+    if meal.per == "piece" and meal.piece_g:
+        return meal.piece_g
+    return 1.0 if meal.per in ("100g", "100ml") else portion_grams(meal)
+
+
+def per_unit(meal: Meal) -> Nutrients:
+    """Values for one portion/piece or per 100 g / ml (`meal.per`), from the values per portion."""
+    grams = portion_grams(meal)
+    if meal.per == "portion" or grams <= 0:
+        return per_portion(meal)
+    unit = 100 if meal.per in ("100g", "100ml") else grams_per_amount(meal)
+    return per_portion(meal).scaled(100 * unit / grams)
+
+
+def amount_of(meal: Meal, portions: float) -> float:
+    """Portions → the amount in the meal's unit (2 portions of 150 g = 300 g, or 3 pieces)."""
+    one = grams_per_amount(meal)
+    if meal.per == "portion" or one <= 0:
+        return portions
+    return round(portions * portion_grams(meal) / one, 1)
+
+
+def snack_info(meal: Meal) -> dict:
+    return SnackInfo(
+        snack_kind=meal.snack_kind,
+        per=meal.per,
+        piece_g=meal.piece_g,
+        is_product=meal.is_product,
+        per_unit=NutrientsOut(**{k: round(v, 2) for k, v in asdict(per_unit(meal)).items()}),
+        portion_g=round(portion_grams(meal), 1),
+    ).model_dump()
+
+
+def log_entry(
+    user: User,
+    meal: Meal,
+    *,
+    meal_type: str,
+    eaten_on: date,
+    source: str,
+    portions: float = 1,
+    amount: float | None = None,
+) -> FoodLog:
+    """A food-log entry for eating this meal: portions, or a snack's amount in its unit (0025)."""
+    entry = FoodLog(
+        household_id=user.household_id,
+        user_id=user.id,
+        eaten_on=eaten_on,
+        meal_type=meal_type,
+        name=meal.name,
+        emoji=meal.emoji,
+        meal_id=meal.id,
+        source=source,
+    )
+    if meal_type == "snack":
+        entry.kind, entry.snack_kind, entry.per = "snack", meal.snack_kind or "savory", meal.per
+        entry.servings = amount if amount is not None else amount_of(meal, portions)
+        entry.per_unit = {k: round(v, 3) for k, v in asdict(per_unit(meal)).items()}
+        entry.set_nutrients(snack_nutrients(entry))
+    else:
+        entry.kind, entry.servings = "meal", portions
+        entry.set_nutrients(per_portion(meal).scaled(portions * 100))
+    return entry
 
 
 def effective_cost(meal: Meal) -> float:
@@ -128,6 +202,7 @@ async def meal_out(session: AsyncSession, user: User, meal: Meal) -> MealOut:
         ],
         created_at=meal.created_at,
         undo_until=_undo_until_for(meal, user),
+        **snack_info(meal),
     )
 
 
@@ -169,6 +244,7 @@ async def meal_cards(session: AsyncSession, user: User) -> list[MealCard]:
                 rated_by_me=any(r.user_id == user.id for r in rs),
                 kcal_per_portion=round(portion.kcal, 1),
                 created_at=m.created_at,
+                **snack_info(m),
             )
         )
     return cards
@@ -187,31 +263,39 @@ async def save_rating(session: AsyncSession, user: User, meal: Meal, body: Ratin
 
 
 async def cook_again(session: AsyncSession, user: User, meal: Meal, body: CookIn) -> None:
-    """Logs the portions eaten; cooking now also takes the whole recipe out of stock."""
+    """Logs the portions eaten; cooking now also takes the whole recipe out of stock.
+
+    Snacks: the amount in the meal's unit; every one counts as eaten. A product takes what was
+    eaten out of stock (if it's there); a home-made snack made now, the whole recipe."""
     recipe = {mi.ingredient_id: mi.grams for mi in meal.ingredients}
     if not set(body.used_up) <= set(recipe):
         raise HTTPException(
             status.HTTP_422_UNPROCESSABLE_CONTENT,
             "used_up must only contain this meal's ingredients",
         )
-    if body.cooked:
+    snack = body.meal_type == "snack"
+    if snack and "snack" not in meal.types:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT, "Not a snack: add Snack to it in Edit meal"
+        )
+    if body.cooked or snack:
         session.add(CookLog(meal_id=meal.id, user_id=user.id, cooked_on=body.eaten_on))
-    log = FoodLog(
-        household_id=user.household_id,
-        user_id=user.id,
-        eaten_on=body.eaten_on,
+    log = log_entry(
+        user,
+        meal,
         meal_type=body.meal_type,
-        name=meal.name,
-        emoji=meal.emoji,
-        meal_id=meal.id,
-        kind="meal",
+        eaten_on=body.eaten_on,
         source="cook" if body.cooked else "leftover",
-        servings=body.servings_eaten,
+        portions=body.servings_eaten,
+        amount=body.amount,
     )
-    log.set_nutrients(per_portion(meal).scaled(body.servings_eaten * 100))
     session.add(log)
     if body.cooked:
-        await deduct(session, user.household_id, recipe)
+        if snack and meal.is_product:
+            eaten = log.servings * grams_per_amount(meal)
+            await deduct(session, user.household_id, {k: eaten for k in recipe})
+        else:
+            await deduct(session, user.household_id, recipe)
         await mark_used_up(session, user.household_id, body.used_up)
     await session.commit()
 
@@ -240,6 +324,9 @@ async def post_meal(session: AsyncSession, user: User, body: MealCreate) -> Meal
         emoji=found[by_weight[0]].emoji or "🍽️",
         photo_path=analysis.photo_path if analysis else None,
         types=[body.meal_type],
+        snack_kind=body.snack_kind if body.meal_type == "snack" else None,
+        per=body.per,
+        piece_g=body.piece_g,
         tags=[],
         prep_minutes=body.prep_minutes,
         portions=body.portions,
@@ -258,20 +345,16 @@ async def post_meal(session: AsyncSession, user: User, body: MealCreate) -> Meal
     ran_before = await ran_out_of(session, user.household_id)
     if body.eaten:  # saved for later: only the recipe goes into the library
         session.add(CookLog(meal_id=meal.id, user_id=user.id, cooked_on=body.eaten_on))
-        log = FoodLog(
-            household_id=user.household_id,
-            user_id=user.id,
-            eaten_on=body.eaten_on,
-            meal_type=body.meal_type,
-            name=meal.name,
-            emoji=meal.emoji,
-            meal_id=meal.id,
-            kind="meal",
-            source="snap",
-            servings=body.servings_eaten,
+        session.add(
+            log_entry(
+                user,
+                meal,
+                meal_type=body.meal_type,
+                eaten_on=body.eaten_on,
+                source="snap",
+                portions=body.servings_eaten,
+            )
         )
-        log.set_nutrients(per_portion(meal).scaled(body.servings_eaten * 100))
-        session.add(log)
 
         await deduct(session, user.household_id, recipe)
         await mark_used_up(session, user.household_id, body.used_up)
@@ -293,7 +376,10 @@ async def post_meal(session: AsyncSession, user: User, body: MealCreate) -> Meal
 async def update_meal(session: AsyncSession, meal: Meal, body: MealPatch) -> None:
     sent = body.model_fields_set
     if body.items is not None:
+        own = [mi.ingredient_id for mi in meal.ingredients]
         await _replace_ingredients(session, meal, body.items)
+        if [i.ingredient_id for i in body.items] != own:
+            meal.is_product = False  # ingredients added: a recipe of its own now
     if "cost" in sent:
         meal.cost = body.cost
     if "per_portion" in sent:
@@ -301,7 +387,16 @@ async def update_meal(session: AsyncSession, meal: Meal, body: MealPatch) -> Non
     if body.name is not None:
         meal.name = body.name.strip()
     if body.types is not None:
-        meal.types = [t for t in ("breakfast", "lunch", "dinner") if t in body.types]
+        meal.types = [t for t in TYPES if t in body.types]
+    _update_snack(meal, body)
+    if body.product_per100 is not None:
+        if not meal.is_product:
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_CONTENT, "Only a product has pack values"
+            )
+        product = meal.ingredients[0].ingredient
+        for key, value in body.product_per100.model_dump().items():
+            setattr(product, key, value)
     if body.prep_friendly is not None:
         tags = [t for t in meal.tags if t != "prep-friendly"]
         meal.tags = tags + ["prep-friendly"] if body.prep_friendly else tags
@@ -314,6 +409,35 @@ async def update_meal(session: AsyncSession, meal: Meal, body: MealPatch) -> Non
     await session.flush()
     await _refresh_logs(session, meal)
     await session.commit()
+
+
+def _update_snack(meal: Meal, body: MealPatch) -> None:
+    snack = "snack" in meal.types
+    if body.snack_kind is not None:
+        meal.snack_kind = body.snack_kind
+    if body.per is not None:
+        meal.per = body.per
+        meal.piece_g = body.piece_g if body.per == "piece" else None
+    elif body.piece_g is not None:
+        meal.piece_g = body.piece_g
+    if not snack:  # no longer a snack: logged in portions like any meal
+        meal.snack_kind, meal.per, meal.piece_g = None, "portion", None
+    elif meal.snack_kind is None:
+        meal.snack_kind = "savory"
+    if meal.per == "piece" and not meal.piece_g:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT, "Pieces come with the weight of one piece"
+        )
+    if body.per is not None and body.per != "portion" and not snack:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT, "Only snacks are counted in pieces, g or ml"
+        )
+    if meal.is_product:  # the fridge counts the product the same way
+        product = meal.ingredients[0].ingredient
+        product.unit, product.unit_grams = {
+            "piece": ("pc", meal.piece_g),
+            "100ml": ("ml", 1.0),
+        }.get(meal.per, (None, None))
 
 
 async def _replace_ingredients(session: AsyncSession, meal: Meal, items: list[ItemIn]) -> None:
@@ -343,9 +467,15 @@ async def _refresh_logs(session: AsyncSession, meal: Meal) -> None:
     Stock taken out when it was cooked stays as it was.
     """
     portion = per_portion(meal)
+    one = {k: round(v, 3) for k, v in asdict(per_unit(meal)).items()}
     for log in await session.scalars(select(FoodLog).where(FoodLog.meal_id == meal.id)):
         log.name, log.emoji = meal.name, meal.emoji
-        log.set_nutrients(portion.scaled(log.servings * 100))
+        if log.kind == "snack":
+            if log.per == meal.per:  # counted another way back then: stays as logged
+                log.per_unit, log.snack_kind = one, meal.snack_kind or log.snack_kind
+                log.set_nutrients(snack_nutrients(log))
+        else:
+            log.set_nutrients(portion.scaled(log.servings * 100))
 
 
 async def delete_meal(session: AsyncSession, meal: Meal, *, keep_log: bool) -> None:

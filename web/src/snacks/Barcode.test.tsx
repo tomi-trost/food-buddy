@@ -13,7 +13,7 @@ const CODE = '8000500310427'
 const per100 = { kcal: 539, protein: 6.3, carbs: 57.5, fat: 30.9, fiber: 0, sugar: 56.3 }
 const nutella: Product = {
   code: CODE, name: 'Nutella', brand: 'Ferrero', quantity: '400 g', per: '100g', serving_g: 15, piece_g: null,
-  image_url: null, per100, kind: 'sweet', remembered: false, source: 'Open Food Facts',
+  image_url: null, per100, kind: 'sweet', remembered: false, meal_id: null, source: 'Open Food Facts',
 }
 
 function Opener() {
@@ -27,9 +27,9 @@ function setup(product: Product | null | 'down' = nutella) {
       if (product === 'down') return jsonResponse({ detail: "Open Food Facts can't be reached right now" }, 503)
       return product ? jsonResponse(product) : jsonResponse({ detail: 'Product not found in Open Food Facts' }, 404)
     }
-    if (url === '/api/snacks') return jsonResponse({ id: 1, name: 'Ferrero Nutella', kcal: 80.8, sugar: 8.4, treat: true, saved_id: 3 }, 201)
+    if (url === '/api/snacks') return jsonResponse({ id: 1, name: 'Ferrero Nutella', kcal: 80.8, sugar: 8.4, treat: true, meal_id: 3 }, 201)
     if (url === '/api/analyses') return jsonResponse({ id: 9, status: 'queued' }, 202)
-    if (url === '/api/snacks/saved' || url === '/api/snacks/catalog') return jsonResponse([])
+    if (url === '/api/meals' || url === '/api/snacks/catalog') return jsonResponse([])
     return jsonResponse({})
   })
   renderAt('/', <Route path="/" element={<Opener />} />)
@@ -204,6 +204,16 @@ describe('Barcode scanner', () => {
     fireEvent.click(within(sheet).getByRole('button', { name: 'Grams' }))
     expect(within(sheet).getByRole('textbox', { name: 'amount' })).toHaveValue('27')
     expect(within(sheet).queryByRole('textbox', { name: 'piece weight' })).not.toBeInTheDocument()
+  })
+
+  it('keeps a product that is one of our snacks up to date: the switch starts on', async () => {
+    const { fetch, sheet } = setup({ ...nutella, remembered: true, meal_id: 7, source: 'Our values' })
+    typeCode(sheet, CODE)
+    expect(await within(sheet).findByRole('switch', { name: /Save to our snacks/ })).toBeChecked()
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Log snack' }))
+    await waitFor(() => expect(fetch.mock.calls.some(([u]) => u === '/api/snacks')).toBe(true))
+    const [, init] = fetch.mock.calls.find(([u]) => u === '/api/snacks')!
+    expect(JSON.parse(String(init!.body))).toMatchObject({ save: true, barcode: CODE })
   })
 
   it('uses our remembered values, and a corrected name is sent along', async () => {

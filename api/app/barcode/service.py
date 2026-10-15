@@ -166,6 +166,7 @@ async def remember(
     amount: float,
     piece_g: float | None = None,
     per: str = "100g",
+    meal_id: int | None = None,
 ) -> None:
     """Keep a scanned product as just logged (the caller commits). `per100` and `amount` in
     grams, or ml when `per` is 100ml; `piece_g` when it was counted in pieces (None = weighed)."""
@@ -176,6 +177,7 @@ async def remember(
         "per": per,
         "amount": amount,
         "piece_g": piece_g,
+        "meal_id": meal_id,
         "updated_by": user.id,
     }
     stmt = insert(HouseholdProduct).values(household_id=user.household_id, code=code, **values)

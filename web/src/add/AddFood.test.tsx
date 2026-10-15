@@ -107,18 +107,27 @@ describe('Add food sheet', () => {
     expect(JSON.parse(String(init!.body))).toEqual({ kind: 'meal', text: 'spaghetti carbonara', meal_type: 'dinner', save_only: false })
   })
 
-  it('types a snack, goes back to all options, and skips blank text', async () => {
+  it('types a snack: a meal typed Snack, checked on the same screen; blank text is skipped', async () => {
     const { fetch, sheet } = setup()
-    fireEvent.click(within(sheet).getByRole('button', { name: /Type it/ }))
     fireEvent.click(within(sheet).getByRole('button', { name: 'Snack' }))
+    fireEvent.click(within(sheet).getByRole('button', { name: /Type it/ }))
     expect(within(sheet).getByRole('heading', { name: 'What snack was it?' })).toBeInTheDocument()
     fireEvent.change(within(sheet).getByLabelText('Snack'), { target: { value: '   ' } })
     fireEvent.submit(within(sheet).getByRole('button', { name: 'Estimate it' }).closest('form')!)
     expect(fetch).not.toHaveBeenCalled()
-    fireEvent.change(within(sheet).getByLabelText('Snack'), { target: { value: '2 slices of tiramisu' } })
+    fireEvent.change(within(sheet).getByLabelText('Snack'), { target: { value: 'chia pudding' } })
     fireEvent.click(within(sheet).getByRole('button', { name: 'Estimate it' }))
-    expect(await screen.findByText(/Estimating your snack/)).toBeInTheDocument()
-    expect(JSON.parse(String(fetch.mock.calls[0][1]!.body))).toMatchObject({ kind: 'snack', meal_type: null })
+    expect(await screen.findByText('analysis page')).toBeInTheDocument()
+    expect(JSON.parse(String(fetch.mock.calls[0][1]!.body))).toEqual({ kind: 'meal', text: 'chia pudding', meal_type: 'snack', save_only: false })
+  })
+
+  it('sends a snack photo for its ingredients, like a meal', async () => {
+    const { fetch, sheet } = setup({ type: 'snack' })
+    expect(within(sheet).getByText(/A home-made snack or a drink/)).toBeInTheDocument()
+    fireEvent.change(within(sheet).getByLabelText('Take photo'), { target: { files: [photo()] } })
+    expect(await screen.findByText('analysis page')).toBeInTheDocument()
+    expect(form(fetch).get('kind')).toBe('meal')
+    expect(form(fetch).get('meal_type')).toBe('snack')
   })
 
   it('goes back from a sub view to all options', () => {
@@ -156,7 +165,7 @@ describe('Add food sheet', () => {
 
   it('opens the snack sheet', async () => {
     const { sheet } = setup(undefined, (() => jsonResponse([])) as never)
-    fireEvent.click(within(sheet).getByRole('button', { name: /Snack/ }))
+    fireEvent.click(within(sheet).getByRole('button', { name: /Quick snack/ }))
     expect(await screen.findByRole('dialog', { name: 'Log a snack' })).toBeInTheDocument()
     expect(screen.queryByRole('dialog', { name: 'Add food' })).not.toBeInTheDocument()
   })

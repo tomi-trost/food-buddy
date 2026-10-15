@@ -36,6 +36,7 @@ class HouseholdProduct(Base):
     per: Mapped[str] = mapped_column(String(5), default="100g", server_default="100g")  # | 100ml
     amount: Mapped[float] = mapped_column(Float)  # grams (ml when per 100 ml) we usually eat
     piece_g: Mapped[float | None] = mapped_column(Float)  # set when we count it in pieces
+    meal_id: Mapped[int | None] = mapped_column(ForeignKey("meal.id", ondelete="SET NULL"))
     updated_by: Mapped[int | None] = mapped_column(ForeignKey("app_user.id", ondelete="SET NULL"))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()

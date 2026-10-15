@@ -2,19 +2,23 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { api } from '../api/client'
-import type { Meal, MealPatch, MealType, Nutrients } from '../api/types'
+import type { Meal, MealKind, MealPatch, MealPer, Nutrients, SnackKind } from '../api/types'
 import { MEAL_TYPE_LABEL } from '../lib/dates'
 import { scale } from '../lib/macros'
 import { NutritionOverride } from '../meals/NutritionOverride'
 import { cleanSteps, StepsEditor } from '../meals/StepsEditor'
+import { SnackFields } from '../snap/Details'
 import { IngredientChips } from '../snap/IngredientChips'
+import { NutrientFields } from '../ui/NutrientFields'
 import { type PlateItem, plateNutrients, recipeCost } from '../snap/plate'
 import { Icon } from '../ui/Icon'
 import { Sheet } from '../ui/Sheet'
 import { Stepper } from '../ui/Stepper'
 import { useToast } from '../ui/Toast'
 
-const TYPES: MealType[] = ['breakfast', 'lunch', 'dinner']
+const TYPES: MealKind[] = ['breakfast', 'lunch', 'dinner', 'snack']
+
+const resolvedIds = (items: PlateItem[]) => items.filter((i) => i.ingredient && i.grams > 0).map((i) => i.ingredient!.id)
 
 export function MealEditPage() {
   const { id = '' } = useParams()
@@ -34,7 +38,12 @@ function EditForm({ meal, close }: { meal: Meal; close: React.ReactNode }) {
   const qc = useQueryClient()
   const toast = useToast()
   const [name, setName] = useState(meal.name)
-  const [types, setTypes] = useState<MealType[]>(meal.types)
+  const [types, setTypes] = useState<MealKind[]>(meal.types)
+  const [snack, setSnack] = useState<{ snackKind: SnackKind | null; per: MealPer; pieceG: number }>({
+    snackKind: meal.snack_kind, per: meal.per, pieceG: meal.piece_g ?? 30,
+  })
+  const product = meal.is_product ? meal.ingredients[0]?.ingredient : undefined
+  const [pack, setPack] = useState<Nutrients | null>(product?.per100 ?? null) // the pack's values per 100 g / ml
   const [prepFriendly, setPrepFriendly] = useState(meal.tags.includes('prep-friendly'))
   const [prepMinutes, setPrepMinutes] = useState(meal.prep_minutes)
   const [portions, setPortions] = useState(meal.portions)
@@ -47,6 +56,9 @@ function EditForm({ meal, close }: { meal: Meal; close: React.ReactNode }) {
   const [steps, setSteps] = useState<string[]>(meal.steps.length ? meal.steps : [''])
   const stepsChanged = JSON.stringify(cleanSteps(steps)) !== JSON.stringify(meal.steps)
 
+  const isSnack = types.includes('snack')
+  // a product until other ingredients are added (then it's a recipe of its own)
+  const stillProduct = !!product && resolvedIds(items).join() === String(product.id)
   const estimate = Math.round(recipeCost(items, 1) * 100) / 100
   const calculated = scale(plateNutrients(items), 100 / portions)
   const resolved = items.filter((i) => i.ingredient && i.grams > 0)
@@ -64,6 +76,8 @@ function EditForm({ meal, close }: { meal: Meal; close: React.ReactNode }) {
         items: resolved.map((i) => ({ ingredient_id: i.ingredient!.id, grams: i.grams })),
         per_portion: override,
         ...(stepsChanged ? { steps: cleanSteps(steps) } : {}), // untouched: the model may still write them
+        ...(isSnack ? { snack_kind: snack.snackKind ?? 'savory', per: snack.per, ...(snack.per === 'piece' ? { piece_g: snack.pieceG } : {}) } : {}),
+        ...(product && pack && stillProduct ? { product_per100: pack } : {}),
       }
       return api.patchMeal(meal.id, patch)
     },
@@ -96,21 +110,37 @@ function EditForm({ meal, close }: { meal: Meal; close: React.ReactNode }) {
         })}
       </div>
 
-      <h2>Ingredients <span className="sub">(for {portions} portions)</span></h2>
+      {isSnack && <div style={{ marginTop: 14 }}><SnackFields state={snack} set={(patch) => setSnack((s) => ({ ...s, ...patch }))} /></div>}
+
+      {stillProduct && pack && (
+        <section className="card" aria-label="Pack values">
+          <h3>Values per {snack.per === '100ml' ? '100 ml' : '100 g'}</h3>
+          <div className="sub" style={{ marginBottom: 8 }}>as printed on the pack</div>
+          <NutrientFields initial={pack} onChange={(n) => { setValuesOk(n !== null); if (n) setPack(n) }} />
+        </section>
+      )}
+
+      <h2>Ingredients <span className="sub">{stillProduct ? '(add some to make it a recipe)' : `(for ${portions} portions)`}</span></h2>
       <IngredientChips items={items} setItems={(f) => setItems(f)} amountLabel="in the recipe" />
 
-      <div style={{ marginTop: 14 }}>
-        <NutritionOverride calculated={calculated} override={override} onChange={setOverride} onValid={setValuesOk} showTiles />
-      </div>
+      {!stillProduct && (
+        <div style={{ marginTop: 14 }}>
+          <NutritionOverride calculated={calculated} override={override} onChange={setOverride} onValid={setValuesOk} showTiles />
+        </div>
+      )}
 
-      <div className="card row">
-        <h3 className="sp">Portions made</h3>
-        <Stepper label="portions made" value={portions} min={1} max={20} onChange={setPortions} />
-      </div>
-      <div className="card row">
-        <h3 className="sp">Prep time</h3>
-        <Stepper label="prep time" value={prepMinutes} step={5} min={5} max={600} unit=" min" onChange={setPrepMinutes} />
-      </div>
+      {!stillProduct && (
+        <>
+          <div className="card row">
+            <h3 className="sp">Portions made</h3>
+            <Stepper label="portions made" value={portions} min={1} max={20} onChange={setPortions} />
+          </div>
+          <div className="card row">
+            <h3 className="sp">Prep time</h3>
+            <Stepper label="prep time" value={prepMinutes} step={5} min={5} max={600} unit=" min" onChange={setPrepMinutes} />
+          </div>
+        </>
+      )}
       <div className="card">
         <div className="row">
           <div className="sp">
@@ -121,10 +151,9 @@ function EditForm({ meal, close }: { meal: Meal; close: React.ReactNode }) {
         </div>
         {cost !== null && <button type="button" className="textbtn" onClick={() => setCost(null)}>Use the estimate ({estimate.toFixed(2)} €)</button>}
       </div>
-      <h2>Steps</h2>
-      <StepsEditor steps={steps} onChange={setSteps} />
+      {!stillProduct && <><h2>Steps</h2><StepsEditor steps={steps} onChange={setSteps} /></>}
 
-      <div className="card row">
+      {!stillProduct && <div className="card row">
         <div className="sp">
           <h3>Prep-friendly</h3>
           <div className="sub">Keeps well for a few days — the planner uses it for "Prep" slots.</div>
@@ -132,10 +161,10 @@ function EditForm({ meal, close }: { meal: Meal; close: React.ReactNode }) {
         <button type="button" className={`chip${prepFriendly ? ' on' : ''}`} aria-pressed={prepFriendly} onClick={() => setPrepFriendly(!prepFriendly)}>
           {prepFriendly ? 'Yes' : 'No'}
         </button>
-      </div>
+      </div>}
 
       {save.isError && <p className="error" role="alert">{save.error.message}</p>}
-      <button className="btn" disabled={save.isPending || !name.trim() || resolved.length === 0 || !valuesOk || !cleanSteps(steps).length} onClick={() => save.mutate()}>
+      <button className="btn" disabled={save.isPending || !name.trim() || resolved.length === 0 || !valuesOk || (stepsChanged && !cleanSteps(steps).length)} onClick={() => save.mutate()}>
         {save.isPending ? 'Saving…' : 'Save changes'}
       </button>
       {resolved.length === 0 && <p className="sub">A meal needs at least one ingredient.</p>}

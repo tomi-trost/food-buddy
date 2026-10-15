@@ -24,6 +24,7 @@ function api(extra: (url: string, init?: RequestInit) => Response | undefined = 
     if (path === '/api/snacks/catalog') return jsonResponse(catalog)
     if (path === '/api/snacks') return jsonResponse({ id: 1, name: 'Cookie', kcal: 140, sugar: 10, treat: true }, 201)
     if (path === '/api/day') return jsonResponse({ date: '2026-10-05', totals: n(140, 10), entries: [cookie] })
+    if (path === '/api/meals') return jsonResponse([])
     return jsonResponse({})
   })
 }

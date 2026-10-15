@@ -59,6 +59,7 @@ export const meal = (over: Partial<Meal> = {}): Meal => ({
   steps_source: 'template', created_at: '2026-10-01T12:00:00Z', undo_until: null,
   per_portion: n(551.7, 51.9, 56, 9.9, 0.8, 0), per_portion_calculated: n(551.7, 51.9, 56, 9.9, 0.8, 0),
   nutrients_overridden: false, logged_count: 1,
+  snack_kind: null, per: 'portion', piece_g: null, is_product: false, per_unit: n(551.7, 51.9, 56, 9.9, 0.8, 0), portion_g: 350,
   ingredients: [{ ingredient: ING.rice, grams: 400 }, { ingredient: ING.chicken, grams: 300 }],
   score: null, cooked_count: 1, last_cooked: '2026-10-01',
   ratings: [
@@ -71,7 +72,9 @@ export const meal = (over: Partial<Meal> = {}): Meal => ({
 export const card = (over: Partial<MealCard> = {}): MealCard => ({
   id: 1, name: 'Meal', emoji: '🍽️', photo_url: null, types: ['dinner'], tags: [], prep_minutes: 30,
   portions: 2, cost: 6, rated_by_me: false, kcal_per_portion: 500, created_at: '2026-10-01T12:00:00Z',
-  score: null, cooked_count: 1, last_cooked: '2026-10-01', ...over,
+  score: null, cooked_count: 1, last_cooked: '2026-10-01',
+  snack_kind: null, per: 'portion', piece_g: null, is_product: false, per_unit: n(500, 0, 0, 0, 0, 0), portion_g: 300,
+  ...over,
 })
 
 const slotCard = (id: number, name: string, emoji: string, over: Partial<MealCard> = {}) =>

@@ -1,5 +1,5 @@
 import { createContext, type FormEvent, type ReactNode, useCallback, useContext, useState } from 'react'
-import type { MealType } from '../api/types'
+import type { MealKind } from '../api/types'
 import { guessMealType, MEAL_TYPE_LABEL } from '../lib/dates'
 import { CookMealSheet } from '../meals/CookSheet'
 import { MealPicker } from '../meals/MealPicker'
@@ -10,9 +10,9 @@ import { Toggle } from '../ui/Toggle'
 import { PhotoInput } from './PhotoInput'
 import { type MealChoice, useFoodUpload } from './upload'
 
-type Slot = MealType | 'later'
+type Slot = MealKind | 'later'
 type View = 'menu' | 'type' | 'meals'
-type Open = (opts?: { type?: MealType | 'later'; snack?: boolean }) => void
+type Open = (opts?: { type?: MealKind | 'later'; snack?: boolean }) => void
 
 const AddFoodContext = createContext<Open>(() => {})
 
@@ -37,7 +37,7 @@ export function AddFoodProvider({ children }: { children: ReactNode }) {
 
 function AddFoodSheet({ slot, setSlot, openSnack }: { slot: Slot | null; setSlot: (s: Slot | null) => void; openSnack: (scan?: boolean) => void }) {
   const [view, setView] = useState<View>('menu')
-  const [cooking, setCooking] = useState<{ id: number; type: MealType } | null>(null) // kept after the sheet closes
+  const [cooking, setCooking] = useState<{ id: number; type: MealKind } | null>(null) // kept after the sheet closes
   const close = () => {
     setSlot(null)
     setView('menu')
@@ -49,11 +49,11 @@ function AddFoodSheet({ slot, setSlot, openSnack }: { slot: Slot | null; setSlot
 
   let body: ReactNode
   if (view === 'type') {
-    body = <><TypeIt busy={busy} onSend={(t, kind) => text.mutate({ text: t, kind, meal })} />{back}</>
+    body = <><TypeIt busy={busy} snack={mealType === 'snack'} onSend={(t) => text.mutate({ text: t, meal })} />{back}</>
   } else if (view === 'meals' && mealType) {
     body = (
       <>
-        <h1>{MEAL_TYPE_LABEL[mealType]} from our meals</h1>
+        <h1>{mealType === 'snack' ? 'Our snacks' : `${MEAL_TYPE_LABEL[mealType]} from our meals`}</h1>
         <MealPicker mealType={mealType} onPick={(id) => { setCooking({ id, type: mealType }); close() }} />
         {back}
       </>
@@ -64,7 +64,7 @@ function AddFoodSheet({ slot, setSlot, openSnack }: { slot: Slot | null; setSlot
         <h1>Add food</h1>
         <Toggle<Slot> label="Which meal?" value={slot ?? 'lunch'} onChange={setSlot}
           options={[
-            ...(['breakfast', 'lunch', 'dinner'] as const).map((t) => ({ value: t, label: MEAL_TYPE_LABEL[t] })),
+            ...(['breakfast', 'lunch', 'dinner', 'snack'] as const).map((t) => ({ value: t, label: MEAL_TYPE_LABEL[t] })),
             { value: 'later' as const, label: 'For later' },
           ]} />
         <PhotoInput camera label="Take photo" disabled={busy} className="add-hero"
@@ -72,7 +72,9 @@ function AddFoodSheet({ slot, setSlot, openSnack }: { slot: Slot | null; setSlot
           <span className="add-ic"><Icon name="camera" size={30} /></span>
           <span className="sp">
             <b>{busy ? 'Uploading photo…' : 'Take a photo'}</b>
-            <small>From above, whole plate in view. We find the dish and its macros.</small>
+            <small>{mealType === 'snack'
+              ? 'A home-made snack or a drink. We find what’s in it and its macros.'
+              : 'From above, whole plate in view. We find the dish and its macros.'}</small>
           </span>
         </PhotoInput>
         <div className="add-grid">
@@ -84,10 +86,11 @@ function AddFoodSheet({ slot, setSlot, openSnack }: { slot: Slot | null; setSlot
             <Icon name="edit" size={22} /><b>Type it</b><small>Just the name of the dish</small>
           </button>
           <button className="add-opt" disabled={busy || !mealType} onClick={() => setView('meals')}>
-            <Icon name="meals" size={22} /><b>Our meals</b><small>{mealType ? 'Again, or leftovers' : 'Pick a meal type first'}</small>
+            <Icon name="meals" size={22} /><b>{mealType === 'snack' ? 'Our snacks' : 'Our meals'}</b>
+            <small>{mealType ? 'Again, or leftovers' : 'Pick a meal type first'}</small>
           </button>
           <button className="add-opt" disabled={busy} onClick={() => openSnack()}>
-            <Icon name="gift" size={22} /><b>Snack</b><small>Sweets, drinks, bites</small>
+            <Icon name="gift" size={22} /><b>Quick snack</b><small>Pick a sweet, drink or fruit</small>
           </button>
         </div>
         <PhotoInput camera label="Scan a nutrition label" disabled={busy} className="add-row"
@@ -114,20 +117,19 @@ function AddFoodSheet({ slot, setSlot, openSnack }: { slot: Slot | null; setSlot
   )
 }
 
-function TypeIt({ busy, onSend }: { busy: boolean; onSend: (text: string, kind: 'meal' | 'snack') => void }) {
-  const [kind, setKind] = useState<'meal' | 'snack'>('meal')
+/** The meal type ("Snack" too) is picked on the menu before. */
+function TypeIt({ busy, snack, onSend }: { busy: boolean; snack: boolean; onSend: (text: string) => void }) {
+  const kind = snack ? 'snack' : 'meal'
   const submit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const value = String(new FormData(e.currentTarget).get('text') ?? '').trim()
-    if (value) onSend(value, kind)
+    if (value) onSend(value)
   }
   return (
     <>
       <h1>{kind === 'snack' ? 'What snack was it?' : 'What did you eat?'}</h1>
-      <Toggle<'meal' | 'snack'> label="Meal or snack" value={kind} onChange={setKind}
-        options={[{ value: 'meal', label: 'Meal' }, { value: 'snack', label: 'Snack' }]} />
       <p className="sub">
-        The name is enough, add amounts if you know them. You check the {kind === 'snack' ? 'values' : 'ingredients'} afterwards, like with a photo.
+        The name is enough, add amounts if you know them. You check the ingredients afterwards, like with a photo.
       </p>
       <form onSubmit={submit} style={{ display: 'grid', gap: 12 }}>
         <label className="field">

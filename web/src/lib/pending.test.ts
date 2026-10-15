@@ -5,6 +5,15 @@ import { banner, jobHref } from './pending'
 const ME = 1
 const ana = { id: 2, name: 'Ana' }
 
+describe('snack meals', () => {
+  it('call a snack photo a snack, and open the check screen', () => {
+    const job = analysisJob({ id: 4, kind: 'meal', meal_type: 'snack', status: 'running' })
+    const shown = banner([job], ME)!
+    expect(shown.title).toMatch(/your snack/)
+    expect(shown.href).toBe('/analysis/4')
+  })
+})
+
 describe('banner', () => {
   it('is empty without open photos', () => {
     expect(banner([], ME)).toBeNull()

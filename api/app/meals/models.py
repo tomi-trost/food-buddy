@@ -1,6 +1,6 @@
 from datetime import date
 
-from sqlalchemy import ARRAY, Date, Float, ForeignKey, String, Text
+from sqlalchemy import ARRAY, Boolean, Date, Float, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -8,10 +8,16 @@ from app.db import Base, TimestampMixin
 from app.nutrition.models import Ingredient
 
 MEAL_TYPES = ("breakfast", "lunch", "dinner")
+TYPES = (*MEAL_TYPES, "snack")  # snacks are meals too (0025); the plan only fills MEAL_TYPES
 
 
 class Meal(TimestampMixin, Base):
-    """A household recipe. Ingredient grams are for the whole recipe (`portions` portions)."""
+    """A household recipe. Ingredient grams are for the whole recipe (`portions` portions).
+
+    A snack is a meal typed `snack` (0025): `snack_kind` for treats, `per` for how it's logged
+    (portion | piece of `piece_g` grams | 100g | 100ml). A product (scanned, label) is a snack with
+    one household-owned ingredient holding its values (`is_product`).
+    """
 
     __tablename__ = "meal"
 
@@ -33,6 +39,10 @@ class Meal(TimestampMixin, Base):
     # Set on post: the photo it came from, stock taken out and "ran out" items added, so the
     # post can be undone for UNDO_MINUTES (see meals.undo)
     undo: Mapped[dict | None] = mapped_column(JSONB)
+    snack_kind: Mapped[str | None] = mapped_column(String(10))  # sweet|savory|fruit|drink
+    per: Mapped[str] = mapped_column(String(8), default="portion", server_default="portion")
+    piece_g: Mapped[float | None] = mapped_column(Float)  # per = piece: one piece weighs this
+    is_product: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
 
     ingredients: Mapped[list["MealIngredient"]] = relationship(
         back_populates="meal", cascade="all, delete-orphan", lazy="selectin"

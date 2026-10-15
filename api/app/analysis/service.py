@@ -19,6 +19,13 @@ from app.vision.providers import AllProvidersFailed, VisionChain, image_message
 from app.vision.schemas import MealAnalysis
 from app.vision.snack_prompts import LABEL_PROMPT, SNACK_PHOTO_PROMPT, SNACK_TEXT_PROMPT
 
+# Snacks are meals (0025): a home-made one gets its ingredients, a packaged one is one item
+SNACK_HINT = (
+    "This is a snack or a drink, not a full meal: list what it is made of (a home-made snack "
+    "like chia pudding: chia seeds, milk, honey…); a packaged product or a piece of fruit is a "
+    "single ingredient."
+)
+
 
 async def ground(session: AsyncSession, analysis: MealAnalysis) -> AnalysisResult:
     items: list[AnalysisItem] = []
@@ -82,6 +89,8 @@ async def run_analysis(
             jpeg = shrink_jpeg((photo_dir / job.photo_path).read_bytes(), vision_max_px)
         if job.kind == "meal":
             hint = priors_hint(await portion_priors(session, job.household_id))
+            if job.meal_type == "snack":
+                hint = "\n".join(filter(None, [SNACK_HINT, hint]))
             if jpeg is None:
                 messages = [
                     {"role": "system", "content": MEAL_TEXT_PROMPT},

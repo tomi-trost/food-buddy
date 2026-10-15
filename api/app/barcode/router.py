@@ -27,6 +27,7 @@ class ProductOut(BaseModel):
     per100: NutrientsOut | None  # None: OFF has no energy value, the user types the label
     kind: SnackKind  # guessed from OFF's categories and the sugar
     remembered: bool = False  # our values from the last time we logged it
+    meal_id: int | None = None  # in our snacks: logging it updates that product meal
     source: str = "Open Food Facts"
 
 
@@ -48,6 +49,7 @@ async def product_by_barcode(code: Barcode, session: Session, user: CurrentUser)
             per100=ours.per100,
             kind=ours.kind,
             remembered=True,
+            meal_id=ours.meal_id,
             source="Our values",
         )
     try:

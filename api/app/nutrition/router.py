@@ -12,14 +12,17 @@ router = APIRouter(prefix="/ingredients", tags=["nutrition"])
 @router.get("")
 async def search_ingredients(
     session: Session,
-    _: CurrentUser,
+    user: CurrentUser,
     q: str = "",
     limit: int = Query(default=30, ge=1, le=100),
 ) -> list[IngredientOut]:
     """Hand-picked foods before the full USDA/Ciqual import; within each prefix matches first,
-    then fuzzy ones. An empty query lists everything by name."""
+    then fuzzy ones. An empty query lists everything by name. Our own products (0025) count as
+    hand-picked; other households' never show."""
     query = normalize(q)
-    stmt = select(Ingredient)
+    stmt = select(Ingredient).where(
+        Ingredient.household_id.is_(None) | (Ingredient.household_id == user.household_id)
+    )
     if query:
         name = func.lower(Ingredient.name)
         aliases = func.array_to_string(Ingredient.aliases, "|")

@@ -1,5 +1,5 @@
 import type {
-  AnalysisJob, CatalogItem, CookIn, Day, Insights, LogEntry, LogPatch, Reward, SnackIn, HouseholdPatch, Ingredient, Me, Meal, MealCard, MealCreate, MealPatch, MealType, MePatch, Plan, PushConfig, PushKind, SavedSnack, Suggestion, SavedSnackPatch, SnackLogged, PlanMode, Product, Rating, RegisterBody, Shopping, StockItem, WizardCell,
+  AnalysisJob, CatalogItem, CookIn, Day, Insights, LogEntry, LogPatch, Reward, SnackIn, HouseholdPatch, Ingredient, Me, Meal, MealCard, MealCreate, MealKind, MealPatch, MealType, MePatch, Plan, PushConfig, PushKind, Suggestion, SnackLogged, PlanMode, Product, Rating, RegisterBody, Shopping, StockItem, WizardCell,
 } from './types'
 import { reportReachable } from '../lib/online'
 import { shrinkPhoto } from '../lib/photoResize'
@@ -115,7 +115,7 @@ export const api = {
   updateMe: (patch: MePatch) => json<Me>('/auth/me', { method: 'PATCH', body: JSON.stringify(patch) }),
   updateHousehold: (patch: HouseholdPatch) =>
     json<Me>('/household', { method: 'PATCH', body: JSON.stringify(patch) }),
-  async uploadPhoto(file: File, kind: 'meal' | 'snack' | 'label' = 'meal', meal?: { type: MealType | null; saveOnly: boolean }) {
+  async uploadPhoto(file: File, kind: 'meal' | 'label' = 'meal', meal?: { type: MealKind | null; saveOnly: boolean }) {
     const form = new FormData()
     form.append('photo', await shrinkPhoto(file))
     form.append('kind', kind)
@@ -124,10 +124,10 @@ export const api = {
     return await json<AnalysisJob>('/analyses', { method: 'POST', body: form })
   },
   /** Type a dish instead of snapping it; checked and posted like a photo. */
-  describe: (kind: 'meal' | 'snack', text: string, meal?: { type: MealType | null; saveOnly: boolean }) =>
+  describe: (text: string, meal?: { type: MealKind | null; saveOnly: boolean }) =>
     json<AnalysisJob>('/analyses/text', {
       method: 'POST',
-      body: JSON.stringify({ kind, text, meal_type: meal?.type ?? null, save_only: meal?.saveOnly ?? false }),
+      body: JSON.stringify({ kind: 'meal', text, meal_type: meal?.type ?? null, save_only: meal?.saveOnly ?? false }),
     }),
   analysis: (id: number | string) => json<AnalysisJob>(`/analyses/${id}`),
   openAnalyses: () => json<AnalysisJob[]>('/analyses/open'),
@@ -175,18 +175,12 @@ export const api = {
   insights: (end: string, days = 7) => json<Insights>(`/insights?end=${end}&days=${days}`),
   snackCatalog: () => json<CatalogItem[]>('/snacks/catalog'),
   logSnack: (body: SnackIn) => json<SnackLogged>('/snacks', { method: 'POST', body: JSON.stringify(body) }),
-  savedSnacks: () => json<SavedSnack[]>('/snacks/saved'),
   product: (code: string) => json<Product>(`/barcode/${code}`),
   suggestions: (today: string) => json<Suggestion[]>(`/suggestions?today=${today}`),
   acceptSuggestion: (id: number, servings = 1) =>
     json<{ log_id: number }>(`/suggestions/${id}/accept`, { method: 'POST', body: JSON.stringify({ servings_eaten: servings }) }),
   async declineSuggestion(id: number) {
     await request(`/suggestions/${id}/decline`, { method: 'POST' })
-  },
-  updateSavedSnack: (id: number, patch: SavedSnackPatch) =>
-    json<SavedSnack>(`/snacks/saved/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),
-  async deleteSavedSnack(id: number) {
-    await request(`/snacks/saved/${id}`, { method: 'DELETE' })
   },
   rewards: (today: string) => json<Reward[]>(`/rewards?today=${today}`),
   useReward: (today: string) => json<Reward[]>('/rewards/use', { method: 'POST', body: JSON.stringify({ today }) }),

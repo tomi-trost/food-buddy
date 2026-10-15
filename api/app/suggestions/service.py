@@ -14,7 +14,7 @@ from app.auth.models import User
 from app.auth.service import household_members
 from app.logs.models import FoodLog
 from app.meals.models import Meal
-from app.meals.service import per_portion
+from app.meals.service import log_entry
 from app.suggestions.models import MealSuggestion
 
 SHOWN_DAYS = 2  # today and yesterday: "did you have it too?" stops making sense after that
@@ -85,19 +85,14 @@ async def lock_pending(session: AsyncSession, user: User, suggestion_id: int) ->
 
 async def accept(session: AsyncSession, user: User, suggestion: MealSuggestion, servings: float):
     meal = await session.get(Meal, suggestion.meal_id)
-    entry = FoodLog(
-        household_id=user.household_id,
-        user_id=user.id,
-        eaten_on=suggestion.eaten_on,
+    entry = log_entry(
+        user,
+        meal,
         meal_type=suggestion.meal_type,
-        name=meal.name,
-        emoji=meal.emoji,
-        meal_id=meal.id,
-        kind="meal",
+        eaten_on=suggestion.eaten_on,
         source="shared",
-        servings=servings,
+        portions=servings,  # a snack: that many portions in its unit
     )
-    entry.set_nutrients(per_portion(meal).scaled(servings * 100))
     session.add(entry)
     suggestion.status = "accepted"
     await session.commit()

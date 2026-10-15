@@ -9,7 +9,6 @@ import {
   amountStep, amountUnit, type Crossed, crossedValues, isTreatKind, KIND_EMOJI as EMOJI, KIND_LABEL, perLabel, SNACK_KINDS,
   snackNutrients, switchPer,
 } from '../lib/snacks'
-import { SAVED_SNACKS } from '../snacks/LogSnackSheet'
 import { Icon } from '../ui/Icon'
 import { MacroTiles } from '../ui/Macro'
 import { NutrientFields } from '../ui/NutrientFields'
@@ -130,7 +129,7 @@ function SnackForm({ analysisId, photoUrl, label, initial, close }: {
         analysis_id: analysisId, save,
       }),
     onSuccess: () => {
-      if (save) qc.invalidateQueries({ queryKey: SAVED_SNACKS })
+      if (save) qc.invalidateQueries({ queryKey: ['meals'] })
       qc.invalidateQueries({ queryKey: ['day'] })
       qc.invalidateQueries({ queryKey: ['insights'] })
       qc.invalidateQueries({ queryKey: OPEN_ANALYSES })
@@ -200,7 +199,7 @@ function SnackForm({ analysisId, photoUrl, label, initial, close }: {
         <div className="sub row" style={{ gap: 6, marginBottom: 12 }}><Icon name="gift" size={16} /> Counts as a treat for your streak</div>
       )}
       <label className="switch-row card" style={{ marginBottom: 12 }}>
-        <span className="sp"><b>Save to our snacks</b><small className="sub">Log it again in one tap, from Snacks under Meals</small></span>
+        <span className="sp"><b>Save to our snacks</b><small className="sub">Under Meals → Snacks: log it again in one tap, rate it, keep it at home</small></span>
         <input type="checkbox" role="switch" className="switch" checked={save} onChange={(e) => setSave(e.target.checked)} />
       </label>
       {log.isError && <p className="error" role="alert">{log.error.message}</p>}

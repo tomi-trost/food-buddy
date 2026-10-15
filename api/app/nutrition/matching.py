@@ -31,7 +31,7 @@ _FUZZY = text(
                similarity(t.term, :q) AS sim, word_similarity(t.term, :q) AS wsim
         FROM ingredient i
         CROSS JOIN LATERAL unnest(array_append(i.aliases, lower(i.name))) AS t(term)
-        WHERE i.curated
+        WHERE i.curated AND i.household_id IS NULL
     ) s
     WHERE wsim >= :min_wsim OR sim >= :min_sim
     ORDER BY score DESC, sim DESC, len
@@ -58,6 +58,7 @@ async def match_ingredient(session: AsyncSession, name: str) -> Match | None:
     exact = await session.scalar(
         select(Ingredient)
         .where((func.lower(Ingredient.name) == query) | (query == any_(Ingredient.aliases)))
+        .where(Ingredient.household_id.is_(None))  # households' own products stay theirs
         .order_by(Ingredient.curated.desc(), Ingredient.id)
         .limit(1)
     )

@@ -11,7 +11,6 @@ from app.nutrition.models import Ingredient, UnmatchedIngredient
 from app.plan.models import PlanApproval, PlanSlot, PlanWeek, ShoppingCheck
 from app.push.models import PushSent, PushSubscription
 from app.ratings.models import Rating
-from app.snacks.models import SavedSnack
 from app.suggestions.models import MealSuggestion
 
 __all__ = [
@@ -36,7 +35,6 @@ __all__ = [
     "PushSubscription",
     "RanOut",
     "Rating",
-    "SavedSnack",
     "ShoppingCheck",
     "User",
 ]

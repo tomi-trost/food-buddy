@@ -40,7 +40,8 @@ function EntryForm({ entry, onClose }: { entry: LogEntry; onClose: () => void })
   }
   const save = useMutation({
     mutationFn: () => {
-      const patch: LogPatch = isMeal ? { servings, meal_type: mealType } : { servings, ...(perUnit && { per_unit: perUnit }) }
+      const ours = !isMeal && entry.meal_id !== null // one of our snacks: values live on the snack
+      const patch: LogPatch = isMeal ? { servings, meal_type: mealType } : { servings, ...(perUnit && !ours && { per_unit: perUnit }) }
       return api.editLog(entry.id, patch)
     },
     onSuccess: () => done('Updated'),
@@ -65,7 +66,11 @@ function EntryForm({ entry, onClose }: { entry: LogEntry; onClose: () => void })
           {entry.meal_id && <Link to={`/meals/${entry.meal_id}`} className="btn ghost" onClick={onClose}>Open the meal</Link>}
         </>
       ) : perUnit && entry.per ? (
-        <SnackAmount per={entry.per} amount={servings} perUnit={perUnit} onAmount={setServings} onPerUnit={setPerUnit} onValid={setValid} />
+        <>
+          <SnackAmount per={entry.per} amount={servings} perUnit={perUnit} fixed={entry.meal_id !== null}
+            onAmount={setServings} onPerUnit={setPerUnit} onValid={setValid} />
+          {entry.meal_id && <Link to={`/meals/${entry.meal_id}`} className="btn ghost" onClick={onClose}>Open the snack</Link>}
+        </>
       ) : (
         <MacroTiles values={entry.nutrients} label="What you ate" />
       )}

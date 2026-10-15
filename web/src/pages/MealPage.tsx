@@ -16,6 +16,7 @@ import { Photo } from '../ui/Photo'
 import { StarNum, Stars } from '../ui/Stars'
 import { Toggle } from '../ui/Toggle'
 import { formatAmount } from '../lib/units'
+import { KIND_LABEL, perLabel } from '../lib/snacks'
 
 type Tab = 'recipe' | 'nutrition' | 'ratings'
 
@@ -40,6 +41,13 @@ export function MealPage() {
 
   const m = meal.data
   const today = todayISO()
+  const snackOnly = !!m && m.types.every((t) => t === 'snack') // eaten, not cooked; never planned
+  const sections: { value: Tab; label: string }[] = [
+    ...(m?.is_product ? [] : [{ value: 'recipe' as const, label: 'Recipe' }]),
+    { value: 'nutrition', label: 'Nutrition' },
+    { value: 'ratings', label: 'Ratings' },
+  ]
+  const shown: Tab = m?.is_product && tab === 'recipe' ? 'nutrition' : tab
 
   return (
     <>
@@ -49,7 +57,7 @@ export function MealPage() {
         {m && (
           <>
             <button className="icon" aria-label="Edit meal" onClick={() => navigate(`/meals/${m.id}/edit`)}><Icon name="settings" /></button>
-            <button className="btn sm ghost" onClick={() => setPlanning(true)}><Icon name="plan" size={16} /> Add to plan</button>
+            {!snackOnly && <button className="btn sm ghost" onClick={() => setPlanning(true)}><Icon name="plan" size={16} /> Add to plan</button>}
           </>
         )}
       </div>
@@ -61,14 +69,18 @@ export function MealPage() {
           <h1 style={{ margin: '12px 0 8px' }}>{m.name}</h1>
           <div className="chips">
             <span className="chip">{m.types.map((t) => MEAL_TYPE_LABEL[t]).join(' / ')}</span>
-            <span className="chip"><Icon name="clock" size={14} /> {m.prep_minutes} min</span>
-            <span className="chip">{m.cost.toFixed(2)} € total · {(m.cost / m.portions).toFixed(2)} € / portion</span>
-            <span className="chip"><Icon name="users" size={14} /> {m.portions} portions</span>
+            {m.snack_kind && <span className="chip">{KIND_LABEL[m.snack_kind]}</span>}
+            {m.types.includes('snack') && (
+              <span className="chip">{Math.round(m.per_unit.kcal)} kcal / {perLabel(m.per)}{m.per === 'piece' && m.piece_g ? ` (${m.piece_g} g)` : ''}</span>
+            )}
+            {!m.is_product && <span className="chip"><Icon name="clock" size={14} /> {m.prep_minutes} min</span>}
+            {!m.is_product && <span className="chip">{m.cost.toFixed(2)} € total · {(m.cost / m.portions).toFixed(2)} € / portion</span>}
+            {!m.is_product && <span className="chip"><Icon name="users" size={14} /> {m.portions} portions</span>}
             {m.score !== null && <span className="chip"><StarNum value={m.score} /></span>}
           </div>
           <div className="macro" style={{ margin: '14px 0 0', '--n': 3 } as CSSProperties} aria-label="Stats">
-            <div><b>{m.cooked_count}×</b><small>cooked</small></div>
-            <div><b>{ago(m.last_cooked, today)}</b><small>last cooked</small></div>
+            <div><b>{m.cooked_count}×</b><small>{snackOnly ? 'eaten' : 'cooked'}</small></div>
+            <div><b>{ago(m.last_cooked, today)}</b><small>{snackOnly ? 'last eaten' : 'last cooked'}</small></div>
             <div><b>{m.score !== null ? Math.round(m.score * 10) / 10 : '–'}</b><small>avg rating</small></div>
           </div>
           {(() => {
@@ -86,11 +98,10 @@ export function MealPage() {
             )
           })()}
           <div style={{ marginTop: 14 }}>
-            <Toggle<Tab> label="Meal sections" value={tab} onChange={setTab}
-              options={[{ value: 'recipe', label: 'Recipe' }, { value: 'nutrition', label: 'Nutrition' }, { value: 'ratings', label: 'Ratings' }]} />
+            <Toggle<Tab> label="Meal sections" value={shown} onChange={setTab} options={sections} />
           </div>
 
-          {tab === 'recipe' && (
+          {shown === 'recipe' && (
             <>
               <div className="card">
                 <h3>Ingredients <span className="sub">(for {m.portions} portions)</span></h3>
@@ -113,14 +124,31 @@ export function MealPage() {
             </>
           )}
 
-          {tab === 'nutrition' && (
+          {shown === 'nutrition' && (
             <>
-              <div className="card">
+              {m.types.includes('snack') && m.per !== 'portion' && (
+                <div className="card" aria-label="Values per unit">
+                  <div className="sub" style={{ marginBottom: 8 }}>
+                    Per {perLabel(m.per)}{m.is_product ? ' · from the pack' : ''}
+                  </div>
+                  <MacroTiles values={m.per_unit} />
+                </div>
+              )}
+              {m.is_product && (
+                <div className="card row">
+                  <div className="sp">
+                    <h3>Made it yourself?</h3>
+                    <div className="sub">Add its ingredients and it becomes a recipe.</div>
+                  </div>
+                  <button className="btn sm ghost" onClick={() => navigate(`/meals/${m.id}/edit`)}>Add ingredients</button>
+                </div>
+              )}
+              {!m.is_product && <div className="card">
                 <div className="sub" style={{ marginBottom: 8 }}>
                   Per portion{m.nutrients_overridden && ` · your values (calculated ${Math.round(m.per_portion_calculated.kcal)} kcal)`}
                 </div>
                 <MacroTiles values={m.per_portion} />
-              </div>
+              </div>}
               {fillTip(m.ratings.map((r) => r.rating)) && (
                 <div className="card">
                   <h3>How filling</h3>
@@ -135,7 +163,7 @@ export function MealPage() {
             </>
           )}
 
-          {tab === 'ratings' && m.ratings.map((r) => {
+          {shown === 'ratings' && m.ratings.map((r) => {
             const isMe = r.user_id === me.id
             return (
               <div className="card" key={r.user_id}>
@@ -159,9 +187,11 @@ export function MealPage() {
             )
           })}
 
-          <button className="btn" onClick={() => setCooking(true)}><Icon name="flame" size={18} /> I cooked this again</button>
+          <button className="btn" onClick={() => setCooking(true)}>
+            <Icon name="flame" size={18} /> {snackOnly ? 'I had this again' : 'I cooked this again'}
+          </button>
           <RateSheet meal={m} meId={me.id} open={rating} onClose={() => setRating(false)} />
-          <CookSheet meal={m} open={cooking} onClose={() => setCooking(false)} />
+          <CookSheet meal={m} open={cooking} onClose={() => setCooking(false)} initialType={snackOnly ? 'snack' : undefined} />
           <AddToPlanSheet meal={m} open={planning} onClose={() => setPlanning(false)} />
         </>
       )}

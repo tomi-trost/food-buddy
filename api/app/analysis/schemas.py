@@ -48,7 +48,7 @@ class AnalysisJobOut(BaseModel):
     created_at: datetime
     finished_at: datetime | None
     closed: bool  # posted, logged or discarded: no longer "to check"
-    meal_type: Literal["breakfast", "lunch", "dinner"] | None  # chosen when snapping
+    meal_type: Literal["breakfast", "lunch", "dinner", "snack"] | None  # chosen when snapping
     save_only: bool  # "for later": save to the library, don't log as eaten
     meal_id: int | None  # set once posted
     my_rating: RatingIn | None  # rating given before posting (meals only)
