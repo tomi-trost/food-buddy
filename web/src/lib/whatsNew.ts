@@ -4,6 +4,13 @@ export type Release = { id: string; notes: string[] }
 
 export const RELEASES: Release[] = [
   {
+    id: '2026-10-15-search-sheet',
+    notes: [
+      'Ingredient search stays in view above the keyboard, so you can see what you type.',
+      'Swiping down while typing now just hides the keyboard; swipe again to close.',
+    ],
+  },
+  {
     id: '2026-10-14-snacks-are-meals',
     notes: [
       'Snacks are meals now: a home-made chia pudding gets its ingredients, portions and ratings like any meal. Pick "Snack" when you add food.',

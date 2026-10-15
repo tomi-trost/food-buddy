@@ -26,18 +26,20 @@ export function IngredientPicker({ onPick, hint = '', exclude = [] }: {
 
   return (
     <>
-      <label className="row card" style={{ padding: '4px 12px' }}>
-        <Icon name="search" size={18} />
-        <input
-          className="input"
-          style={{ border: 0, padding: 0 }}
-          placeholder="Search ingredients"
-          aria-label="Search ingredients"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          autoFocus
-        />
-      </label>
+      <div className="sheet-sticky">
+        <label className="row card" style={{ padding: '4px 12px' }}>
+          <Icon name="search" size={18} />
+          <input
+            className="input"
+            style={{ border: 0, padding: 0 }}
+            placeholder="Search ingredients"
+            aria-label="Search ingredients"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            autoFocus
+          />
+        </label>
+      </div>
       <div className="list">
         {list.map((i) => (
           <button key={i.id} style={{ width: '100%', textAlign: 'left' }} onClick={() => onPick(i)}>

@@ -13,7 +13,15 @@ function lockPage() {
   }
 }
 
-/** Bottom sheet. Closes on backdrop tap, Escape, or a swipe down from its top (not from `[data-no-swipe]`). */
+const isTyping = (sheet: HTMLElement) => {
+  const el = document.activeElement
+  return el instanceof HTMLElement && sheet.contains(el) && el.matches('input, textarea, [contenteditable]')
+}
+
+/**
+ * Bottom sheet. Closes on backdrop tap, Escape, or a swipe down from its top (not from `[data-no-swipe]`);
+ * while a field inside has focus, that swipe only hides the keyboard.
+ */
 export function Sheet({ open, onClose, label, children }: {
   open: boolean
   onClose: () => void
@@ -21,6 +29,7 @@ export function Sheet({ open, onClose, label, children }: {
   children: ReactNode
 }) {
   const ref = useRef<HTMLDivElement>(null)
+  const bgRef = useRef<HTMLDivElement>(null)
   const closeRef = useRef(onClose)
   closeRef.current = onClose
 
@@ -32,6 +41,26 @@ export function Sheet({ open, onClose, label, children }: {
   }, [open, onClose])
 
   useEffect(() => (open ? lockPage() : undefined), [open])
+
+  // iOS keeps fixed elements sized to the whole screen when the keyboard opens and pans the page,
+  // which pushes the sheet's top (its search box) out of sight: fit the backdrop to what's visible.
+  useEffect(() => {
+    const bg = bgRef.current
+    const vv = window.visualViewport
+    if (!open || !bg || !vv) return
+    const fit = () => {
+      bg.style.top = `${vv.offsetTop}px`
+      bg.style.height = `${vv.height}px`
+      bg.style.bottom = 'auto'
+    }
+    fit()
+    vv.addEventListener('resize', fit)
+    vv.addEventListener('scroll', fit)
+    return () => {
+      vv.removeEventListener('resize', fit)
+      vv.removeEventListener('scroll', fit)
+    }
+  }, [open])
 
   // Touch events, not pointer events: iOS cancels pointer events once it starts scrolling.
   useEffect(() => {
@@ -68,7 +97,9 @@ export function Sheet({ open, onClose, label, children }: {
       const fast = dy / Math.max(1, performance.now() - startT) > FLICK_PX_PER_MS
       sheet.style.transition = ''
       sheet.style.transform = ''
-      if (dy > CLOSE_DRAG_PX || (fast && dy > 20)) closeRef.current()
+      if (!(dy > CLOSE_DRAG_PX || (fast && dy > 20))) return
+      if (isTyping(sheet)) (document.activeElement as HTMLElement).blur()
+      else closeRef.current()
     }
     sheet.addEventListener('touchstart', onStart, { passive: true })
     sheet.addEventListener('touchmove', onMove, { passive: false })
@@ -84,7 +115,7 @@ export function Sheet({ open, onClose, label, children }: {
 
   if (!open) return null
   return createPortal(
-    <div className="sheetbg" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div ref={bgRef} className="sheetbg" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div ref={ref} className="sheet" role="dialog" aria-modal="true" aria-label={label}>
         <div className="grab" />
         {children}

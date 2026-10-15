@@ -158,6 +158,26 @@ describe('Sheet swipe', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
+  it('only hides the keyboard on a swipe down while typing, then closes on the next', () => {
+    const onClose = vi.fn()
+    render(<Sheet open onClose={onClose} label="Test"><input aria-label="search" autoFocus /></Sheet>)
+    const input = screen.getByLabelText('search')
+    expect(input).toHaveFocus()
+    swipe(screen.getByRole('dialog'), [100, 150, 220])
+    expect(onClose).not.toHaveBeenCalled()
+    expect(input).not.toHaveFocus()
+    swipe(screen.getByRole('dialog'), [100, 150, 220])
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps a short pull while typing as is (no blur, no close)', () => {
+    const onClose = vi.fn()
+    render(<Sheet open onClose={onClose} label="Test"><input aria-label="search" autoFocus /></Sheet>)
+    swipe(screen.getByRole('dialog'), [100, 120], 400)
+    expect(screen.getByLabelText('search')).toHaveFocus()
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
   it('follows the finger and snaps back after a short slow pull', () => {
     const onClose = vi.fn()
     render(<Sheet open onClose={onClose} label="Test"><p>content</p></Sheet>)
@@ -219,6 +239,29 @@ describe('Sheet swipe', () => {
 })
 
 describe('Sheet', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('fits the backdrop to the visible area above the keyboard and follows it', () => {
+    const vv = Object.assign(new EventTarget(), { offsetTop: 120, height: 400 })
+    vi.stubGlobal('visualViewport', vv)
+    const { unmount } = render(<Sheet open onClose={() => {}} label="Test"><p>content</p></Sheet>)
+    const bg = document.querySelector<HTMLElement>('.sheetbg')!
+    expect(bg.style.top).toBe('120px')
+    expect(bg.style.height).toBe('400px')
+    vv.offsetTop = 0
+    vv.height = 844 // keyboard closed
+    act(() => { vv.dispatchEvent(new Event('resize')) })
+    expect(bg.style.top).toBe('0px')
+    expect(bg.style.height).toBe('844px')
+    unmount()
+  })
+
+  it('works without visualViewport', () => {
+    vi.stubGlobal('visualViewport', undefined)
+    render(<Sheet open onClose={() => {}} label="Test"><p>content</p></Sheet>)
+    expect(document.querySelector<HTMLElement>('.sheetbg')!.style.top).toBe('')
+  })
+
   it('closes on Escape and backdrop tap, not on content tap', () => {
     const onClose = vi.fn()
     render(<Sheet open onClose={onClose} label="Test"><p>content</p></Sheet>)
