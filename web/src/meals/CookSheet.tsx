@@ -2,10 +2,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { api } from '../api/client'
 import type { Meal, MealKind } from '../api/types'
-import { MEAL_TYPE_LABEL, todayISO } from '../lib/dates'
+import { todayISO } from '../lib/dates'
 import { amountHint, amountMin, amountStep, amountUnit, isCounted, piecesIn, snackNutrients } from '../lib/snacks'
 import { Sheet } from '../ui/Sheet'
 import { Stepper } from '../ui/Stepper'
+import { typeOption } from '../ui/mealTypes'
 import { Toggle } from '../ui/Toggle'
 import { useToast } from '../ui/Toast'
 
@@ -78,7 +79,7 @@ export function CookSheet({ meal, open, onClose, initialType }: {
             : 'Logs what you ate today. Stock stays as it is (it went down when it was made).'}
       </p>
       <Toggle<MealKind> label="Meal type" value={type} onChange={(t) => { setType(t); setCooked(t !== 'snack' || meal.is_product) }}
-        options={types.map((t) => ({ value: t, label: MEAL_TYPE_LABEL[t] }))} />
+        stack options={types.map((t) => typeOption(t))} />
       {!(snack && meal.is_product) && (
         <Toggle<'now' | 'made'> label="Cooked" value={cooked ? 'now' : 'made'} onChange={(v) => setCooked(v === 'now')}
           options={[

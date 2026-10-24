@@ -4,6 +4,14 @@ export type Release = { id: string; notes: string[] }
 
 export const RELEASES: Release[] = [
   {
+    id: '2026-10-24-meals-screen',
+    notes: [
+      'Meals has a calmer look: a switch for the meal type, small filters (tap again to clear) and the sort on the same row.',
+      'Meal types everywhere have icons, and Recipe, Nutrition and Ratings too.',
+      'Wrong emoji? Change it in Edit meal. No photo yet? Tap "Add photo" on the meal.',
+    ],
+  },
+  {
     id: '2026-10-24-bought-ate-out',
     notes: [
       'Bought it or ate out? Pick Bought or Ate out when you check a photo: it counts for today without a recipe, rating or a spot in your meals.',

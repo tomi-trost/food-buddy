@@ -163,6 +163,11 @@ export const api = {
   cookable: () => json<MealCard[]>('/inventory/cookable'),
   patchMeal: (id: number, patch: MealPatch) =>
     json<Meal>(`/meals/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),
+  async setMealPhoto(id: number, file: File) {
+    const form = new FormData()
+    form.append('photo', await shrinkPhoto(file))
+    return await json<Meal>(`/meals/${id}/photo`, { method: 'PUT', body: form })
+  },
   async deleteMeal(id: number, keepLog: boolean) {
     await request(`/meals/${id}?keep_log=${keepLog}`, { method: 'DELETE' })
   },

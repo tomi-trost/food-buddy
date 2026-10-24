@@ -125,6 +125,7 @@ class MealPatch(BaseModel):
     `per_portion: null` = use the values calculated from the ingredients again."""
 
     name: str | None = Field(default=None, min_length=1, max_length=120)
+    emoji: str | None = Field(default=None, min_length=1, max_length=8)  # the card without a photo
     types: list[MealType] | None = Field(default=None, min_length=1)
     prep_friendly: bool | None = None
     prep_minutes: int | None = Field(default=None, ge=1, le=600)
@@ -148,6 +149,13 @@ class MealPatch(BaseModel):
         if self.piece_g is not None and self.per not in ("piece", None):
             raise ValueError("A piece weight comes with counting in pieces")
         return self
+
+    @field_validator("emoji")
+    @classmethod
+    def _one_symbol(cls, emoji: str | None) -> str | None:
+        if emoji is not None and (not emoji.strip() or emoji.isascii()):
+            raise ValueError("pick an emoji")
+        return emoji.strip() if emoji else emoji
 
     @field_validator("steps")
     @classmethod

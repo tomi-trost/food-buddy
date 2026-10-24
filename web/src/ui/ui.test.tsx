@@ -5,6 +5,7 @@ import { Sheet } from './Sheet'
 import { starAt, Stars } from './Stars'
 import { Stepper } from './Stepper'
 import { TOAST_MS, ToastProvider, useToast } from './Toast'
+import { Toggle } from './Toggle'
 
 function StepperHarness({ start = 2 }: { start?: number }) {
   const [v, setV] = useState(start)
@@ -296,5 +297,30 @@ describe('Toast', () => {
     act(() => vi.advanceTimersByTime(TOAST_MS + 10))
     expect(screen.queryByText('Saved')).not.toBeInTheDocument()
     vi.useRealTimers()
+  })
+})
+
+describe('Toggle', () => {
+  function Harness() {
+    const [v, setV] = useState<'a' | 'b' | 'c'>('a')
+    return <Toggle label="Pick" value={v} onChange={setV} options={[{ value: 'a', label: 'A' }, { value: 'b', label: 'B' }, { value: 'c', label: 'C' }]} />
+  }
+
+  it('slides the thumb under the chosen option', () => {
+    const { container } = render(<Harness />)
+    const thumb = () => container.querySelector<HTMLElement>('.seg-thumb')!
+    expect(thumb().style.transform).toBe('translateX(0%)')
+    expect(screen.getByRole('group', { name: 'Pick' })).toHaveStyle({ '--n': '3' })
+    fireEvent.click(screen.getByRole('button', { name: 'C' }))
+    expect(thumb().style.transform).toBe('translateX(200%)')
+    expect(screen.getByRole('button', { name: 'C' })).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('shows no thumb before anything is chosen, nor for other styles', () => {
+    const { container } = render(<>
+      <Toggle label="Empty" value={'' as 'a'} onChange={() => {}} options={[{ value: 'a', label: 'A' }]} />
+      <Toggle label="Mini" variant="mini" value="a" onChange={() => {}} options={[{ value: 'a', label: 'A' }]} />
+    </>)
+    expect(container.querySelectorAll('.seg-thumb')).toHaveLength(0)
   })
 })

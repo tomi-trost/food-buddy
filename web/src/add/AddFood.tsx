@@ -6,6 +6,7 @@ import { MealPicker } from '../meals/MealPicker'
 import { LogSnackSheet } from '../snacks/LogSnackSheet'
 import { Icon } from '../ui/Icon'
 import { Sheet } from '../ui/Sheet'
+import { typeOption } from '../ui/mealTypes'
 import { Toggle } from '../ui/Toggle'
 import { PhotoInput } from './PhotoInput'
 import { type MealChoice, useFoodUpload } from './upload'
@@ -62,11 +63,8 @@ function AddFoodSheet({ slot, setSlot, openSnack }: { slot: Slot | null; setSlot
     body = (
       <>
         <h1>Add food</h1>
-        <Toggle<Slot> label="Which meal?" value={slot ?? 'lunch'} onChange={setSlot}
-          options={[
-            ...(['breakfast', 'lunch', 'dinner', 'snack'] as const).map((t) => ({ value: t, label: MEAL_TYPE_LABEL[t] })),
-            { value: 'later' as const, label: 'For later' },
-          ]} />
+        <Toggle<Slot> label="Which meal?" value={slot ?? 'lunch'} onChange={setSlot} stack
+          options={(['breakfast', 'lunch', 'dinner', 'snack', 'later'] as const).map((t) => typeOption(t))} />
         <PhotoInput camera label="Take photo" disabled={busy} className="add-hero"
           onFile={(file) => photo.mutate({ file, kind: 'meal', meal })}>
           <span className="add-ic"><Icon name="camera" size={30} /></span>

@@ -1,7 +1,8 @@
-from fastapi import APIRouter, HTTPException, Response, status
+from fastapi import APIRouter, HTTPException, Response, UploadFile, status
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
+from app.analysis.photos import InvalidPhoto, normalize_photo, save_photo
 from app.auth.deps import CurrentUser, Session
 from app.config import get_settings
 from app.meals.schemas import CookIn, MealCard, MealCreate, MealOut, MealPatch, RatingIn
@@ -93,6 +94,27 @@ async def cook_meal(meal_id: int, body: CookIn, user: CurrentUser, session: Sess
     await cook_again(session, user, meal, body)
     if body.eaten and body.eaten_on is not None:
         await suggest_to_others(session, user, meal, body.meal_type, body.eaten_on)
+    return await meal_out(session, user, meal)
+
+
+@router.put("/{meal_id}/photo")
+async def set_meal_photo(
+    meal_id: int, photo: UploadFile, user: CurrentUser, session: Session
+) -> MealOut:
+    """A photo for a meal that has none (typed in) or a better one; the old file stays for
+    the analysis it came from."""
+    meal = await get_own_meal(session, user, meal_id)
+    settings = get_settings()
+    max_bytes = settings.max_upload_mb * 1024 * 1024
+    data = await photo.read(max_bytes + 1)
+    if len(data) > max_bytes:
+        raise HTTPException(status.HTTP_413_CONTENT_TOO_LARGE, "Photo too large")
+    try:
+        jpeg = normalize_photo(data, settings.photo_max_px)
+    except InvalidPhoto as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
+    meal.photo_path = save_photo(settings.photo_dir, user.household_id, jpeg)
+    await session.commit()
     return await meal_out(session, user, meal)
 
 

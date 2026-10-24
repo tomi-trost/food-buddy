@@ -8,11 +8,13 @@ import { useAddFood } from '../add/AddFood'
 import { CookMealSheet } from '../meals/CookSheet'
 import { feed, type FeedSeg, type FeedSort, type FeedType, NEXT_SORT, ORIGIN_LABEL, SORT_LABEL } from '../lib/meals'
 import { KIND_LABEL, perLabel } from '../lib/snacks'
-import { Icon } from '../ui/Icon'
+import { Icon, type IconName } from '../ui/Icon'
 import { Photo } from '../ui/Photo'
+import { MEAL_TYPE_ICON, typeOption } from '../ui/mealTypes'
 import { Toggle } from '../ui/Toggle'
 
-const SEGS: [FeedSeg, string][] = [['all', 'Any'], ['top', 'Top rated'], ['quick', '≤ 30 min'], ['cheap', '≤ 4 € / portion']]
+/** Filters: one at a time, tap again to clear. */
+const FILTERS: [Exclude<FeedSeg, 'all'>, string, IconName][] = [['top', 'Top', 'star'], ['quick', '≤ 30 min', 'clock'], ['cheap', '≤ 4 €', 'cost']]
 
 /** The meal library; Snacks are meals typed Snack (decision 0025), shown with their own unit. */
 export function MealsPage() {
@@ -36,32 +38,35 @@ export function MealsPage() {
     <>
       <div className="top">
         <h1>Meals</h1>
-        <button className="sortbtn" onClick={() => set('sort', NEXT_SORT[sort])} aria-label={`Sort: ${SORT_LABEL[sort]}`}>
-          <Icon name="sort" size={16} /><small>Sort</small><b>{SORT_LABEL[sort]}</b>
-        </button>
       </div>
       <Toggle<FeedType | 'snacks'>
-        variant="tseg"
         label="Meal type"
         value={type}
         onChange={(v) => set('type', v)}
+        stack
         options={[
-          { value: 'all', label: <><Icon name="grid" size={14} />All</> },
-          { value: 'breakfast', label: <><Icon name="sunrise" size={14} />Breakfast</> },
-          { value: 'lunch', label: <><Icon name="sun" size={14} />Lunch</> },
-          { value: 'dinner', label: <><Icon name="moon" size={14} />Dinner</> },
-          { value: 'snacks', label: <><Icon name="gift" size={14} />Snacks</> },
+          { value: 'all', label: <><Icon name="grid" size={18} /><span>All</span></> },
+          typeOption('breakfast'),
+          typeOption('lunch'),
+          typeOption('dinner'),
+          { value: 'snacks', label: <><Icon name={MEAL_TYPE_ICON.snack} size={18} /><span>Snacks</span></> },
         ]}
       />
-      {!snacks && (
-        <div className="chips" style={{ marginBottom: 14 }} role="group" aria-label="Filter">
-          {SEGS.map(([k, label]) => (
-            <button key={k} className={`chip${seg === k ? ' on' : ''}`} aria-pressed={seg === k} onClick={() => set('seg', k)}>
-              {label}
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="feedbar">
+        {!snacks && (
+          <div className="fchips" role="group" aria-label="Filter">
+            {FILTERS.map(([k, label, icon]) => (
+              <button key={k} className="fchip" aria-pressed={seg === k} onClick={() => set('seg', seg === k ? 'all' : k)}>
+                <span><Icon name={icon} size={14} />{label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        <span className="sp" />
+        <button className="sortbtn" onClick={() => set('sort', NEXT_SORT[sort])} aria-label={`Sort: ${SORT_LABEL[sort]}`}>
+          <Icon name="sort" size={15} /><b>{SORT_LABEL[sort]}</b>
+        </button>
+      </div>
       {cards.isError && <p className="error" role="alert">{cards.error.message}</p>}
       <div className="mealgrid">
         {list.map((m) => (

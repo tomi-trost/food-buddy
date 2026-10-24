@@ -30,9 +30,14 @@ describe('MealsPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Sort: Top rated' }))
     expect(screen.getByRole('button', { name: 'Sort: Most recent' })).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Top rated' }))
+    const top = screen.getByRole('button', { name: 'Top' })
+    fireEvent.click(top)
+    expect(top).toHaveAttribute('aria-pressed', 'true')
     fireEvent.click(screen.getByRole('button', { name: /Dinner/ }))
     expect(screen.getByText('No meals match this filter.')).toBeInTheDocument()
+    fireEvent.click(top) // tap again: no filter
+    expect(top).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByRole('link', { name: /Curry/ })).toBeInTheDocument()
   })
 
   it('invites the first snap when there are no meals', async () => {
@@ -155,6 +160,26 @@ describe('MealPage', () => {
     expect(await screen.findByText('Saved to our meals')).toBeInTheDocument()
     expect(patched).toEqual({ listed: true })
     expect(screen.getByLabelText('Your rating')).toBeInTheDocument() // rate it once it's ours
+  })
+
+  it('adds a photo to a meal that has none', async () => {
+    let put = false
+    mockFetch((url, init) => {
+      if (url === '/api/auth/me') return jsonResponse(me())
+      if (url === '/api/meals/3/photo' && init?.method === 'PUT') {
+        put = init.body instanceof FormData
+        return jsonResponse(meal({ photo_url: '/api/meals/3/photo' }))
+      }
+      if (url === '/api/meals/3/photo') return new Response('img')
+      return jsonResponse(meal())
+    })
+    vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: () => 'blob:x', revokeObjectURL: () => {} }))
+    renderMeal()
+    const input = await screen.findByLabelText('Add a photo')
+    fireEvent.change(input, { target: { files: [new File(['x'], 'p.jpg', { type: 'image/jpeg' })] } })
+    expect(await screen.findByText('Photo added')).toBeInTheDocument()
+    expect(put).toBe(true)
+    expect(screen.queryByLabelText('Add a photo')).not.toBeInTheDocument()
   })
 
   it('removes my rating', async () => {

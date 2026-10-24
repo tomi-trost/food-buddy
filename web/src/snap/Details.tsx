@@ -1,9 +1,9 @@
 import type { MealKind, MealPer, Origin, SnackKind } from '../api/types'
-import { MEAL_TYPE_LABEL } from '../lib/dates'
 import { isTreatKind, KIND_LABEL, SNACK_KINDS } from '../lib/snacks'
 import { Icon } from '../ui/Icon'
 import { templateSteps } from '../lib/recipe'
 import { Stepper } from '../ui/Stepper'
+import { typeOption } from '../ui/mealTypes'
 import { Toggle } from '../ui/Toggle'
 import { byWeight, type PlateItem } from './plate'
 
@@ -76,7 +76,8 @@ function NotCookedDetails({ state, set }: { state: DetailsState; set: (patch: Pa
         label="Meal type"
         value={state.mealType}
         onChange={(mealType) => set({ mealType })}
-        options={(['breakfast', 'lunch', 'dinner', 'snack'] as const).map((t) => ({ value: t, label: MEAL_TYPE_LABEL[t] }))}
+        stack
+        options={(['breakfast', 'lunch', 'dinner', 'snack'] as const).map((t) => typeOption(t))}
       />
       {state.mealType === 'snack' && <SnackFields state={state} set={set} countIn={false} />}
       <div className="card">
@@ -126,7 +127,8 @@ function CookedDetails({ items, resolved, perPortion, state, set }: {
         label="Meal type"
         value={state.mealType}
         onChange={(mealType) => set({ mealType })}
-        options={(['breakfast', 'lunch', 'dinner', 'snack'] as const).map((t) => ({ value: t, label: MEAL_TYPE_LABEL[t] }))}
+        stack
+        options={(['breakfast', 'lunch', 'dinner', 'snack'] as const).map((t) => typeOption(t))}
       />
       {state.mealType === 'snack' && <SnackFields state={state} set={set} />}
       <div className="card row">

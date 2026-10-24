@@ -407,6 +407,8 @@ async def update_meal(session: AsyncSession, meal: Meal, body: MealPatch) -> Non
         meal.nutrients_override = body.per_portion.model_dump() if body.per_portion else None
     if body.name is not None:
         meal.name = body.name.strip()
+    if body.emoji is not None:
+        meal.emoji = body.emoji
     if body.types is not None:
         meal.types = [t for t in TYPES if t in body.types]
     _update_snack(meal, body)

@@ -5,12 +5,13 @@ import { api } from '../api/client'
 import { useMe } from '../api/hooks'
 import { MEAL_TYPE_LABEL, todayISO } from '../lib/dates'
 import { ago, againLabel, EFFORT_STEPS, FILL_STEPS, fillTip, ORIGIN_LABEL, stepLabel } from '../lib/meals'
+import { PhotoInput } from '../add/PhotoInput'
 import { AddToPlanSheet } from '../meals/AddToPlanSheet'
 import { CookSheet } from '../meals/CookSheet'
 import { RateSheet } from '../meals/RateSheet'
 import { UndoPost } from '../meals/UndoPost'
 import { Avatar } from '../ui/Avatar'
-import { Icon } from '../ui/Icon'
+import { Icon, type IconName } from '../ui/Icon'
 import { MacroTiles } from '../ui/Macro'
 import { Photo } from '../ui/Photo'
 import { StarNum, Stars } from '../ui/Stars'
@@ -52,13 +53,22 @@ export function MealPage() {
       toast('Saved to our meals')
     },
   })
+  const addPhoto = useMutation({
+    mutationFn: (file: File) => api.setMealPhoto(Number(id), file),
+    onSuccess: (updated) => {
+      qc.setQueryData(['meal', id], updated)
+      qc.invalidateQueries({ queryKey: ['meals'] })
+      toast('Photo added')
+    },
+  })
   const notCooked = !!m && m.origin !== 'home' // bought / eaten out: no recipe, rated once saved
   const snackOnly = !!m && (notCooked || m.types.every((t) => t === 'snack')) // eaten, not cooked; never planned
   const noRecipe = !!m && (m.is_product || notCooked)
-  const sections: { value: Tab; label: string }[] = [
-    ...(noRecipe ? [] : [{ value: 'recipe' as const, label: 'Recipe' }]),
-    { value: 'nutrition', label: 'Nutrition' },
-    ...(m?.listed === false ? [] : [{ value: 'ratings' as const, label: 'Ratings' }]),
+  const section = (value: Tab, icon: IconName, label: string) => ({ value, label: <><Icon name={icon} size={16} />{label}</> })
+  const sections = [
+    ...(noRecipe ? [] : [section('recipe', 'book', 'Recipe')]),
+    section('nutrition', 'flame', 'Nutrition'),
+    ...(m?.listed === false ? [] : [section('ratings', 'star', 'Ratings')]),
   ]
   const shown: Tab = (noRecipe && tab === 'recipe') || (m?.listed === false && tab === 'ratings') ? 'nutrition' : tab
 
@@ -78,7 +88,15 @@ export function MealPage() {
       {m && me && (
         <>
           <UndoPost meal={m} />
-          <Photo url={m.photo_url} emoji={m.emoji} seed={m.id} alt={m.name} />
+          <div style={{ position: 'relative' }}>
+            <Photo url={m.photo_url} emoji={m.emoji} seed={m.id} alt={m.name} />
+            {!m.photo_url && (
+              <PhotoInput label="Add a photo" disabled={addPhoto.isPending} className="photo-add" onFile={(file) => addPhoto.mutate(file)}>
+                <Icon name="camera" size={16} /> {addPhoto.isPending ? 'Uploading…' : 'Add photo'}
+              </PhotoInput>
+            )}
+          </div>
+          {addPhoto.isError && <p className="error" role="alert">{addPhoto.error.message}</p>}
           <h1 style={{ margin: '12px 0 8px' }}>{m.name}</h1>
           <div className="chips">
             <span className="chip">{m.types.map((t) => MEAL_TYPE_LABEL[t]).join(' / ')}</span>

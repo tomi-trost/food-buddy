@@ -81,9 +81,16 @@ h3 { margin: 0; font-size: 15px; font-weight: 600; }
   background: none; color: inherit; font: inherit; font-size: 16px; text-align: center; border-radius: 0; }
 .stepper-value input:focus { outline: none; border-bottom: 1.5px solid var(--accent); }
 .stepper-value span { font-size: 14px; color: var(--ink2); font-weight: 500; }
-.seg { display: flex; background: var(--surface2); border-radius: var(--r); padding: 3px; margin-bottom: 14px; }
-.seg button { flex: 1; padding: 9px; border-radius: 6px; font-size: 14px; min-height: 40px; color: var(--ink2); }
-.seg button[aria-pressed='true'] { background: var(--surface); color: var(--ink); font-weight: 600; }
+.seg { position: relative; display: flex; background: var(--surface2); border-radius: var(--r); padding: 3px; margin-bottom: 14px; }
+.seg button { position: relative; z-index: 1; flex: 1 1 0; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  padding: 9px 4px; border-radius: 6px; font-size: 14px; min-height: 40px; color: var(--ink2); background: none; transition: color .2s; }
+.seg button[aria-pressed='true'] { color: var(--ink); font-weight: 600; }
+/* The white thumb slides under the chosen option */
+.seg-thumb { position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / var(--n)); border-radius: 6px;
+  background: var(--surface); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12); transition: transform .28s cubic-bezier(.3, .7, .4, 1); }
+@media (prefers-reduced-motion: reduce) { .seg-thumb, .seg button { transition: none; } }
+.seg.stack button { flex-direction: column; gap: 2px; font-size: 11px; min-height: 50px; padding: 6px 2px; }
+.seg.stack button > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .tabs { display: flex; border-bottom: 1px solid var(--line); margin-bottom: 14px; }
 .tabs button { flex: 1; padding: 12px 4px; font-size: 15px; color: var(--ink2); border-bottom: 2px solid transparent; margin-bottom: -1px; min-height: 46px; }
 .tabs button[aria-pressed='true'] { color: var(--ink); font-weight: 650; border-color: var(--accent); }
@@ -93,8 +100,16 @@ h3 { margin: 0; font-size: 15px; font-weight: 600; }
 .tseg { display: flex; gap: 6px; margin-bottom: 12px; }
 .tseg button { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 44px; font-size: 11px; padding: 4px 2px; border-radius: var(--r2); background: var(--surface2); color: var(--ink2); }
 .tseg button[aria-pressed='true'] { background: var(--ink); color: var(--bg); font-weight: 600; }
-.sortbtn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line2); border-radius: var(--r2); padding: 6px 10px; font-size: 13px; min-height: 34px; background: var(--surface); }
-.sortbtn small { color: var(--ink2); font-size: 12px; }
+.sortbtn { display: inline-flex; align-items: center; gap: 5px; min-height: 44px; padding: 0 2px 0 8px; font-size: 13px; color: var(--ink2); background: none; border: 0; white-space: nowrap; }
+.sortbtn b { color: var(--ink); font-weight: 600; }
+/* Meals: filters (outlined pills, lower level than the meal-type switch) + sort, one quiet row */
+.feedbar { display: flex; align-items: center; gap: 6px; margin: -2px 0 10px; }
+.fchips { display: flex; gap: 6px; min-width: 0; }
+.fchip { display: inline-flex; align-items: center; min-height: 44px; padding: 0; background: none; border: 0; }
+.fchip > span { display: inline-flex; align-items: center; gap: 4px; height: 30px; padding: 0 9px; border: 1px solid var(--line2);
+  border-radius: 999px; font-size: 13px; color: var(--ink2); white-space: nowrap; transition: background .2s, color .2s, border-color .2s; }
+.fchip[aria-pressed='true'] > span { border-color: var(--accent); color: var(--accent); font-weight: 600;
+  background: color-mix(in srgb, var(--accent) 10%, transparent); }
 .swatch { width: 36px; height: 36px; border-radius: var(--r2); border: 2px solid transparent; }
 .swatch[aria-pressed='true'] { border-color: var(--ink); outline: 2px solid var(--bg); outline-offset: -4px; }
 .chk { width: 26px; height: 26px; border-radius: var(--r2); border: 1.5px solid var(--line2); display: grid; place-items: center; flex: none; color: #fff; }
@@ -154,6 +169,14 @@ svg text { fill: var(--ink2); font-size: 11px; }
 .tab { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; color: var(--ink2); min-height: 48px; justify-content: center; text-decoration: none; }
 .tab.on { color: var(--accent); font-weight: 600; }
 .fab { width: 56px; height: 56px; border-radius: 14px; background: var(--accent); color: var(--accent-ink); margin: -26px auto 6px; display: grid; place-items: center; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2); }
+
+/* Emoji picker + the emoji button in Edit meal */
+.emoji-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(48px, 1fr)); gap: 4px; }
+.emoji-grid button { height: 48px; font-size: 28px; border-radius: var(--r2); background: none; border: 0; }
+.emoji-grid button[aria-pressed='true'] { background: var(--surface2); box-shadow: inset 0 0 0 2px var(--accent); }
+.emoji-pick { flex: none; width: 52px; height: 52px; font-size: 30px; border-radius: var(--r); background: var(--surface2); border: 1px solid var(--line); }
+.photo-add { position: absolute; right: 10px; bottom: 10px; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px;
+  border-radius: 999px; background: var(--surface); color: var(--ink); font-size: 13px; font-weight: 600; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18); cursor: pointer; }
 
 /* Rating sliders: 7 steps, the current word above, end words below */
 .step-slider { margin-top: 4px; }

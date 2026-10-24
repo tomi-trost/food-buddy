@@ -251,6 +251,7 @@ export type Shopping = { plan_approved: boolean; items: ShoppingItem[]; in_stock
 /** Only the fields sent change. cost null = estimate again; per_portion null = calculate again. */
 export type MealPatch = Partial<{
   name: string
+  emoji: string // the card without a photo
   types: MealKind[]
   prep_friendly: boolean
   prep_minutes: number

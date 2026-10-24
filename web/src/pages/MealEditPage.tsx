@@ -6,6 +6,7 @@ import type { Meal, MealKind, MealPatch, MealPer, Nutrients, SnackKind } from '.
 import { MEAL_TYPE_LABEL } from '../lib/dates'
 import { scale } from '../lib/macros'
 import { NutritionOverride } from '../meals/NutritionOverride'
+import { EmojiPicker } from '../meals/EmojiPicker'
 import { cleanSteps, StepsEditor } from '../meals/StepsEditor'
 import { SnackFields } from '../snap/Details'
 import { IngredientChips } from '../snap/IngredientChips'
@@ -38,6 +39,8 @@ function EditForm({ meal, close }: { meal: Meal; close: React.ReactNode }) {
   const qc = useQueryClient()
   const toast = useToast()
   const [name, setName] = useState(meal.name)
+  const [emoji, setEmoji] = useState(meal.emoji)
+  const [picking, setPicking] = useState(false)
   const [types, setTypes] = useState<MealKind[]>(meal.types)
   const [snack, setSnack] = useState<{ snackKind: SnackKind | null; per: MealPer; pieceG: number }>({
     snackKind: meal.snack_kind, per: meal.per, pieceG: meal.piece_g ?? 30,
@@ -72,7 +75,7 @@ function EditForm({ meal, close }: { meal: Meal; close: React.ReactNode }) {
   const save = useMutation({
     mutationFn: () => {
       const patch: MealPatch = {
-        name: name.trim(), types, prep_friendly: prepFriendly, prep_minutes: prepMinutes, portions, cost,
+        name: name.trim(), ...(emoji !== meal.emoji ? { emoji } : {}), types, prep_friendly: prepFriendly, prep_minutes: prepMinutes, portions, cost,
         items: resolved.map((i) => ({ ingredient_id: i.ingredient!.id, grams: i.grams })),
         per_portion: override,
         ...(stepsChanged ? { steps: cleanSteps(steps) } : {}), // untouched: the model may still write them
@@ -92,10 +95,14 @@ function EditForm({ meal, close }: { meal: Meal; close: React.ReactNode }) {
   return (
     <>
       <div className="top">{close}<span className="sub">Edit meal</span><span style={{ width: 44 }} /></div>
-      <label className="field" style={{ marginBottom: 14 }}>
-        Name
-        <input value={name} maxLength={120} onChange={(e) => setName(e.target.value)} />
-      </label>
+      <div className="row" style={{ alignItems: 'flex-end', marginBottom: 14 }}>
+        <button type="button" className="emoji-pick" aria-label={`Emoji ${emoji}, change`} onClick={() => setPicking(true)}>{emoji}</button>
+        <label className="field sp" style={{ margin: 0 }}>
+          Name
+          <input value={name} maxLength={120} onChange={(e) => setName(e.target.value)} />
+        </label>
+      </div>
+      <EmojiPicker open={picking} value={emoji} onPick={setEmoji} onClose={() => setPicking(false)} />
 
       <h2>Good for</h2>
       <div className="chips" role="group" aria-label="Meal types">

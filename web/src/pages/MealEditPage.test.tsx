@@ -175,4 +175,31 @@ describe('MealEditPage', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     expect(bodyOf(fetch, 'DELETE')).toBeUndefined()
   })
+
+  it('picks our own emoji, by search or typed from the keyboard', async () => {
+    const fetch = api()
+    render()
+    fireEvent.click(await screen.findByRole('button', { name: 'Emoji 🍚, change' }))
+    const sheet = screen.getByRole('dialog', { name: 'Choose an emoji' })
+    fireEvent.change(within(sheet).getByLabelText('Search, or type any emoji'), { target: { value: 'pancake' } })
+    expect(within(sheet).getAllByRole('button').filter((b) => b.closest('.emoji-grid'))).toHaveLength(1)
+    fireEvent.click(within(sheet).getByRole('button', { name: 'pancakes' }))
+    expect(screen.getByRole('button', { name: 'Emoji 🥞, change' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Emoji 🥞, change' }))
+    const again = screen.getByRole('dialog', { name: 'Choose an emoji' })
+    fireEvent.change(within(again).getByLabelText('Search, or type any emoji'), { target: { value: '🫔' } })
+    fireEvent.click(within(again).getByRole('button', { name: 'Use 🫔' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    await screen.findByText('meal page')
+    expect(bodyOf(fetch, 'PATCH')!.body.emoji).toBe('🫔')
+  })
+
+  it('leaves the emoji out when it did not change', async () => {
+    const fetch = api()
+    render()
+    fireEvent.click(await screen.findByRole('button', { name: 'Save changes' }))
+    await screen.findByText('meal page')
+    expect(bodyOf(fetch, 'PATCH')!.body).not.toHaveProperty('emoji')
+  })
 })
