@@ -8,60 +8,8 @@ from sqlalchemy import update
 
 from app.barcode import service
 from app.barcode.models import OffProduct
-from tests.conftest import register
+from tests.conftest import CODE, OFF_PRODUCT, register
 from tests.test_analysis_queue import partner_of
-
-CODE = "8000500310427"  # a 400 g jar of hazelnut spread
-OFF_PRODUCT = {
-    "product_name": "Nutella",
-    "brands": "Ferrero, Nutella",
-    "quantity": "400 g",
-    "serving_quantity": "15",
-    "image_front_small_url": "https://images.openfoodfacts.org/nutella.jpg",
-    "nutriments": {
-        "energy-kcal_100g": 539,
-        "proteins_100g": 6.3,
-        "carbohydrates_100g": 57.5,
-        "fat_100g": 30.9,
-        "sugars_100g": 56.3,
-        # no fibre on the label
-    },
-}
-
-
-def off_transport(seen: list, product: dict | None = OFF_PRODUCT, status: int = 200):
-    def handler(request: httpx.Request) -> httpx.Response:
-        seen.append(request)
-        if status != 200:
-            return httpx.Response(status, text="down")
-        if product is None:
-            return httpx.Response(404, json={"status": 0, "status_verbose": "product not found"})
-        return httpx.Response(200, json={"status": 1, "code": CODE, "product": product})
-
-    return httpx.MockTransport(handler)
-
-
-@pytest.fixture
-def off(monkeypatch):
-    """Point the lookup at a fake OFF; returns the requests it got. `off.set(...)` changes it."""
-    seen: list[httpx.Request] = []
-
-    class Fake(list):
-        def set(self, **kwargs):
-            transport = off_transport(self, **kwargs)
-            monkeypatch.setattr(
-                service,
-                "off_client",
-                lambda: httpx.AsyncClient(
-                    base_url="https://off.test",
-                    transport=transport,
-                    headers={"User-Agent": "FoodBuddy/test"},
-                ),
-            )
-
-    fake = Fake(seen)
-    fake.set()
-    return fake
 
 
 async def test_lookup_returns_label_values_per_100_g(client, auth, off):
@@ -88,6 +36,7 @@ async def test_lookup_returns_label_values_per_100_g(client, auth, off):
         "remembered": False,
         "meal_id": None,
         "source": "Open Food Facts",
+        "ingredient": None,  # not one of our ingredients
     }
     assert off[0].url.path == f"/api/v2/product/{CODE}.json"
     assert "nutriments" in off[0].url.params["fields"]
@@ -268,6 +217,7 @@ async def test_logged_scan_is_remembered_and_used_next_time(client, auth, off):
         "remembered": True,
         "meal_id": None,  # not saved to our snacks
         "source": "Our values",
+        "ingredient": None,
     }
     assert len(off) == 1  # ours: OFF not asked again
 

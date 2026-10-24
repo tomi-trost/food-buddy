@@ -15,6 +15,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.models import User
 from app.barcode.models import HouseholdProduct, OffProduct
 from app.config import get_settings
+from app.nutrition.models import Ingredient
+from app.snacks.products import source_of
 
 FOUND_TTL = timedelta(days=30)
 NOT_FOUND_TTL = timedelta(days=1)
@@ -185,3 +187,50 @@ async def remember(
         index_elements=["household_id", "code"], set_={**values, "updated_at": func.now()}
     )
     await session.execute(stmt)
+
+
+async def our_ingredient(session: AsyncSession, household_id: int, code: str) -> Ingredient | None:
+    """The ingredient we made from this barcode (to cook with), if any."""
+    return await session.scalar(
+        select(Ingredient).where(
+            Ingredient.source == source_of(household_id), Ingredient.ref == code
+        )
+    )
+
+
+async def save_ingredient(
+    session: AsyncSession,
+    household_id: int,
+    code: str,
+    name: str,
+    per: str,
+    per100: dict[str, float],
+    piece_g: float | None,
+) -> Ingredient:
+    """A scanned pack as an ingredient only our household sees (a tortilla, a sauce): found
+    again by barcode, else by name, else new. Values per 100 g / ml; counted in pieces when
+    `piece_g` is set. The caller commits."""
+    name = name.strip()
+    source = source_of(household_id)
+    ingredient = await our_ingredient(session, household_id, code) or await session.scalar(
+        select(Ingredient).where(Ingredient.source == source, Ingredient.name == name)
+    )
+    if ingredient is None:
+        ingredient = Ingredient(
+            household_id=household_id, source=source, name=name, aliases=[], emoji="🏷️"
+        )
+        session.add(ingredient)
+    elif ingredient.name != name:
+        clash = await session.scalar(
+            select(Ingredient.id).where(Ingredient.source == source, Ingredient.name == name)
+        )
+        if clash is None:
+            ingredient.name = name
+    ingredient.ref = code
+    for key, value in per100.items():
+        setattr(ingredient, key, value)
+    ingredient.unit, ingredient.unit_grams = (
+        ("pc", piece_g) if piece_g else ("ml", 1.0) if per == "100ml" else ("g", 1.0)
+    )
+    await session.flush()
+    return ingredient

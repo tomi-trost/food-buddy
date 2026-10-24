@@ -4,6 +4,13 @@ export type Release = { id: string; notes: string[] }
 
 export const RELEASES: Release[] = [
   {
+    id: '2026-10-24-barcode-ingredient',
+    notes: [
+      'Cooking with a packaged food, like a tortilla? Tap the barcode button next to ingredient search, scan it, check it once, and it is added with its exact values.',
+      'Count it in pieces (one tortilla) or grams. Next time the same barcode adds it straight away, and it also works when adding to your fridge.',
+    ],
+  },
+  {
     id: '2026-10-24-dish-families',
     notes: [
       'Tap "By dish" in Meals: pasta with any sauce shows as one Pasta row, chia with any fruit as Oats & chia.',

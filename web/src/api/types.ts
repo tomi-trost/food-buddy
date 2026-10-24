@@ -351,7 +351,11 @@ export type Product = {
   remembered: boolean // our values (name, type, values, amount) from the last time we logged it
   meal_id: number | null // in our snacks: logging it updates that product
   source: string
+  ingredient: Ingredient | null // we cook with it: the ingredient made from this barcode
 }
+
+/** A scanned pack to cook with, as we checked it. */
+export type IngredientFromCode = { name: string; per: '100g' | '100ml'; per100: Nutrients; piece_g: number | null }
 
 export type SnackLogged = { id: number; name: string; kcal: number; sugar: number; treat: boolean; meal_id: number | null }
 

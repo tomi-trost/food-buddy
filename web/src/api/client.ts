@@ -1,5 +1,5 @@
 import type {
-  AnalysisJob, CatalogItem, CookIn, Day, Insights, LearnedFamily, LogEntry, Sources, LogPatch, Reward, SnackIn, HouseholdPatch, Ingredient, Me, Meal, MealCard, MealCreate, MealKind, MealPatch, MealType, MePatch, Plan, PushConfig, PushKind, Suggestion, SnackLogged, PlanMode, Product, Rating, RegisterBody, Shopping, StockItem, WizardCell,
+  AnalysisJob, CatalogItem, CookIn, Day, Insights, LearnedFamily, LogEntry, Sources, LogPatch, Reward, SnackIn, HouseholdPatch, Ingredient, IngredientFromCode, Me, Meal, MealCard, MealCreate, MealKind, MealPatch, MealType, MePatch, Plan, PushConfig, PushKind, Suggestion, SnackLogged, PlanMode, Product, Rating, RegisterBody, Shopping, StockItem, WizardCell,
 } from './types'
 import { reportReachable } from '../lib/online'
 import { shrinkPhoto } from '../lib/photoResize'
@@ -187,6 +187,8 @@ export const api = {
   snackCatalog: () => json<CatalogItem[]>('/snacks/catalog'),
   logSnack: (body: SnackIn) => json<SnackLogged>('/snacks', { method: 'POST', body: JSON.stringify(body) }),
   product: (code: string) => json<Product>(`/barcode/${code}`),
+  ingredientFromBarcode: (code: string, body: IngredientFromCode) =>
+    json<Ingredient>(`/barcode/${code}/ingredient`, { method: 'POST', body: JSON.stringify(body) }),
   suggestions: (today: string) => json<Suggestion[]>(`/suggestions?today=${today}`),
   acceptSuggestion: (id: number, servings = 1) =>
     json<{ log_id: number }>(`/suggestions/${id}/accept`, { method: 'POST', body: JSON.stringify({ servings_eaten: servings }) }),

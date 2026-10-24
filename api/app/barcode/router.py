@@ -1,13 +1,13 @@
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, HTTPException, Path, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.auth.deps import CurrentUser, Session
 from app.barcode import service
 from app.barcode.models import OffProduct
-from app.nutrition.schemas import NutrientsOut
-from app.snacks.schemas import SnackKind
+from app.nutrition.schemas import IngredientOut, NutrientsOut
+from app.snacks.schemas import NutrientsIn, SnackKind
 
 router = APIRouter(prefix="/barcode", tags=["barcode"])
 
@@ -29,6 +29,18 @@ class ProductOut(BaseModel):
     remembered: bool = False  # our values from the last time we logged it
     meal_id: int | None = None  # in our snacks: logging it updates that product meal
     source: str = "Open Food Facts"
+    ingredient: IngredientOut | None = (
+        None  # we cook with it: the ingredient made from this barcode
+    )
+
+
+class IngredientFromCode(BaseModel):
+    """A scanned pack to cook with: its name and values per 100 g / ml as we checked them."""
+
+    name: str = Field(min_length=1, max_length=120)
+    per: Literal["100g", "100ml"] = "100g"
+    per100: NutrientsIn
+    piece_g: float | None = Field(default=None, gt=0, le=2000)  # counted in pieces (a tortilla)
 
 
 @router.get("/{code}")
@@ -51,6 +63,7 @@ async def product_by_barcode(code: Barcode, session: Session, user: CurrentUser)
             remembered=True,
             meal_id=ours.meal_id,
             source="Our values",
+            ingredient=await our_ingredient(session, user.household_id, code),
         )
     try:
         async with service.off_client() as client:
@@ -64,4 +77,31 @@ async def product_by_barcode(code: Barcode, session: Session, user: CurrentUser)
     # answers cached before `kind`/`per` existed: kind guessed from the sugar, per from the pack
     kind = product.get("kind") or service.snack_kind([], product["per100"])
     per = product.get("per") or service.measure(product["quantity"], kind)
-    return ProductOut(code=code, **{**product, "kind": kind, "per": per})
+    return ProductOut(
+        code=code,
+        **{**product, "kind": kind, "per": per},
+        ingredient=await our_ingredient(session, user.household_id, code),
+    )
+
+
+async def our_ingredient(session, household_id: int, code: str) -> IngredientOut | None:
+    ingredient = await service.our_ingredient(session, household_id, code)
+    return IngredientOut.of(ingredient) if ingredient else None
+
+
+@router.post("/{code}/ingredient")
+async def ingredient_from_barcode(
+    code: Barcode, body: IngredientFromCode, session: Session, user: CurrentUser
+) -> IngredientOut:
+    """Add a scanned pack to a meal: it becomes our ingredient, found by its barcode next time."""
+    ingredient = await service.save_ingredient(
+        session,
+        user.household_id,
+        code,
+        body.name,
+        body.per,
+        body.per100.model_dump(),
+        body.piece_g,
+    )
+    await session.commit()
+    return IngredientOut.of(ingredient)

@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { api } from '../api/client'
 import type { Ingredient } from '../api/types'
+import { ScanIngredient } from '../meals/ScanIngredient'
 import { Icon } from './Icon'
 
 function useDebounced<T>(value: T, ms = 200) {
@@ -20,14 +21,16 @@ export function IngredientPicker({ onPick, hint = '', exclude = [] }: {
   exclude?: number[]
 }) {
   const [q, setQ] = useState(hint)
+  const [scanning, setScanning] = useState(false)
   const query = useDebounced(q.trim())
   const results = useQuery({ queryKey: ['ingredients', query], queryFn: () => api.searchIngredients(query) })
   const list = (results.data ?? []).filter((i) => !exclude.includes(i.id))
 
+  if (scanning) return <ScanIngredient onPick={onPick} onCancel={() => setScanning(false)} />
   return (
     <>
-      <div className="sheet-sticky">
-        <label className="row card" style={{ padding: '4px 12px' }}>
+      <div className="sheet-sticky row" style={{ gap: 8 }}>
+        <label className="row card sp" style={{ padding: '4px 12px', margin: 0 }}>
           <Icon name="search" size={18} />
           <input
             className="input"
@@ -39,6 +42,7 @@ export function IngredientPicker({ onPick, hint = '', exclude = [] }: {
             autoFocus
           />
         </label>
+        <button type="button" className="icon" aria-label="Scan a barcode" onClick={() => setScanning(true)}><Icon name="barcode" size={20} /></button>
       </div>
       <div className="list">
         {list.map((i) => (

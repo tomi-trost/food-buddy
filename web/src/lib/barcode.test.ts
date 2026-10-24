@@ -6,7 +6,7 @@ import { scale } from './macros'
 const per100 = { kcal: 539, protein: 6.3, carbs: 57.5, fat: 30.9, fiber: 0, sugar: 56.3 }
 const product = (over: Partial<Product> = {}): Product => ({
   code: '8000500310427', name: 'Nutella', brand: 'Ferrero', quantity: '400 g', per: '100g', serving_g: 15, piece_g: null,
-  image_url: null, per100, kind: 'sweet', remembered: false, meal_id: null, source: 'Open Food Facts', ...over,
+  image_url: null, per100, kind: 'sweet', remembered: false, meal_id: null, source: 'Open Food Facts', ingredient: null, ...over,
 })
 
 describe('cleanBarcode', () => {
