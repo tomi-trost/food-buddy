@@ -4,6 +4,13 @@ export type Release = { id: string; notes: string[] }
 
 export const RELEASES: Release[] = [
   {
+    id: '2026-10-24-count-in',
+    notes: [
+      'Tap an ingredient to count it in grams, pieces or ml. Pieces ask once what one weighs, then it shows that way everywhere for both of you.',
+      'Amounts in ml show to the ml now, not in steps of 5.',
+    ],
+  },
+  {
     id: '2026-10-24-barcode-ingredient',
     notes: [
       'Cooking with a packaged food, like a tortilla? Tap the barcode button next to ingredient search, scan it, check it once, and it is added with its exact values.',

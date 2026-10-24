@@ -18,9 +18,9 @@ const per = (u: Counted) => (u.unit_grams > 0 ? u.unit_grams : 1)
 export const toAmount = (grams: number, u: Counted) => grams / per(u)
 export const toGrams = (amount: number, u: Counted) => Math.round(amount * per(u) * 10) / 10
 
-/** Halves for pieces, 5 ml steps, whole grams; `up` rounds up (shopping: no half eggs). */
+/** Halves for pieces, whole ml and grams; `up` rounds up (shopping: no half eggs). */
 export function roundAmount(amount: number, u: Counted, up = false): number {
-  const q = isCounted(u) ? (up ? 1 : 0.5) : u.unit === 'ml' ? 5 : 1
+  const q = isCounted(u) ? (up ? 1 : 0.5) : 1
   const r = (up ? Math.ceil(amount / q - 1e-9) : Math.round(amount / q)) * q
   return amount > 0 && r === 0 ? q : r // never show "0 pcs" for something that's there
 }

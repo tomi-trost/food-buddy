@@ -5,9 +5,18 @@ amount: `unit_grams` is the weight of one piece/slice/clove, or the density (g p
 Only hand-picked names are listed (the long USDA/Ciqual rows stay in grams).
 """
 
+from collections.abc import Mapping
+from contextvars import ContextVar
+from types import MappingProxyType
 from typing import Literal
 
 Unit = Literal["g", "ml", "pc", "slice", "clove"]
+
+# The signed-in household's own picks (ingredient id → unit, grams per unit), set once per
+# request with the user (auth.deps) so every IngredientOut shows amounts the way we count them.
+HOUSE_UNITS: ContextVar[Mapping[int, tuple[str, float]]] = ContextVar(
+    "house_units", default=MappingProxyType({})
+)
 
 # One piece as usually bought/eaten (edible part, medium size)
 PIECES: dict[str, float] = {

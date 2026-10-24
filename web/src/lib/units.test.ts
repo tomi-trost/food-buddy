@@ -11,7 +11,7 @@ describe('units', () => {
     expect(formatAmount(100, ING.eggs)).toBe('2 pcs')
     expect(formatAmount(50, ING.eggs)).toBe('1 pc')
     expect(formatAmount(75, ING.eggs)).toBe('1.5 pcs') // halves
-    expect(formatAmount(10, ING.oil)).toBe('10 ml') // 10 g / 0.91 = 11 → 5 ml steps
+    expect(formatAmount(10, ING.oil)).toBe('11 ml') // 10 g / 0.91 = 11, whole ml
     expect(formatAmount(91, ING.oil)).toBe('100 ml')
     expect(formatAmount(150.4, ING.chicken)).toBe('150 g')
     expect(formatAmount(60, slice)).toBe('2 slices')
@@ -20,7 +20,7 @@ describe('units', () => {
 
   it('never shows zero for something that is there, and rounds up for shopping', () => {
     expect(formatAmount(5, ING.eggs)).toBe('0.5 pcs')
-    expect(formatAmount(1, ING.oil)).toBe('5 ml')
+    expect(formatAmount(1, ING.oil)).toBe('1 ml') // 1.1 ml
     expect(formatAmount(0, ING.eggs)).toBe('0 pcs')
     expect(formatAmount(110, ING.eggs, true)).toBe('3 pcs') // no half eggs at the shop
     expect(roundAmount(2, ING.eggs, true)).toBe(2)

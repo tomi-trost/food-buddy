@@ -145,6 +145,9 @@ export const api = {
   discardAnalysis: (id: number) => json<AnalysisJob>(`/analyses/${id}/discard`, { method: 'POST' }),
   reopenAnalysis: (id: number) => json<AnalysisJob>(`/analyses/${id}/reopen`, { method: 'POST' }),
   retryAnalysis: (id: number) => json<AnalysisJob>(`/analyses/${id}/retry`, { method: 'POST' }),
+  /** Count an ingredient our way everywhere (g, pieces of unit_grams g, or ml at unit_grams g/ml). */
+  setIngredientUnit: (id: number, unit: 'g' | 'pc' | 'ml', unit_grams = 1) =>
+    json<Ingredient>(`/ingredients/${id}/unit`, { method: 'PUT', body: JSON.stringify({ unit, unit_grams }) }),
   searchIngredients: (q: string, limit = 30) =>
     json<Ingredient[]>(`/ingredients?${new URLSearchParams({ q, limit: String(limit) })}`),
   createMeal: (body: MealCreate) => json<Meal>('/meals', { method: 'POST', body: JSON.stringify(body) }),

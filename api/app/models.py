@@ -7,7 +7,7 @@ from app.db import Base
 from app.inventory.models import InventoryItem, RanOut
 from app.logs.models import FoodLog
 from app.meals.models import CookLog, FamilyBlock, Meal, MealIngredient
-from app.nutrition.models import Ingredient, UnmatchedIngredient
+from app.nutrition.models import HouseholdUnit, Ingredient, UnmatchedIngredient
 from app.plan.models import PlanApproval, PlanSlot, PlanWeek, ShoppingCheck
 from app.push.models import PushSent, PushSubscription
 from app.ratings.models import Rating
@@ -21,6 +21,7 @@ __all__ = [
     "FoodLog",
     "Household",
     "HouseholdProduct",
+    "HouseholdUnit",
     "Ingredient",
     "UnmatchedIngredient",
     "InventoryItem",

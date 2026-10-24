@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 from app.nutrition.models import Ingredient
-from app.nutrition.units import Unit, unit_of
+from app.nutrition.units import HOUSE_UNITS, Unit, unit_of
 
 
 class NutrientsOut(BaseModel):
@@ -26,7 +26,9 @@ class IngredientOut(BaseModel):
 
     @classmethod
     def of(cls, ing: Ingredient) -> "IngredientOut":
-        unit, unit_grams = unit_of(ing.name, ing.curated, (ing.unit, ing.unit_grams))
+        unit, unit_grams = HOUSE_UNITS.get().get(ing.id) or unit_of(
+            ing.name, ing.curated, (ing.unit, ing.unit_grams)
+        )
         return cls(
             id=ing.id,
             name=ing.name,

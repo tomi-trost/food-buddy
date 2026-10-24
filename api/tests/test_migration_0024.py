@@ -19,6 +19,7 @@ async def test_old_ratings_move_onto_the_sliders(client, seeded):
     snack = await pudding(client, auth, seeded)
     job = await snap(client, auth)
     await sql("UPDATE analysis_job SET meal_type = 'snack' WHERE id = :id", id=job)
+    await seeded.rollback()  # its open read would block dropping later tables (household_unit)
     await engine.dispose()
     alembic("0023", down=True)
     try:

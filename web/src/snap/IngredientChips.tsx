@@ -7,6 +7,7 @@ import { IngredientPicker } from '../ui/IngredientPicker'
 import { Sheet } from '../ui/Sheet'
 import { Stepper } from '../ui/Stepper'
 import { addIngredient, type PlateItem, replaceIngredient } from './plate'
+import { UnitSwitch } from './UnitSwitch'
 
 type SheetState = { kind: 'edit'; key: string } | { kind: 'replace'; key: string } | { kind: 'add' } | null
 
@@ -51,7 +52,11 @@ export function IngredientChips({ items, setItems, amountLabel = 'on the plate' 
             {open.name.toLowerCase() !== open.ingredient.name.toLowerCase() && (
               <div className="sub">Detected as “{open.name}”</div>
             )}
-            <div className="card row" style={{ marginTop: 12 }}>
+            <div style={{ marginTop: 12 }}>
+              <UnitSwitch ingredient={open.ingredient}
+                onChange={(updated) => setItems((list) => list.map((i) => (i.ingredient?.id === updated.id ? { ...i, ingredient: updated } : i)))} />
+            </div>
+            <div className="card row">
               <span className="sp">Amount</span>
               <Stepper label="amount" {...amountStepper(open.ingredient)}
                 value={roundAmount(toAmount(open.grams, open.ingredient), open.ingredient)}

@@ -83,3 +83,17 @@ class UnmatchedIngredient(Base):
     last_seen_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
+
+
+class HouseholdUnit(Base):
+    """How our household counts an ingredient (picked in the app): grams, pieces of
+    `unit_grams` g, or ml at `unit_grams` g per ml. Wins over the hand-picked tables."""
+
+    __tablename__ = "household_unit"
+    __table_args__ = (UniqueConstraint("household_id", "ingredient_id"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    household_id: Mapped[int] = mapped_column(ForeignKey("household.id", ondelete="CASCADE"))
+    ingredient_id: Mapped[int] = mapped_column(ForeignKey("ingredient.id", ondelete="CASCADE"))
+    unit: Mapped[str] = mapped_column(String(5))  # g | pc | ml
+    unit_grams: Mapped[float] = mapped_column(Float)
