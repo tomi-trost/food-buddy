@@ -4,6 +4,10 @@ export type Release = { id: string; notes: string[] }
 
 export const RELEASES: Release[] = [
   {
+    id: '2026-10-15-steps-editor',
+    notes: ['Recipe steps in Edit meal are easier to read: each step grows to fit its text, with move and remove buttons grouped above it.'],
+  },
+  {
     id: '2026-10-15-search-sheet',
     notes: [
       'Ingredient search stays in view above the keyboard, so you can see what you type.',
