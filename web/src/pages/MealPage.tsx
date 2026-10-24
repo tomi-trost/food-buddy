@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type CSSProperties, useEffect, useState } from 'react'
-import { useNavigate, useParams, useSearchParams } from 'react-router'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { api } from '../api/client'
 import { useMe } from '../api/hooks'
 import { MEAL_TYPE_LABEL, todayISO } from '../lib/dates'
@@ -19,6 +19,7 @@ import { Toggle } from '../ui/Toggle'
 import { useToast } from '../ui/Toast'
 import { formatAmount } from '../lib/units'
 import { KIND_LABEL, perLabel } from '../lib/snacks'
+import { portionsLabel } from '../snap/plate'
 
 type Tab = 'recipe' | 'nutrition' | 'ratings'
 
@@ -148,6 +149,25 @@ export function MealPage() {
             <>
               <div className="card">
                 <h3>Ingredients <span className="sub">(for {m.portions} portions)</span></h3>
+                {m.components.map((c) => (
+                  <details key={c.id} className="dish-row" aria-label={c.name}>
+                    <summary>
+                      <span>{c.emoji}</span>
+                      <span className="sp">{c.name}</span>
+                      <span className="sub">{portionsLabel(c.portions)}</span>
+                    </summary>
+                    <div className="list">
+                      {c.ingredients.map(({ ingredient, grams }) => (
+                        <div key={ingredient.id}>
+                          <span>{ingredient.emoji}</span>
+                          <span className="sp">{ingredient.name}</span>
+                          <span className="sub">{formatAmount(grams, ingredient)}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <Link className="textbtn" to={`/meals/${c.id}`}>Open its recipe</Link>
+                  </details>
+                ))}
                 <div className="list">
                   {m.ingredients.map(({ ingredient, grams }) => (
                     <div key={ingredient.id}>
@@ -158,6 +178,14 @@ export function MealPage() {
                   ))}
                 </div>
               </div>
+              {m.used_in.length > 0 && (
+                <div className="card" aria-label="A dish in">
+                  <h3>A dish in</h3>
+                  <div className="chips" style={{ marginTop: 8 }}>
+                    {m.used_in.map((p) => <Link key={p.id} className="chip" to={`/meals/${p.id}`}>{p.emoji} {p.name}</Link>)}
+                  </div>
+                </div>
+              )}
               <div className="card">
                 <h3>Steps {m.steps_source === 'template' && <span className="sub">(quick draft)</span>}</h3>
                 <ol style={{ paddingLeft: 20, lineHeight: 1.5 }}>

@@ -1,7 +1,7 @@
 from datetime import date, datetime
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, StringConstraints, field_validator, model_validator
 
 from app.nutrition.schemas import IngredientOut, NutrientsOut
 from app.snacks.schemas import NutrientsIn, SnackKind
@@ -26,8 +26,51 @@ class ItemIn(BaseModel):
     grams: float = Field(gt=0, le=5000)
 
 
+def _unique_ingredients(items: list[ItemIn] | None) -> list[ItemIn] | None:
+    if items is not None and len({i.ingredient_id for i in items}) != len(items):
+        raise ValueError("Each ingredient may appear only once")
+    return items
+
+
+class NewComponent(BaseModel):
+    """ "Make it its own dish": some of the plate's ingredients become a meal of ours.
+    `items` are grams for ONE portion of it; `portions` = how many portions we made."""
+
+    name: str = Field(min_length=1, max_length=120)
+    portions: int = Field(ge=1, le=20)
+    items: list[ItemIn] = Field(min_length=1, max_length=40)
+
+    _items = field_validator("items")(_unique_ingredients)
+
+
+Alias = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=80)]
+
+
+class ComponentIn(BaseModel):
+    """Portions of one of our meals on the plate: an existing one (`meal_id`) or a `new` one.
+    `aliases`: what the photo called the items it took the place of ("pancakes")."""
+
+    meal_id: int | None = None
+    new: NewComponent | None = None
+    portions: float = Field(gt=0, le=40)
+    aliases: list[Alias] = Field(default_factory=list, max_length=5)
+
+    @model_validator(mode="after")
+    def one_dish(self) -> "ComponentIn":
+        if (self.meal_id is None) == (self.new is None):
+            raise ValueError("A dish is either one of our meals or a new one")
+        return self
+
+
+def _unique_components(components: list[ComponentIn] | None) -> list[ComponentIn] | None:
+    ids = [c.meal_id for c in components or [] if c.meal_id is not None]
+    if len(ids) != len(set(ids)):
+        raise ValueError("Each dish may appear only once")
+    return components
+
+
 class MealCreate(BaseModel):
-    """Post a snapped meal. `items` are grams for ONE plate (what the photo shows)."""
+    """Post a snapped meal. `items` and `components` are for ONE plate (what the photo shows)."""
 
     name: str = Field(min_length=1, max_length=120)
     meal_type: MealType
@@ -37,8 +80,9 @@ class MealCreate(BaseModel):
     portions: int = Field(ge=1, le=20, description="portions made; recipe = plate × portions")
     servings_eaten: float = Field(gt=0, le=10)
     cost: float | None = Field(default=None, ge=0, le=1000)
-    items: list[ItemIn] = Field(min_length=1, max_length=40)
-    used_up: list[int] = Field(default_factory=list)
+    items: list[ItemIn] = Field(default_factory=list, max_length=40)
+    components: list[ComponentIn] = Field(default_factory=list, max_length=10)  # bundles
+    used_up: list[int] = Field(default_factory=list)  # also a dish's ingredients
     analysis_id: int | None = None
     per_portion: NutrientsIn | None = None  # typed-in values instead of the ingredients' ones
     snack_kind: SnackKind | None = None  # snacks: required
@@ -50,6 +94,7 @@ class MealCreate(BaseModel):
     place: str | None = Field(default=None, max_length=80)
 
     _servings = field_validator("servings_eaten")(_half_steps)
+    _components = field_validator("components")(_unique_components)
 
     @model_validator(mode="after")
     def not_cooked(self) -> "MealCreate":
@@ -71,8 +116,8 @@ class MealCreate(BaseModel):
         ids = [i.ingredient_id for i in self.items]
         if len(ids) != len(set(ids)):
             raise ValueError("Each ingredient may appear only once")
-        if not set(self.used_up) <= set(ids):
-            raise ValueError("used_up must only contain ingredients of this meal")
+        if not ids and not self.components:
+            raise ValueError("A meal needs at least one ingredient or dish")
         if self.eaten and self.eaten_on is None:
             raise ValueError("eaten_on is required for a meal that was eaten")
         if not self.eaten and self.used_up:
@@ -114,12 +159,6 @@ def _check_snack(snack: bool, kind: str | None, per: str, piece_g: float | None)
         raise ValueError("Pieces come with the weight of one piece")
 
 
-def _unique_ingredients(items: list[ItemIn] | None) -> list[ItemIn] | None:
-    if items is not None and len({i.ingredient_id for i in items}) != len(items):
-        raise ValueError("Each ingredient may appear only once")
-    return items
-
-
 class MealPatch(BaseModel):
     """Only the fields sent change. `cost: null` = estimate from prices again;
     `per_portion: null` = use the values calculated from the ingredients again."""
@@ -132,8 +171,10 @@ class MealPatch(BaseModel):
     portions: int | None = Field(default=None, ge=1, le=20)
     cost: float | None = Field(default=None, ge=0, le=1000)
     items: list[ItemIn] | None = Field(
-        default=None, min_length=1, max_length=40, description="grams for the whole recipe"
+        default=None, max_length=40, description="grams for the whole recipe"
     )
+    # Portions of our other meals in the whole recipe; with `items`, at least one of the two
+    components: list[ComponentIn] | None = Field(default=None, max_length=10)
     per_portion: NutrientsIn | None = None
     steps: list[str] | None = Field(default=None, min_length=1, max_length=30)
     snack_kind: SnackKind | None = None
@@ -143,8 +184,10 @@ class MealPatch(BaseModel):
     listed: bool | None = None  # bought / eaten out: true = save it to our meals
     # Dish family; "" = guess it again from the name and ingredients
     family: str | None = Field(default=None, max_length=40)
+    aliases: list[Alias] | None = Field(default=None, max_length=10)  # what photos call it
 
     _items = field_validator("items")(_unique_ingredients)
+    _components = field_validator("components")(_unique_components)
 
     @model_validator(mode="after")
     def piece_weight(self) -> "MealPatch":
@@ -194,6 +237,44 @@ class MealIngredientOut(BaseModel):
     grams: float
 
 
+class MealRef(BaseModel):
+    id: int
+    name: str
+    emoji: str
+
+
+class MealComponentOut(MealRef):
+    """A dish on the plate: `portions` of it in the whole recipe (`grams` together)."""
+
+    portions: float
+    grams: float
+    photo_url: str | None
+    per_portion: NutrientsOut  # one portion of the dish
+    cost: float  # for these portions
+    ingredients: list[MealIngredientOut]  # for these portions
+
+
+class DishOption(MealRef):
+    """One of our meals as a dish on a plate: enough to show and count one portion of it."""
+
+    portions: int
+    portion_g: float
+    cost: float  # whole recipe
+    per_portion: NutrientsOut
+
+
+class DishSuggestion(BaseModel):
+    """ "Pancakes — your Healthy banana pancakes?": `item` is the index in the result's items."""
+
+    item: int
+    name: str  # as the photo called it
+    dish: DishOption
+
+
+class AliasDecline(BaseModel):
+    name: Alias
+
+
 class MealStats(BaseModel):
     score: float | None  # sorting and the menu
     taste: float | None  # the stars: average taste
@@ -232,6 +313,8 @@ class MealCard(MealStats, SnackInfo, OriginInfo):
     cost: float
     rated_by_me: bool
     kcal_per_portion: float
+    per_portion: NutrientsOut
+    bundle: bool  # holds other meals of ours (they can't hold dishes themselves)
     created_at: datetime
 
 
@@ -249,6 +332,9 @@ class MealOut(MealStats, SnackInfo, OriginInfo):
     steps: list[str]
     steps_source: str
     ingredients: list[MealIngredientOut]
+    components: list[MealComponentOut]  # bundles: our other meals on the plate
+    used_in: list[MealRef]  # plates this meal is a dish of
+    aliases: list[str]  # what photos call it (offered as a swap on the check screen)
     per_portion: NutrientsOut  # what counts: typed-in values if any, else calculated
     per_portion_calculated: NutrientsOut
     nutrients_overridden: bool

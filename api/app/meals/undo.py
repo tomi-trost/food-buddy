@@ -11,7 +11,7 @@ from app.analysis.models import AnalysisJob, AnalysisRating
 from app.auth.models import User
 from app.inventory.models import InventoryItem, RanOut
 from app.logs.models import FoodLog
-from app.meals.models import Meal
+from app.meals.models import CookLog, Meal, MealComponent
 from app.ratings.models import Rating
 
 UNDO_MINUTES = 10
@@ -52,6 +52,13 @@ def undo_until(meal: Meal) -> datetime | None:
     if meal.undo is None or meal.created_at is None:
         return None
     return meal.created_at + timedelta(minutes=UNDO_MINUTES)
+
+
+async def _in_use(session: AsyncSession, meal_id: int) -> bool:
+    plate = select(MealComponent.id).where(MealComponent.component_id == meal_id)
+    eaten = select(FoodLog.id).where(FoodLog.meal_id == meal_id)
+    cooked = select(CookLog.id).where(CookLog.meal_id == meal_id)
+    return any([await session.scalar(q.limit(1)) for q in (plate, eaten, cooked)])
 
 
 async def undo_post(session: AsyncSession, user: User, meal: Meal) -> int | None:
@@ -114,5 +121,10 @@ async def undo_post(session: AsyncSession, user: User, meal: Meal) -> int | None
             )
     await session.execute(delete(FoodLog).where(FoodLog.meal_id == meal.id))
     await session.delete(meal)  # cook log, ratings, "you too?" suggestions go with it
+    await session.flush()
+    for dish_id in record.get("components", []):  # dishes made in this post, unless used since
+        dish = await session.get(Meal, dish_id)
+        if dish is not None and not await _in_use(session, dish_id):
+            await session.delete(dish)
     await session.commit()
     return job.id if job is not None else None

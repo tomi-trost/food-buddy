@@ -3,7 +3,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from app.meals.schemas import RatingIn
+from app.meals.schemas import DishSuggestion, RatingIn
 from app.nutrition.schemas import IngredientOut, NutrientsOut
 from app.snacks.schemas import SnackResult
 
@@ -52,3 +52,4 @@ class AnalysisJobOut(BaseModel):
     save_only: bool  # "for later": save to the library, don't log as eaten
     meal_id: int | None  # set once posted
     my_rating: RatingIn | None  # rating given before posting (meals only)
+    dishes: list[DishSuggestion] = []  # items that may be one of our dishes (aliases), to ask

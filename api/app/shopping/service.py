@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.models import User
 from app.inventory.models import InventoryItem, RanOut
+from app.meals.bundles import flat_items
 from app.meals.models import Meal
 from app.nutrition.models import Ingredient
 from app.nutrition.schemas import IngredientOut
@@ -57,9 +58,9 @@ async def shopping_list(session: AsyncSession, user: User) -> ShoppingOut:
         meals = {m.id: m for m in await session.scalars(select(Meal).where(Meal.id.in_(set(ids))))}
         times = batches([i for i in ids if i in meals], {i: m.portions for i, m in meals.items()})
         for mid, n in times.items():
-            for mi in meals[mid].ingredients:
-                need[mi.ingredient_id] = need.get(mi.ingredient_id, 0) + mi.grams * n
-                ingredients[mi.ingredient_id] = mi.ingredient
+            for ingredient, grams in flat_items(meals[mid]):  # a bundle: its dishes' too
+                need[ingredient.id] = need.get(ingredient.id, 0) + grams * n
+                ingredients[ingredient.id] = ingredient
 
     stock = {iid: item.grams for iid, item in (await stock_items(session, hid)).items()}
     checked = set(

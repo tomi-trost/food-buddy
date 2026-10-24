@@ -104,7 +104,10 @@ export function CookSheet({ meal, open, onClose, initialType }: {
           <h3>Used up an ingredient?</h3>
           <div className="sub" style={{ margin: '2px 0 10px' }}>Tap anything you finished. It goes on your shopping list.</div>
           <div className="chips">
-            {meal.ingredients.map(({ ingredient: i }) => {
+            {[...meal.ingredients, ...meal.components.flatMap((c) => c.ingredients)] // a bundle: its dishes' too
+              .map(({ ingredient }) => ingredient)
+              .filter((i, n, all) => all.findIndex((x) => x.id === i.id) === n)
+              .map((i) => {
               const on = usedUp.includes(i.id)
               return (
                 <button key={i.id} className={`chip${on ? ' on' : ''}`} aria-pressed={on}

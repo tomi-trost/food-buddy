@@ -29,13 +29,15 @@ export const ING: Record<string, Ingredient> = {
   rice: { id: 2, name: 'Rice (cooked)', emoji: '🍚', category: 'Pantry', location: 'pantry', price_per_100g: 0.2, per100: n(130, 2.7, 28, 0.3, 0.4), unit: 'g', unit_grams: 1 },
   soy: { id: 4, name: 'Soy sauce', emoji: '🫙', category: 'Pantry', location: 'pantry', price_per_100g: 0.5, per100: n(60, 8, 5, 0, 0.8, 0.5), unit: 'g', unit_grams: 1 },
   oil: { id: 5, name: 'Olive oil', emoji: '🫒', category: 'Pantry', location: 'pantry', price_per_100g: 0.8, per100: n(884, 0, 0, 100), unit: 'ml', unit_grams: 0.91 },
+  banana: { id: 23, name: 'Banana', emoji: '🍌', category: 'Produce', location: 'pantry', price_per_100g: 0.2, per100: n(89, 1.1, 23, 0.3, 2.6, 12), unit: 'g', unit_grams: 1 },
+  oats: { id: 20, name: 'Rolled oats', emoji: '🥣', category: 'Pantry', location: 'pantry', price_per_100g: 0.1, per100: n(389, 17, 66, 7, 10, 1), unit: 'g', unit_grams: 1 },
   eggs: { id: 12, name: 'Eggs', emoji: '🥚', category: 'Dairy', location: 'fridge', price_per_100g: 0.6, per100: n(143, 13, 0.7, 9.5), unit: 'pc', unit_grams: 50 },
 }
 
 export const analysisJob = (over: Partial<AnalysisJob> = {}): AnalysisJob => ({
   id: 5, by: { id: 1, name: 'Tomi' }, kind: 'meal', status: 'queued', photo_url: '/api/analyses/5/photo', description: null, provider: null,
   result: null, snack: null, error: null, created_at: '2026-10-04T12:00:00Z', finished_at: null,
-  closed: false, meal_id: null, my_rating: null, meal_type: null, save_only: false, ...over,
+  closed: false, meal_id: null, my_rating: null, meal_type: null, save_only: false, dishes: [], ...over,
 })
 
 export const doneJob = () =>
@@ -62,6 +64,7 @@ export const meal = (over: Partial<Meal> = {}): Meal => ({
   snack_kind: null, per: 'portion', piece_g: null, is_product: false, per_unit: n(551.7, 51.9, 56, 9.9, 0.8, 0), portion_g: 350,
   origin: 'home', listed: true, place: null, family: 'Rice & grains', family_picked: false,
   ingredients: [{ ingredient: ING.rice, grams: 400 }, { ingredient: ING.chicken, grams: 300 }],
+  components: [], used_in: [], aliases: [],
   score: null, taste: null, cooked_count: 1, last_cooked: '2026-10-01',
   ratings: [
     { user_id: 1, name: 'Tomi', color: '#b9532f', rating: null },
@@ -72,7 +75,7 @@ export const meal = (over: Partial<Meal> = {}): Meal => ({
 
 export const card = (over: Partial<MealCard> = {}): MealCard => ({
   id: 1, name: 'Meal', emoji: '🍽️', photo_url: null, types: ['dinner'], tags: [], prep_minutes: 30,
-  portions: 2, cost: 6, rated_by_me: false, kcal_per_portion: 500, created_at: '2026-10-01T12:00:00Z',
+  portions: 2, cost: 6, rated_by_me: false, kcal_per_portion: 500, per_portion: n(500, 0, 0, 0, 0, 0), bundle: false, created_at: '2026-10-01T12:00:00Z',
   score: null, taste: null, cooked_count: 1, last_cooked: '2026-10-01',
   snack_kind: null, per: 'portion', piece_g: null, is_product: false, per_unit: n(500, 0, 0, 0, 0, 0), portion_g: 300,
   origin: 'home', listed: true, place: null, family: 'Rice & grains', family_picked: false,

@@ -13,6 +13,7 @@ from app.analysis.tasks import queue_analysis
 from app.auth.deps import CurrentUser, Session
 from app.auth.models import User
 from app.config import get_settings
+from app.meals.aliases import household_aliases, suggestions
 from app.meals.schemas import RatingIn
 from app.meals.service import apply_rating
 
@@ -33,6 +34,8 @@ async def jobs_out(session: Session, user: User, jobs: list[AnalysisJob]) -> lis
             )
         )
     }
+    to_check = [j for j in jobs if j.kind == "meal" and j.status == "done" and not j.closed_at]
+    aliases = await household_aliases(session, user.household_id) if to_check else {}
     out = []
     for job in jobs:
         meal = job.kind == "meal"
@@ -64,6 +67,7 @@ async def jobs_out(session: Session, user: User, jobs: list[AnalysisJob]) -> lis
                 )
                 if rating
                 else None,
+                dishes=suggestions(job.result, aliases) if job in to_check else [],
             )
         )
     return out

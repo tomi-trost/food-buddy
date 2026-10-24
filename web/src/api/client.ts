@@ -177,6 +177,9 @@ export const api = {
   async deleteMeal(id: number, keepLog: boolean) {
     await request(`/meals/${id}?keep_log=${keepLog}`, { method: 'DELETE' })
   },
+  async declineAlias(mealId: number, name: string) {
+    await request(`/meals/${mealId}/aliases/decline`, { method: 'POST', body: JSON.stringify({ name }) })
+  },
   undoMeal: (id: number) => json<{ analysis_id: number | null }>(`/meals/${id}/undo`, { method: 'POST' }),
   unrateMeal: (id: number) => json<Meal>(`/meals/${id}/rating`, { method: 'DELETE' }),
   day: (date: string) => json<Day>(`/day?date=${date}`),

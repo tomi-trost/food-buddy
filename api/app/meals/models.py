@@ -65,6 +65,48 @@ class Meal(TimestampMixin, Base):
     ingredients: Mapped[list["MealIngredient"]] = relationship(
         back_populates="meal", cascade="all, delete-orphan", lazy="selectin"
     )
+    # Bundles: portions of other meals of ours on this plate (one level deep, see meals.service)
+    components: Mapped[list["MealComponent"]] = relationship(
+        foreign_keys="MealComponent.meal_id",
+        back_populates="meal",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+        join_depth=3,  # plate → its dishes → their (empty) dishes: loaded up front, never lazily
+    )
+    aliases: Mapped[list["MealAlias"]] = relationship(
+        cascade="all, delete-orphan", lazy="selectin", order_by="MealAlias.name"
+    )
+
+
+class MealAlias(Base):
+    """What a photo called something we swapped for this dish (see meals.aliases)."""
+
+    __tablename__ = "meal_alias"
+    __table_args__ = (UniqueConstraint("meal_id", "name"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    meal_id: Mapped[int] = mapped_column(ForeignKey("meal.id", ondelete="CASCADE"))
+    name: Mapped[str] = mapped_column(String(80))
+    declined: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+
+
+class MealComponent(Base):
+    """`portions` of the meal `component_id` in the whole recipe of `meal_id`."""
+
+    __tablename__ = "meal_component"
+    __table_args__ = (UniqueConstraint("meal_id", "component_id"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    meal_id: Mapped[int] = mapped_column(ForeignKey("meal.id", ondelete="CASCADE"))
+    component_id: Mapped[int] = mapped_column(
+        ForeignKey("meal.id", ondelete="RESTRICT"), index=True
+    )
+    portions: Mapped[float] = mapped_column(Float)
+
+    meal: Mapped[Meal] = relationship(foreign_keys=[meal_id], back_populates="components")
+    component: Mapped[Meal] = relationship(
+        foreign_keys=[component_id], lazy="selectin", join_depth=3
+    )
 
 
 class MealIngredient(Base):

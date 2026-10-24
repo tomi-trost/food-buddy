@@ -27,5 +27,6 @@
 | [0026](0026-rating-sliders-taste-stars.md) | Effort/filling sliders, stars = taste, snacks rated on taste | accepted |
 | [0027](0027-bought-and-eaten-out.md) | Bought / eaten-out food is logged, not added to our meals | accepted |
 | [0028](0028-dish-families.md) | Dish families group variations of the same dish | accepted |
+| [0029](0029-bundles.md) | Bundles: a plate can hold dishes of ours; aliases offer them | accepted |
 
 Template: Context · Decision · Alternatives · Consequences.

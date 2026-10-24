@@ -1,11 +1,11 @@
-import type { MealKind, MealPer, Origin, SnackKind } from '../api/types'
+import type { Ingredient, MealKind, MealPer, Origin, SnackKind } from '../api/types'
 import { isTreatKind, KIND_LABEL, SNACK_KINDS } from '../lib/snacks'
 import { Icon } from '../ui/Icon'
 import { templateSteps } from '../lib/recipe'
 import { Stepper } from '../ui/Stepper'
 import { typeOption } from '../ui/mealTypes'
 import { Toggle } from '../ui/Toggle'
-import { byWeight, type PlateItem } from './plate'
+import { byWeight, type PlateItem, usableIngredients } from './plate'
 
 export type DetailsState = {
   name: string
@@ -31,7 +31,7 @@ export function Details({ items, state, set, onPost, posting, error }: {
   posting: boolean
   error?: string
 }) {
-  const resolved = items.filter((i) => i.ingredient)
+  const usable = usableIngredients(items)
   const perPortion = state.cost / state.portions
   const cooked = state.origin === 'home'
   const snackReady = state.mealType !== 'snack' || !!state.snackKind
@@ -45,7 +45,7 @@ export function Details({ items, state, set, onPost, posting, error }: {
         onChange={(origin) => set({ origin })}
         options={[{ value: 'home', label: '🍳 Cooked' }, { value: 'bought', label: '🛒 Bought' }, { value: 'out', label: '🍽️ Ate out' }]}
       />
-      {cooked ? <CookedDetails items={items} resolved={resolved} perPortion={perPortion} state={state} set={set} /> : <NotCookedDetails state={state} set={set} />}
+      {cooked ? <CookedDetails items={items} usable={usable} perPortion={perPortion} state={state} set={set} /> : <NotCookedDetails state={state} set={set} />}
       {error && <p className="error" role="alert">{error}</p>}
       {cooked ? (
         <button className="btn" disabled={posting || !state.name.trim() || !snackReady} onClick={onPost}>
@@ -99,9 +99,9 @@ function NotCookedDetails({ state, set }: { state: DetailsState; set: (patch: Pa
   )
 }
 
-function CookedDetails({ items, resolved, perPortion, state, set }: {
+function CookedDetails({ items, usable, perPortion, state, set }: {
   items: PlateItem[]
-  resolved: PlateItem[]
+  usable: Ingredient[] // the plate's ingredients and its new dishes''
   perPortion: number
   state: DetailsState
   set: (patch: Partial<DetailsState>) => void
@@ -161,13 +161,13 @@ function CookedDetails({ items, resolved, perPortion, state, set }: {
           Tap anything you finished. It leaves your ingredients and goes on your shopping list.
         </div>
         <div className="chips">
-          {resolved.map((i) => {
-            const id = i.ingredient!.id
+          {usable.map((i) => {
+            const id = i.id
             const on = state.usedUp.includes(id)
             return (
               <button key={id} className={`chip${on ? ' on' : ''}`} aria-pressed={on}
                 onClick={() => set({ usedUp: on ? state.usedUp.filter((x) => x !== id) : [...state.usedUp, id] })}>
-                {i.ingredient!.emoji} {i.ingredient!.name}{on ? ' · used up' : ''}
+                {i.emoji} {i.name}{on ? ' · used up' : ''}
               </button>
             )
           })}

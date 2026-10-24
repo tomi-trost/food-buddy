@@ -12,17 +12,29 @@ from app.auth.service import household_members
 from app.inventory.service import deduct, mark_used_up
 from app.logs.models import FoodLog
 from app.logs.service import snack_nutrients
+from app.meals.bundles import (
+    components_for,
+    dissolve,
+    flat_items,
+    flat_recipe,
+    set_aliases,
+    share,
+    used_in,
+)
 from app.meals.families import Families, household_families
-from app.meals.models import TYPES, CookLog, Meal, MealIngredient
+from app.meals.models import TYPES, CookLog, Meal, MealComponent, MealIngredient
 from app.meals.recipes import template_steps
 from app.meals.schemas import (
+    ComponentIn,
     CookIn,
     ItemIn,
     MealCard,
+    MealComponentOut,
     MealCreate,
     MealIngredientOut,
     MealOut,
     MealPatch,
+    MealRef,
     RatingIn,
     RatingOut,
     SnackInfo,
@@ -35,11 +47,16 @@ from app.ratings.models import Rating, is_snack_only, meal_score, meal_taste
 
 
 def recipe_nutrients(meal: Meal) -> Nutrients:
-    return total(mi.ingredient.per100.scaled(mi.grams) for mi in meal.ingredients)
+    """The whole recipe: own ingredients plus each dish's values per portion (its own typed-in
+    values count) × portions on the plate."""
+    own = (mi.ingredient.per100.scaled(mi.grams) for mi in meal.ingredients)
+    dishes = (per_portion(mc.component).scaled(100 * mc.portions) for mc in meal.components)
+    return total([*own, *dishes])
 
 
 def estimated_cost(meal: Meal) -> float:
-    return sum(mi.ingredient.price_per_100g * mi.grams / 100 for mi in meal.ingredients)
+    own = sum(mi.ingredient.price_per_100g * mi.grams / 100 for mi in meal.ingredients)
+    return own + sum(effective_cost(mc.component) * share(mc) for mc in meal.components)
 
 
 def calculated_per_portion(meal: Meal) -> Nutrients:
@@ -54,7 +71,7 @@ def per_portion(meal: Meal) -> Nutrients:
 
 
 def portion_grams(meal: Meal) -> float:
-    return sum(mi.grams for mi in meal.ingredients) / meal.portions
+    return sum(grams for _, grams in flat_items(meal)) / meal.portions
 
 
 def grams_per_amount(meal: Meal) -> float:
@@ -174,6 +191,7 @@ async def meal_out(session: AsyncSession, user: User, meal: Meal) -> MealOut:
     members = await household_members(session, user.household_id)
     ordered = sorted(meal.ingredients, key=lambda mi: -mi.grams)
     logged = await session.scalar(select(func.count()).where(FoodLog.meal_id == meal.id))
+    plates = await used_in(session, meal.id)
     return MealOut(
         id=meal.id,
         name=meal.name,
@@ -191,6 +209,9 @@ async def meal_out(session: AsyncSession, user: User, meal: Meal) -> MealOut:
             MealIngredientOut(ingredient=IngredientOut.of(mi.ingredient), grams=round(mi.grams, 1))
             for mi in ordered
         ],
+        components=[component_out(mc) for mc in meal.components],
+        used_in=[MealRef(id=p.id, name=p.name, emoji=p.emoji) for p in plates],
+        aliases=[a.name for a in meal.aliases],
         per_portion=NutrientsOut(**portion.rounded()),
         per_portion_calculated=NutrientsOut(**calculated_per_portion(meal).rounded()),
         nutrients_overridden=meal.nutrients_override is not None,
@@ -211,6 +232,26 @@ async def meal_out(session: AsyncSession, user: User, meal: Meal) -> MealOut:
         created_at=meal.created_at,
         undo_until=_undo_until_for(meal, user),
         **snack_info(meal, await household_families(session, meal.household_id)),
+    )
+
+
+def component_out(mc: MealComponent) -> MealComponentOut:
+    dish, part = mc.component, share(mc)
+    return MealComponentOut(
+        id=dish.id,
+        name=dish.name,
+        emoji=dish.emoji,
+        photo_url=f"/api/meals/{dish.id}/photo" if dish.photo_path else None,
+        portions=round(mc.portions, 2),
+        grams=round(portion_grams(dish) * mc.portions, 1),
+        per_portion=NutrientsOut(**per_portion(dish).rounded()),
+        cost=round(effective_cost(dish) * part, 2),
+        ingredients=[
+            MealIngredientOut(
+                ingredient=IngredientOut.of(mi.ingredient), grams=round(mi.grams * part, 1)
+            )
+            for mi in sorted(dish.ingredients, key=lambda mi: -mi.grams)
+        ],
     )
 
 
@@ -255,6 +296,8 @@ async def meal_cards(session: AsyncSession, user: User) -> list[MealCard]:
                 last_cooked=last,
                 rated_by_me=any(r.user_id == user.id for r in rs),
                 kcal_per_portion=round(portion.kcal, 1),
+                per_portion=NutrientsOut(**portion.rounded()),
+                bundle=bool(m.components),
                 created_at=m.created_at,
                 **snack_info(m, families),
             )
@@ -288,7 +331,7 @@ async def cook_again(session: AsyncSession, user: User, meal: Meal, body: CookIn
 
     Snacks: the amount in the meal's unit; every one counts as eaten. A product takes what was
     eaten out of stock (if it's there); a home-made snack made now, the whole recipe."""
-    recipe = {mi.ingredient_id: mi.grams for mi in meal.ingredients}
+    recipe = flat_recipe(meal)
     if not set(body.used_up) <= set(recipe):
         raise HTTPException(
             status.HTTP_422_UNPROCESSABLE_CONTENT,
@@ -337,14 +380,13 @@ async def post_meal(session: AsyncSession, user: User, body: MealCreate) -> Meal
     cooked = body.origin == "home"
     portions = body.portions if cooked else 1  # bought / out: the plate we had
     plate = {i.ingredient_id: i.grams for i in body.items}
-    recipe = {k: g * portions for k, g in plate.items()}
+    own = {k: g * portions for k, g in plate.items()}
     by_weight = sorted(ids, key=lambda k: -plate[k])
 
     meal = Meal(
         household_id=user.household_id,
         created_by=user.id,
         name=body.name.strip(),
-        emoji=found[by_weight[0]].emoji or "🍽️",
         photo_path=analysis.photo_path if analysis else None,
         types=[body.meal_type],
         snack_kind=body.snack_kind if body.meal_type == "snack" else None,
@@ -354,17 +396,29 @@ async def post_meal(session: AsyncSession, user: User, body: MealCreate) -> Meal
         prep_minutes=body.prep_minutes if cooked else 0,
         portions=portions,
         cost=body.cost,
-        steps=template_steps([found[k].name for k in by_weight], body.prep_minutes, portions)
-        if cooked
-        else [],
         origin=body.origin,
         listed=cooked,
         place=(body.place or "").strip() or None,
         nutrients_override=body.per_portion.model_dump() if body.per_portion else None,
         ingredients=[
-            MealIngredient(ingredient_id=k, grams=recipe[k], ingredient=found[k]) for k in ids
+            MealIngredient(ingredient_id=k, grams=own[k], ingredient=found[k]) for k in ids
         ],
+        aliases=[],
     )
+    meal.components, created = await components_for(
+        session, user, meal, body.components, scale=portions
+    )
+    names = [found[k].name for k in by_weight] + [mc.component.name for mc in meal.components]
+    meal.steps = template_steps(names, body.prep_minutes, portions) if cooked else []
+    meal.emoji = (
+        found[by_weight[0]].emoji if by_weight else meal.components[0].component.emoji
+    ) or "🍽️"
+    recipe = flat_recipe(meal)
+    if not set(body.used_up) <= set(recipe):
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "used_up must only contain this meal's ingredients",
+        )
     session.add(meal)
     await session.flush()
 
@@ -394,7 +448,7 @@ async def post_meal(session: AsyncSession, user: User, body: MealCreate) -> Meal
         await stock_of(session, user.household_id, touched),
         ran_before,
         await ran_out_of(session, user.household_id),
-    )
+    ) | {"components": [d.id for d in created]}  # new dishes go too on undo, if still unused
     if analysis:
         close(analysis, meal_id=meal.id)
         await move_early_ratings(session, analysis, meal.id, snack=is_snack_only(meal.types))
@@ -402,13 +456,25 @@ async def post_meal(session: AsyncSession, user: User, body: MealCreate) -> Meal
     return meal
 
 
-async def update_meal(session: AsyncSession, meal: Meal, body: MealPatch) -> None:
+async def update_meal(session: AsyncSession, user: User, meal: Meal, body: MealPatch) -> list[Meal]:
+    """Returns dishes made from the meal's ingredients in this edit (for their recipes)."""
     sent = body.model_fields_set
+    created: list[Meal] = []
     if body.items is not None:
         own = [mi.ingredient_id for mi in meal.ingredients]
         await _replace_ingredients(session, meal, body.items)
         if [i.ingredient_id for i in body.items] != own:
             meal.is_product = False  # ingredients added: a recipe of its own now
+    if body.components is not None:
+        created = await _replace_components(session, user, meal, body.components)
+        if meal.components:
+            meal.is_product = False
+    if body.items is not None or body.components is not None:
+        if not meal.ingredients and not meal.components:
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_CONTENT,
+                "A meal needs at least one ingredient or dish",
+            )
     if "cost" in sent:
         meal.cost = body.cost
     if "per_portion" in sent:
@@ -441,9 +507,30 @@ async def update_meal(session: AsyncSession, meal: Meal, body: MealPatch) -> Non
         meal.listed = body.listed
     if body.family is not None:
         meal.family = body.family.strip() or None
+    if body.aliases is not None:
+        set_aliases(meal, body.aliases)
     await session.flush()
     await _refresh_logs(session, meal)
+    for plate in await used_in(session, meal.id):  # a dish changed: so did the plates holding it
+        await _refresh_logs(session, plate)
     await session.commit()
+    return created
+
+
+async def _replace_components(
+    session: AsyncSession, user: User, meal: Meal, wanted: list[ComponentIn]
+) -> list[Meal]:
+    keep = {c.meal_id: c.portions for c in wanted if c.meal_id is not None}
+    for mc in list(meal.components):
+        if mc.component_id in keep:
+            mc.portions = keep.pop(mc.component_id)
+        else:
+            meal.components.remove(mc)
+    await session.flush()
+    added = [c for c in wanted if c.new is not None or c.meal_id in keep]
+    components, created = await components_for(session, user, meal, added, scale=1)
+    meal.components.extend(components)
+    return created
 
 
 def _update_snack(meal: Meal, body: MealPatch) -> None:
@@ -493,7 +580,8 @@ async def _replace_ingredients(session: AsyncSession, meal: Meal, items: list[It
     await session.flush()
     for k, g in grams.items():
         meal.ingredients.append(MealIngredient(ingredient_id=k, grams=g, ingredient=found[k]))
-    meal.emoji = found[max(items, key=lambda i: i.grams).ingredient_id].emoji or meal.emoji
+    if items:
+        meal.emoji = found[max(items, key=lambda i: i.grams).ingredient_id].emoji or meal.emoji
 
 
 async def _refresh_logs(session: AsyncSession, meal: Meal) -> None:
@@ -514,12 +602,15 @@ async def _refresh_logs(session: AsyncSession, meal: Meal) -> None:
 
 
 async def delete_meal(session: AsyncSession, meal: Meal, *, keep_log: bool) -> None:
-    """Ratings, ingredients and cook counts go with it; plan slots become empty.
+    """Ratings, ingredients and cook counts go with it; plan slots become empty. Plates that
+    hold it as a dish get its ingredients instead.
 
     With `keep_log` the food-log entries stay (unlinked) so past days keep their totals.
     """
     if not keep_log:
         await session.execute(delete(FoodLog).where(FoodLog.meal_id == meal.id))
+    for plate in await dissolve(session, meal):  # plates holding it keep its ingredients
+        await _refresh_logs(session, plate)
     await session.delete(meal)
     await session.commit()
 

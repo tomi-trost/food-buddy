@@ -2,7 +2,7 @@ import { act, fireEvent, screen, within } from '@testing-library/react'
 import { Route } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { tokenStore } from '../api/client'
-import { card, me, meal } from '../test/fixtures'
+import { card, ING, me, meal } from '../test/fixtures'
 import { jsonResponse, mockFetch, renderAt } from '../test/utils'
 import { MealPage } from './MealPage'
 import { MealsPage } from './MealsPage'
@@ -381,5 +381,26 @@ describe('MealsPage log button', () => {
     await screen.findByText('Logged · ingredients updated')
     expect(cooked).toMatchObject({ meal_type: 'lunch', cooked: true })
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+})
+
+describe('MealPage bundles', () => {
+  it('lists the dishes on the plate (open to see what is in them) and the plates a dish is in', async () => {
+    mockFetch((url) => {
+      if (url === '/api/auth/me') return jsonResponse(me())
+      return jsonResponse(meal({
+        used_in: [{ id: 9, name: 'Pancake plate', emoji: '🥞' }],
+        components: [{
+          id: 7, name: 'Banana pancakes', emoji: '🥞', portions: 2, grams: 300, photo_url: null, cost: 0.5,
+          per_portion: meal().per_portion, ingredients: [{ ingredient: ING.banana, grams: 200 }],
+        }],
+      }))
+    })
+    renderMeal()
+    const dish = await screen.findByRole('group', { name: 'Banana pancakes' })
+    expect(within(dish).getByText('2 portions')).toBeInTheDocument()
+    expect(within(dish).getByText('200 g')).toBeInTheDocument()
+    expect(within(dish).getByRole('link', { name: 'Open its recipe' })).toHaveAttribute('href', '/meals/7')
+    expect(within(screen.getByLabelText('A dish in')).getByRole('link', { name: /Pancake plate/ })).toHaveAttribute('href', '/meals/9')
   })
 })

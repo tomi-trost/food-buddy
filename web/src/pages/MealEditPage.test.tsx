@@ -60,6 +60,7 @@ describe('MealEditPage', () => {
       name: 'Rice bowl', types: ['lunch', 'dinner'], prep_friendly: true, prep_minutes: 25, portions: 3,
       cost: null, // estimated before and untouched
       items: [{ ingredient_id: 2, grams: 400 }, { ingredient_id: 1, grams: 275 }, { ingredient_id: 5, grams: 100 }],
+      components: [],
       per_portion: null,
     })
   })
@@ -139,7 +140,7 @@ describe('MealEditPage', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Remove ingredient' }))
     }
     expect(screen.getByRole('button', { name: 'Save changes' })).toBeDisabled()
-    expect(screen.getByText('A meal needs at least one ingredient.')).toBeInTheDocument()
+    expect(screen.getByText('A meal needs at least one ingredient or dish.')).toBeInTheDocument()
   })
 
   it('deletes the meal and its log entries by default', async () => {
@@ -226,5 +227,68 @@ describe('MealEditPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
     await screen.findByText('meal page')
     expect(bodyOf(fetch, 'PATCH')!.body.family).toBe('')
+  })
+})
+
+describe('MealEditPage bundles', () => {
+  const pancakes = {
+    id: 7, name: 'Banana pancakes', emoji: '🥞', portions: 2, grams: 300, photo_url: null, cost: 0.5,
+    per_portion: { kcal: 280, protein: 8, carbs: 45, fat: 5, fiber: 5, sugar: 15 },
+    ingredients: [{ ingredient: ING.banana, grams: 200 }, { ingredient: ING.oats, grams: 100 }],
+  }
+
+  it('keeps the dishes and sends their portions for the whole recipe', async () => {
+    const fetch = api(meal({ components: [pancakes] }))
+    render()
+    fireEvent.click(await screen.findByRole('button', { name: /Banana pancakes · 2 portions/ }))
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Edit dish' })).getByLabelText('More dish portions'))
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    expect(await screen.findByText('meal page')).toBeInTheDocument()
+    expect(bodyOf(fetch, 'PATCH')!.body.components).toEqual([{ meal_id: 7, portions: 2.5 }])
+  })
+
+  it('saves a plate of dishes only, and can remove a dish', async () => {
+    const fetch = api(meal({ ingredients: [], components: [pancakes] }))
+    render()
+    fireEvent.click(await screen.findByRole('button', { name: /Banana pancakes/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Remove dish' }))
+    expect(screen.getByRole('button', { name: 'Save changes' })).toBeDisabled()
+    expect(screen.getByText('A meal needs at least one ingredient or dish.')).toBeInTheDocument()
+    expect(bodyOf(fetch, 'PATCH')).toBeUndefined()
+  })
+
+  it("a dish in other plates can't hold dishes", async () => {
+    api(meal({ used_in: [{ id: 9, name: 'Pancake plate', emoji: '🥞' }] }))
+    render()
+    expect(await screen.findByText(/A dish in Pancake plate, so it can't hold dishes itself/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /make them their own dish/ })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Delete meal' }))
+    expect(screen.getByText(/they keep its ingredients instead/)).toBeInTheDocument()
+  })
+})
+
+describe('MealEditPage aliases', () => {
+  it('edits what photos call a dish', async () => {
+    const fetch = api(meal({ aliases: ['pancakes'], used_in: [{ id: 9, name: 'Pancake plate', emoji: '🥞' }] }))
+    render()
+    const box = await screen.findByRole('region', { name: 'Photos call it' })
+    fireEvent.click(within(box).getByRole('button', { name: 'Remove pancakes' }))
+    fireEvent.change(within(box).getByLabelText('Another name'), { target: { value: '  Banana   Pancakes ' } })
+    fireEvent.click(within(box).getByRole('button', { name: 'Add' }))
+    expect(within(box).getByRole('button', { name: 'Remove banana pancakes' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    expect(await screen.findByText('meal page')).toBeInTheDocument()
+    expect(bodyOf(fetch, 'PATCH')!.body.aliases).toEqual(['banana pancakes'])
+  })
+
+  it('leaves them out when untouched, and hides the box for a meal that is no dish', async () => {
+    const fetch = api()
+    render()
+    await screen.findByLabelText('Name')
+    expect(screen.queryByRole('region', { name: 'Photos call it' })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    expect(await screen.findByText('meal page')).toBeInTheDocument()
+    expect(bodyOf(fetch, 'PATCH')!.body).not.toHaveProperty('aliases')
   })
 })

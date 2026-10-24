@@ -4,6 +4,14 @@ export type Release = { id: string; notes: string[] }
 
 export const RELEASES: Release[] = [
   {
+    id: '2026-10-24-bundles',
+    notes: [
+      'Made part of a plate from scratch, like pancakes under the fruit? Tap "Select ingredients" while checking a photo or in Edit meal, pick them and tap "Make it its own dish". It becomes one of our meals with its own recipe.',
+      'Our meals now show under "Ours" when you add an ingredient, so the next plate can hold a portion of them.',
+      'Next time a photo says "pancakes", we ask if it is your pancakes. Yes swaps them in; after three No\'s we stop asking. Edit the names under "Photos call it" in Edit meal.',
+    ],
+  },
+  {
     id: '2026-10-24-count-in',
     notes: [
       'Tap an ingredient to count it in grams, pieces or ml. Pieces ask once what one weighs, then it shows that way everywhere for both of you.',

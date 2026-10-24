@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { useAddFood } from '../add/AddFood'
 import { api, ApiError } from '../api/client'
-import type { AnalysisJob, AnalysisResult, MealKind, Nutrients, Rating } from '../api/types'
+import type { AnalysisJob, AnalysisResult, DishSuggestion, MealKind, Nutrients, Rating } from '../api/types'
 import { DiscardButton } from '../layout/discard'
 import { OPEN_ANALYSES } from '../layout/PendingBanner'
 import { todayISO } from '../lib/dates'
@@ -62,7 +62,8 @@ export function AnalysisPage() {
   if (job.data?.status === 'done' && job.data.result && !job.data.closed) {
     return (
       <SnapFlow analysisId={job.data.id} photoUrl={job.data.photo_url} result={job.data.result}
-        rated={!!job.data.my_rating} chosenType={job.data.meal_type} saveOnly={job.data.save_only} close={close} />
+        rated={!!job.data.my_rating} chosenType={job.data.meal_type} saveOnly={job.data.save_only} close={close}
+        dishes={job.data.dishes} />
     )
   }
 
@@ -137,7 +138,7 @@ function Waiting({ job }: { job: AnalysisJob }) {
   )
 }
 
-function SnapFlow({ analysisId, photoUrl, result, rated, chosenType, saveOnly, close }: {
+function SnapFlow({ analysisId, photoUrl, result, rated, chosenType, saveOnly, close, dishes }: {
   analysisId: number
   photoUrl: string | null
   result: AnalysisResult
@@ -145,6 +146,7 @@ function SnapFlow({ analysisId, photoUrl, result, rated, chosenType, saveOnly, c
   chosenType: MealKind | null // picked on the Snap screen
   saveOnly: boolean // "For later" on the Snap screen
   close: React.ReactNode
+  dishes: DishSuggestion[] // items that may be one of our dishes (aliases)
 }) {
   const navigate = useNavigate()
   const toast = useToast()
@@ -236,6 +238,7 @@ function SnapFlow({ analysisId, photoUrl, result, rated, chosenType, saveOnly, c
             override={override}
             setOverride={setOverride}
             onNext={() => setStep('details')}
+            suggestions={dishes}
           />
         </>
       ) : (

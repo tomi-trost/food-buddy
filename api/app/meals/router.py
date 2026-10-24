@@ -5,7 +5,16 @@ from pydantic import BaseModel
 from app.analysis.photos import InvalidPhoto, normalize_photo, save_photo
 from app.auth.deps import CurrentUser, Session
 from app.config import get_settings
-from app.meals.schemas import CookIn, MealCard, MealCreate, MealOut, MealPatch, RatingIn
+from app.meals.aliases import decline
+from app.meals.schemas import (
+    AliasDecline,
+    CookIn,
+    MealCard,
+    MealCreate,
+    MealOut,
+    MealPatch,
+    RatingIn,
+)
 from app.meals.service import (
     cook_again,
     delete_meal,
@@ -38,6 +47,8 @@ async def create_meal(body: MealCreate, user: CurrentUser, session: Session) -> 
         await suggest_to_others(session, user, meal, body.meal_type, body.eaten_on)
         return await meal_out(session, user, meal)
     await generate_recipe.defer_async(meal_id=meal.id)
+    for dish_id in meal.undo["components"]:  # dishes made from its ingredients
+        await generate_recipe.defer_async(meal_id=dish_id)
     if body.eaten:
         await remind_rate.configure(schedule_in={"minutes": RATE_AFTER_MIN}).defer_async(
             meal_id=meal.id
@@ -60,7 +71,8 @@ async def get_meal(meal_id: int, user: CurrentUser, session: Session) -> MealOut
 @router.patch("/{meal_id}")
 async def patch_meal(meal_id: int, body: MealPatch, user: CurrentUser, session: Session) -> MealOut:
     meal = await get_own_meal(session, user, meal_id)
-    await update_meal(session, meal, body)
+    for dish in await update_meal(session, user, meal, body):  # dishes made in this edit
+        await generate_recipe.defer_async(meal_id=dish.id)
     return await meal_out(session, user, meal)
 
 
@@ -124,6 +136,15 @@ async def get_meal_photo(meal_id: int, user: CurrentUser, session: Session) -> F
     if not meal.photo_path:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "This meal has no photo")
     return FileResponse(get_settings().photo_dir / meal.photo_path, media_type="image/jpeg")
+
+
+@router.post("/{meal_id}/aliases/decline", status_code=status.HTTP_204_NO_CONTENT)
+async def decline_alias(
+    meal_id: int, body: AliasDecline, user: CurrentUser, session: Session
+) -> Response:
+    """ "Pancakes — your Healthy banana pancakes?" → No (see meals.aliases)."""
+    await decline(session, await get_own_meal(session, user, meal_id), body.name)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 class Undone(BaseModel):

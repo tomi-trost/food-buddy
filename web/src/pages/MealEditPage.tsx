@@ -11,7 +11,7 @@ import { cleanSteps, StepsEditor } from '../meals/StepsEditor'
 import { SnackFields } from '../snap/Details'
 import { IngredientChips } from '../snap/IngredientChips'
 import { NutrientFields } from '../ui/NutrientFields'
-import { type PlateItem, plateNutrients, recipeCost } from '../snap/plate'
+import { fromMeal, isResolved, type PlateItem, plateNutrients, recipeCost, toComponents } from '../snap/plate'
 import { Icon } from '../ui/Icon'
 import { Sheet } from '../ui/Sheet'
 import { Stepper } from '../ui/Stepper'
@@ -54,21 +54,24 @@ function EditForm({ meal, close }: { meal: Meal; close: React.ReactNode }) {
   const [prepFriendly, setPrepFriendly] = useState(meal.tags.includes('prep-friendly'))
   const [prepMinutes, setPrepMinutes] = useState(meal.prep_minutes)
   const [portions, setPortions] = useState(meal.portions)
-  const [items, setItems] = useState<PlateItem[]>(() =>
-    meal.ingredients.map(({ ingredient, grams }) => ({ key: `m${ingredient.id}`, name: ingredient.name, grams, ingredient })))
+  const [items, setItems] = useState<PlateItem[]>(() => fromMeal(meal))
   const [cost, setCost] = useState<number | null>(meal.cost_estimated ? null : meal.cost) // null = estimate
   const [override, setOverride] = useState<Nutrients | null>(meal.nutrients_overridden ? meal.per_portion : null)
   const [valuesOk, setValuesOk] = useState(true)
   const [deleting, setDeleting] = useState(false)
+  const [aliases, setAliases] = useState(meal.aliases)
   const [steps, setSteps] = useState<string[]>(meal.steps.length ? meal.steps : [''])
   const stepsChanged = JSON.stringify(cleanSteps(steps)) !== JSON.stringify(meal.steps)
 
   const isSnack = types.includes('snack')
   // a product until other ingredients are added (then it's a recipe of its own)
-  const stillProduct = !!product && resolvedIds(items).join() === String(product.id)
+  const stillProduct = !!product && resolvedIds(items).join() === String(product.id) && !items.some((i) => i.dish)
   const estimate = Math.round(recipeCost(items, 1) * 100) / 100
   const calculated = scale(plateNutrients(items), 100 / portions)
-  const resolved = items.filter((i) => i.ingredient && i.grams > 0)
+  const resolved = items.filter((i) => i.ingredient && !i.dish && i.grams > 0)
+  const onPlate = items.filter((i) => isResolved(i) && i.grams > 0)
+  // A dish in other plates can't hold dishes itself (one level deep)
+  const dishes = meal.used_in.length ? undefined : { platePortions: portions, exclude: [meal.id] }
 
   const changed = () => {
     qc.invalidateQueries({ queryKey: ['meals'] })
@@ -82,8 +85,10 @@ function EditForm({ meal, close }: { meal: Meal; close: React.ReactNode }) {
       const patch: MealPatch = {
         name: name.trim(), ...(emoji !== meal.emoji ? { emoji } : {}), ...(family.trim() !== startFamily ? { family: family.trim() } : {}), types, prep_friendly: prepFriendly, prep_minutes: prepMinutes, portions, cost,
         items: resolved.map((i) => ({ ingredient_id: i.ingredient!.id, grams: i.grams })),
+        components: toComponents(items),
         per_portion: override,
         ...(stepsChanged ? { steps: cleanSteps(steps) } : {}), // untouched: the model may still write them
+        ...(aliases.join('|') !== meal.aliases.join('|') ? { aliases } : {}),
         ...(isSnack ? { snack_kind: snack.snackKind ?? 'savory', per: snack.per, ...(snack.per === 'piece' ? { piece_g: snack.pieceG } : {}) } : {}),
         ...(product && pack && stillProduct ? { product_per100: pack } : {}),
       }
@@ -143,7 +148,11 @@ function EditForm({ meal, close }: { meal: Meal; close: React.ReactNode }) {
       )}
 
       <h2>Ingredients <span className="sub">{stillProduct ? '(add some to make it a recipe)' : `(for ${portions} portions)`}</span></h2>
-      <IngredientChips items={items} setItems={(f) => setItems(f)} amountLabel="in the recipe" />
+      <IngredientChips items={items} setItems={(f) => setItems(f)} amountLabel="in the recipe" dishes={dishes} />
+      {meal.used_in.length > 0 && (
+        <p className="sub">A dish in {meal.used_in.map((p) => p.name).join(', ')}, so it can't hold dishes itself.</p>
+      )}
+      {(meal.used_in.length > 0 || meal.aliases.length > 0) && <AliasEditor aliases={aliases} onChange={setAliases} />}
 
       {!stillProduct && (
         <div style={{ marginTop: 14 }}>
@@ -186,10 +195,10 @@ function EditForm({ meal, close }: { meal: Meal; close: React.ReactNode }) {
       </div>}
 
       {save.isError && <p className="error" role="alert">{save.error.message}</p>}
-      <button className="btn" disabled={save.isPending || !name.trim() || resolved.length === 0 || !valuesOk || (stepsChanged && !cleanSteps(steps).length)} onClick={() => save.mutate()}>
+      <button className="btn" disabled={save.isPending || !name.trim() || onPlate.length === 0 || !valuesOk || (stepsChanged && !cleanSteps(steps).length)} onClick={() => save.mutate()}>
         {save.isPending ? 'Saving…' : 'Save changes'}
       </button>
-      {resolved.length === 0 && <p className="sub">A meal needs at least one ingredient.</p>}
+      {onPlate.length === 0 && <p className="sub">A meal needs at least one ingredient or dish.</p>}
       <p className="sub" style={{ marginTop: 10 }}>Days you already ate it are updated too. Your ingredients at home stay as they are.</p>
 
       <button type="button" className="btn ghost" style={{ marginTop: 24, color: 'var(--bad)' }} onClick={() => setDeleting(true)}>
@@ -197,6 +206,36 @@ function EditForm({ meal, close }: { meal: Meal; close: React.ReactNode }) {
       </button>
       <DeleteSheet meal={meal} open={deleting} onClose={() => setDeleting(false)} onDeleted={changed} />
     </>
+  )
+}
+
+/** What photos call this dish: when one does, checking the photo offers to swap it in. */
+function AliasEditor({ aliases, onChange }: { aliases: string[]; onChange: (a: string[]) => void }) {
+  const [draft, setDraft] = useState('')
+  const add = () => {
+    const name = draft.trim().toLowerCase().replace(/\s+/g, ' ')
+    if (name && !aliases.includes(name)) onChange([...aliases, name].sort())
+    setDraft('')
+  }
+  return (
+    <section className="card" aria-label="Photos call it">
+      <h3>Photos call it</h3>
+      <div className="sub" style={{ margin: '2px 0 10px' }}>When a photo says one of these, we ask if it's this dish.</div>
+      {aliases.length > 0 && (
+        <div className="chips" style={{ marginBottom: 10 }}>
+          {aliases.map((a) => (
+            <button key={a} type="button" className="chip" aria-label={`Remove ${a}`} onClick={() => onChange(aliases.filter((x) => x !== a))}>
+              {a} <Icon name="close" size={14} />
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="row" style={{ gap: 8 }}>
+        <input className="input sp" value={draft} maxLength={80} placeholder="e.g. pancakes" aria-label="Another name"
+          onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') add() }} />
+        <button type="button" className="btn sm ghost" style={{ width: 'auto' }} disabled={!draft.trim() || aliases.length >= 10} onClick={add}>Add</button>
+      </div>
+    </section>
   )
 }
 
@@ -228,6 +267,9 @@ function DeleteForm({ meal, onClose, onDeleted }: { meal: Meal; onClose: () => v
     <>
       <h1>Delete “{meal.name}”?</h1>
       <p className="sub">Its ratings and recipe go too, and it leaves any plan it's in. This can't be undone.</p>
+      {meal.used_in.length > 0 && (
+        <p className="sub">It's a dish in {meal.used_in.map((p) => p.name).join(', ')}: they keep its ingredients instead.</p>
+      )}
       {meal.logged_count > 0 && (
         <label className="card row" style={{ gap: 10 }}>
           <input type="checkbox" checked={alsoLog} onChange={(e) => setAlsoLog(e.target.checked)} style={{ width: 22, height: 22 }} />

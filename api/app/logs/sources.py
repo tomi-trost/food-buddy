@@ -12,6 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.logs.models import FoodLog
+from app.meals.bundles import flat_items
 from app.meals.models import Meal
 from app.meals.service import grams_per_amount
 from app.nutrition.models import Ingredient
@@ -36,7 +37,7 @@ def groups_of(i: Ingredient) -> list[str]:
 
 def share_eaten(entry: FoodLog, meal: Meal) -> float:
     """The part of the whole recipe this entry ate."""
-    total = sum(mi.grams for mi in meal.ingredients)
+    total = sum(grams for _, grams in flat_items(meal))
     if total <= 0:
         return 0
     if entry.kind == "snack":
@@ -78,12 +79,12 @@ async def sources(
         if meal is None:
             continue
         share = share_eaten(e, meal)
-        for mi in meal.ingredients:
-            t = tally.setdefault(mi.ingredient_id, Tally(mi.ingredient))
+        for ingredient, grams in flat_items(meal):  # a bundle: its dishes' ingredients too
+            t = tally.setdefault(ingredient.id, Tally(ingredient))
             if e.id not in t.entries:
                 t.entries.add(e.id)
                 t.times += 1
-            t.grams += mi.grams * share
+            t.grams += grams * share
     grouped: dict[str, list[Tally]] = defaultdict(list)
     for t in tally.values():
         for g in groups_of(t.ingredient):

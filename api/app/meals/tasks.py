@@ -9,6 +9,7 @@ from app.db import SessionLocal
 from app.jobs import jobs_app
 from app.meals.models import Meal, MealIngredient
 from app.meals.recipes import RecipeAnswer, recipe_messages
+from app.meals.service import portion_grams
 from app.vision.providers import AllProvidersFailed, VisionChain, chain_from_settings
 
 log = logging.getLogger(__name__)
@@ -26,6 +27,12 @@ async def improve_recipe(session, meal_id: int, chain: VisionChain) -> bool:
         return False
     items = [
         (mi.ingredient.name, mi.grams) for mi in sorted(meal.ingredients, key=lambda m: -m.grams)
+    ] + [  # a bundle's dishes have recipes of their own
+        (
+            f"{mc.component.name} (our recipe, {mc.portions:g} portions)",
+            portion_grams(mc.component) * mc.portions,
+        )
+        for mc in meal.components
     ]
     try:
         _, answer = await chain.chat_json(

@@ -97,6 +97,8 @@ Shared conventions for all sections:
 - [x] Type it instead: meals and snacks from a typed name (`POST /api/analyses/text`), same job, check screen and push; text prompts with portion anchors (0014). ~4 s on the Mac vs ~1 min expected on the VM (no image encoding)
 - [x] Add food sheet instead of the black camera page: the center tab button is now "+" and opens one sheet with every way in (photo first, library, type it, our meals, snack, label scan) and the meal type on top; Today's "+" opens it with its slot's type; old `/snap` links open it
 - [x] "You too?": a meal one of us logs is suggested to the other (Home card + `shared` push); accepting logs it without touching stock (`meal_suggestion`, 0015)
+- [x] Bundles (2026-10-24, decision 0029, #17): Select ingredients → "Make it its own dish" on the check screen or in Edit meal; our meals under "Ours" in the ingredient picker; `meal_component` (0029), one level deep; stock/shopping/insights through the dishes' ingredients
+- [x] Aliases (2026-10-24, #18): what the photo called an item we swapped becomes an alias of the dish (`meal_alias`, 0030); the check screen asks "Pancakes — your …?" (matched in code after the model); 3 No's in a row stop it; editable in Edit meal
 
 ## M3 — Model benchmark (`eval/`)
 

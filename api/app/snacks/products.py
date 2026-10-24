@@ -90,6 +90,8 @@ async def save_product(
             steps_source="ours",  # nothing to cook: the model doesn't write a recipe
             is_product=True,
             ingredients=[MealIngredient(ingredient=ingredient, grams=usual)],
+            components=[],  # set up front: never loaded lazily in this request
+            aliases=[],
         )
         session.add(meal)
     else:

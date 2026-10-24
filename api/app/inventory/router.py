@@ -7,6 +7,7 @@ from sqlalchemy import select
 from app.auth.deps import CurrentUser, Session
 from app.inventory.models import InventoryItem
 from app.inventory.service import mark_used_up
+from app.meals.bundles import flat_recipe
 from app.meals.models import Meal
 from app.meals.schemas import MealCard
 from app.meals.service import meal_cards
@@ -138,8 +139,8 @@ async def cookable(user: CurrentUser, session: Session, limit: int = 2) -> list[
     ok = {
         m.id
         for m in meals
-        if m.ingredients
-        and all(stock.get(mi.ingredient_id, 0) >= mi.grams * 0.5 for mi in m.ingredients)
+        if (recipe := flat_recipe(m))
+        and all(stock.get(iid, 0) >= grams * 0.5 for iid, grams in recipe.items())
     }
     cards = [c for c in await meal_cards(session, user) if c.id in ok]
     cards.sort(key=lambda c: -(c.score or 0))

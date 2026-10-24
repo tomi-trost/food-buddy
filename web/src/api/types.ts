@@ -76,7 +76,30 @@ export type MealCard = MealStats & SnackInfo & OriginInfo & {
   cost: number
   rated_by_me: boolean
   kcal_per_portion: number
+  per_portion: Nutrients
+  bundle: boolean // holds other meals of ours (so it can't be a dish itself)
   created_at: string
+}
+
+export type MealRef = { id: number; name: string; emoji: string }
+
+/** A dish on a plate (bundle): `portions` of one of our meals in the whole recipe. */
+export type MealComponent = MealRef & {
+  portions: number
+  grams: number
+  photo_url: string | null
+  per_portion: Nutrients // one portion of the dish
+  cost: number // for these portions
+  ingredients: { ingredient: Ingredient; grams: number }[] // for these portions
+}
+
+/** An existing meal of ours (`meal_id`) or a new one made from some of the plate's ingredients
+ *  (`new.items` = grams for ONE portion of it, `new.portions` = portions made). */
+export type ComponentIn = {
+  meal_id?: number
+  new?: { name: string; portions: number; items: { ingredient_id: number; grams: number }[] }
+  portions: number
+  aliases?: string[] // what the photo called the items it took the place of
 }
 
 export type Meal = MealStats & SnackInfo & OriginInfo & {
@@ -93,6 +116,9 @@ export type Meal = MealStats & SnackInfo & OriginInfo & {
   steps: string[]
   steps_source: 'template' | 'model' | 'ours'
   ingredients: { ingredient: Ingredient; grams: number }[]
+  components: MealComponent[] // bundles: our other meals on the plate
+  used_in: MealRef[] // plates this meal is a dish of
+  aliases: string[] // what photos call it (offered as a swap when checking a photo)
   per_portion: Nutrients // what counts: typed-in values if any, else calculated
   per_portion_calculated: Nutrients
   nutrients_overridden: boolean
@@ -123,6 +149,7 @@ export type MealCreate = {
   servings_eaten: number
   cost: number | null
   items: { ingredient_id: number; grams: number }[]
+  components?: ComponentIn[] // per plate, like items
   used_up: number[]
   analysis_id: number | null
   per_portion?: Nutrients | null // typed in instead of the ingredients' values
@@ -173,7 +200,14 @@ export type AnalysisJob = {
   save_only: boolean // "for later": not eaten now
   meal_id: number | null
   my_rating: Rating | null // given while the photo was still being analyzed
+  dishes: DishSuggestion[] // items that may be one of our dishes (aliases): ask before swapping
 }
+
+/** One of our meals as a dish on a plate (enough to show and count a portion of it). */
+export type DishSource = Pick<MealCard, 'id' | 'name' | 'emoji' | 'portions' | 'portion_g' | 'cost' | 'per_portion'>
+
+/** "Pancakes — your Healthy banana pancakes?": `item` is the index in the result's items. */
+export type DishSuggestion = { item: number; name: string; dish: DishSource }
 
 export type Member = { id: number; name: string; color: string }
 
@@ -258,6 +292,7 @@ export type MealPatch = Partial<{
   portions: number
   cost: number | null
   items: { ingredient_id: number; grams: number }[] // whole recipe
+  components: ComponentIn[] // whole recipe
   per_portion: Nutrients | null
   steps: string[] // sets steps_source to 'ours'
   snack_kind: SnackKind
@@ -266,6 +301,7 @@ export type MealPatch = Partial<{
   product_per100: Nutrients // products: the pack's values
   listed: boolean // bought / eaten out: true = save to our meals
   family: string // dish family; '' = guess it again
+  aliases: string[] // what photos call it
 }>
 
 export type LogEntry = {

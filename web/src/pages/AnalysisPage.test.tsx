@@ -2,7 +2,7 @@ import { fireEvent, screen, within } from '@testing-library/react'
 import { Route, useLocation } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { tokenStore } from '../api/client'
-import type { AnalysisJob } from '../api/types'
+import type { AnalysisJob, DishSuggestion } from '../api/types'
 import { analysisJob, doneJob, ING } from '../test/fixtures'
 import { jsonResponse, mockFetch, renderAt } from '../test/utils'
 import { AnalysisPage } from './AnalysisPage'
@@ -27,7 +27,7 @@ function api(over: (url: string, init?: RequestInit) => Response | undefined = (
     if (hit) return hit
     if (url.endsWith('/photo')) return new Response('img')
     if (url.startsWith('/api/ingredients')) return jsonResponse([ING.soy, ING.oil])
-    if (url === '/api/meals') return jsonResponse({ id: 42 }, 201)
+    if (url === '/api/meals') return init?.method === 'POST' ? jsonResponse({ id: 42 }, 201) : jsonResponse([])
     return jsonResponse(doneJob())
   })
 }
@@ -105,7 +105,7 @@ describe('snap flow', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Post meal' }))
     expect(await screen.findByText('meal page')).toBeInTheDocument()
-    const [, init] = fetch.mock.calls.find(([url]) => url === '/api/meals')!
+    const [, init] = fetch.mock.calls.find(([url, init]) => url === '/api/meals' && init?.method === 'POST')!
     const body = JSON.parse(String(init!.body))
     expect(body).toMatchObject({
       name: 'Chicken rice bowl', meal_type: 'lunch', portions: 3, servings_eaten: 1, prep_minutes: 30,
@@ -135,7 +135,7 @@ describe('snap flow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Looks right' }))
     fireEvent.click(screen.getByRole('button', { name: 'Post meal' }))
     await screen.findByText('meal page')
-    const [, init] = fetch.mock.calls.find(([url]) => url === '/api/meals')!
+    const [, init] = fetch.mock.calls.find(([url, init]) => url === '/api/meals' && init?.method === 'POST')!
     expect(JSON.parse(String(init!.body)).per_portion).toMatchObject({ kcal: 650, fat: 20, protein: 51.9 })
   })
 
@@ -152,7 +152,7 @@ describe('snap flow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Looks right' }))
     fireEvent.click(screen.getByRole('button', { name: 'Post meal' }))
     await screen.findByText('meal page')
-    const [, init] = fetch.mock.calls.find(([url]) => url === '/api/meals')!
+    const [, init] = fetch.mock.calls.find(([url, init]) => url === '/api/meals' && init?.method === 'POST')!
     expect(JSON.parse(String(init!.body)).per_portion).toBeNull()
   })
 
@@ -165,7 +165,7 @@ describe('snap flow', () => {
     fireEvent.click(screen.getByLabelText('More cost'))
     fireEvent.click(screen.getByRole('button', { name: 'Post meal' }))
     await screen.findByText('meal page')
-    const [, init] = fetch.mock.calls.find(([url]) => url === '/api/meals')!
+    const [, init] = fetch.mock.calls.find(([url, init]) => url === '/api/meals' && init?.method === 'POST')!
     expect(JSON.parse(String(init!.body)).cost).toBe(5)
   })
 
@@ -409,7 +409,7 @@ describe('meal type and save for later', () => {
 
     expect(await screen.findByTestId('at')).toHaveTextContent(/^\/meals\/42$/) // no rating prompt
     expect(screen.getByText('Saved to your meals for later')).toBeInTheDocument()
-    const [, init] = fetch.mock.calls.find(([url]) => url === '/api/meals')!
+    const [, init] = fetch.mock.calls.find(([url, init]) => url === '/api/meals' && init?.method === 'POST')!
     expect(JSON.parse(String(init!.body))).toMatchObject({ eaten: false, eaten_on: null, used_up: [] })
   })
 
@@ -421,7 +421,45 @@ describe('meal type and save for later', () => {
     expect(screen.getByText(/Not counted as eaten/)).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Save meal' }))
     await screen.findByTestId('at')
-    const [, init] = fetch.mock.calls.find(([url]) => url === '/api/meals')!
+    const [, init] = fetch.mock.calls.find(([url, init]) => url === '/api/meals' && init?.method === 'POST')!
     expect(JSON.parse(String(init!.body)).eaten).toBe(false)
+  })
+})
+
+describe('our dishes on the check screen (aliases)', () => {
+  const sauce: DishSuggestion = {
+    item: 2, name: 'mystery sauce',
+    dish: { id: 7, name: 'Tomi’s satay', emoji: '🥜', portions: 4, portion_g: 40, cost: 2, per_portion: { kcal: 180, protein: 6, carbs: 8, fat: 14, fiber: 2, sugar: 4 } },
+  }
+  const withDish = () => ({ ...doneJob(), dishes: [sauce] })
+
+  it('swaps the item for a portion of our dish on Yes, and posts it as a dish', async () => {
+    const fetch = api((url, init) => (url === '/api/analyses/5' && !init?.method ? jsonResponse(withDish()) : undefined))
+    render()
+    const ask = await screen.findByRole('region', { name: 'Is it our Tomi’s satay?' })
+    expect(ask).toHaveTextContent('Mystery sauce — your Tomi’s satay?')
+    fireEvent.click(within(ask).getByRole('button', { name: 'Yes, swap' }))
+    expect(screen.queryByRole('region', { name: /Is it our/ })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Tomi’s satay · 1 portion/ })).toBeInTheDocument()
+    expect(screen.getByTestId('macro-kcal')).toHaveTextContent('688') // 247.5 + 260 + 180
+    fireEvent.click(screen.getByRole('button', { name: 'Looks right' })) // nothing unknown left
+
+    fireEvent.click(screen.getByRole('button', { name: 'Post meal' }))
+    expect(await screen.findByText('meal page')).toBeInTheDocument()
+    const [, init] = fetch.mock.calls.find(([url, init]) => url === '/api/meals' && init?.method === 'POST')!
+    expect(JSON.parse(String(init!.body)).components).toEqual([{ meal_id: 7, portions: 1, aliases: ['mystery sauce'] }])
+  })
+
+  it('tells the server on No and stops asking', async () => {
+    const fetch = api((url, init) => {
+      if (url === '/api/meals/7/aliases/decline') return new Response(null, { status: 204 })
+      if (url === '/api/analyses/5' && !init?.method) return jsonResponse(withDish())
+    })
+    render()
+    fireEvent.click(within(await screen.findByRole('region', { name: /Is it our/ })).getByRole('button', { name: 'No' }))
+    expect(screen.queryByRole('region', { name: /Is it our/ })).not.toBeInTheDocument()
+    const [, init] = fetch.mock.calls.find(([url]) => url === '/api/meals/7/aliases/decline')!
+    expect(JSON.parse(String(init!.body))).toEqual({ name: 'mystery sauce' })
+    expect(screen.getByRole('button', { name: /mystery sauce · 30 g/ })).toBeInTheDocument() // still to resolve
   })
 })
