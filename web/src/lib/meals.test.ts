@@ -98,4 +98,16 @@ describe('byFamily', () => {
     ])
     expect(byFamily([])).toEqual([])
   })
+
+  it('picks the three best-rated dishes for the collage (unrated last, most cooked breaks ties)', () => {
+    const [pasta] = byFamily([
+      card({ id: 1, family: 'Pasta', taste: null, cooked_count: 9 }),
+      card({ id: 2, family: 'Pasta', taste: 4 }),
+      card({ id: 3, family: 'Pasta', taste: 5 }),
+      card({ id: 4, family: 'Pasta', taste: 4, cooked_count: 3 }),
+      card({ id: 5, family: 'Pasta', taste: null, cooked_count: 1 }),
+    ])
+    expect(pasta.top.map((m) => m.id)).toEqual([3, 4, 2])
+    expect(byFamily([card({ id: 7, family: 'Eggs', taste: null })])[0].top.map((m) => m.id)).toEqual([7])
+  })
 })

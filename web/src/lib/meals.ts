@@ -63,7 +63,18 @@ export function pickable(cards: MealCard[], type: MealKind, query: string): Meal
       a.name.localeCompare(b.name))
 }
 
-export type Family = { family: string; meals: MealCard[]; best: number | null }
+export type Family = { family: string; meals: MealCard[]; best: number | null; top: MealCard[] } // top: collage
+
+const COLLAGE = 3
+
+/** The family's best-rated dishes for its collage: taste, then score, then most cooked. */
+function bestRated(meals: MealCard[]): MealCard[] {
+  const rank = (m: MealCard) => [m.taste ?? -1, m.score ?? -1, m.cooked_count]
+  return [...meals].sort((a, b) => {
+    const [x, y] = [rank(a), rank(b)]
+    return y[0] - x[0] || y[1] - x[1] || y[2] - x[2]
+  }).slice(0, COLLAGE)
+}
 
 /** Meals by dish family, biggest family first ("Other" last); the feed's order inside. */
 export function byFamily(cards: MealCard[]): Family[] {
@@ -73,5 +84,6 @@ export function byFamily(cards: MealCard[]): Family[] {
     family,
     meals,
     best: meals.reduce<number | null>((b, m) => (m.taste !== null && (b === null || m.taste > b) ? m.taste : b), null),
+    top: bestRated(meals),
   })).sort((a, b) => Number(a.family === 'Other') - Number(b.family === 'Other') || b.meals.length - a.meals.length || a.family.localeCompare(b.family))
 }

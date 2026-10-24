@@ -84,12 +84,16 @@ export function MealsPage() {
             <section key={f.family} className="family" aria-label={f.family}>
               <button className="family-head" aria-expanded={shown}
                 onClick={() => setOpen(shown ? open.filter((x) => x !== f.family) : [...open, f.family])}>
-                <span className="family-emojis" aria-hidden>{f.meals.slice(0, 3).map((m) => m.emoji).join('')}</span>
-                <span className="sp">
-                  <b>{f.family}</b>
-                  <small>{f.meals.length} {f.meals.length === 1 ? 'dish' : 'variations'}{f.best !== null ? ` · best ★ ${Math.round(f.best * 10) / 10}` : ''}</small>
+                <span className={`family-collage n${f.top.length}`} aria-hidden>
+                  {f.top.map((m) => <Photo key={m.id} url={m.photo_url} emoji={m.emoji} seed={m.id} alt="" />)}
                 </span>
-                <span className={`family-chev${shown ? ' open' : ''}`}><Icon name="chev" size={16} /></span>
+                <span className="family-info">
+                  <span className="sp">
+                    <b>{f.family}</b>
+                    <small>{f.meals.length} {f.meals.length === 1 ? 'dish' : 'variations'}{f.best !== null ? ` · best ★ ${Math.round(f.best * 10) / 10}` : ''}</small>
+                  </span>
+                  <span className={`family-chev${shown ? ' open' : ''}`}><Icon name="chev" size={16} /></span>
+                </span>
               </button>
               {shown && learnedOf(f.family) && <FamilyLearned family={learnedOf(f.family)!} />}
               {shown && <MealGrid list={f.meals} snacks={snacks} onLog={setLogging} />}

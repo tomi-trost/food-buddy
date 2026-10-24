@@ -174,11 +174,21 @@ svg text { fill: var(--ink2); font-size: 11px; }
 .groupbtn { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px; font-size: 13px; font-weight: 600; border-radius: 999px; background: none; border: 1px solid var(--line2); color: var(--ink2); }
 .groupbtn[aria-pressed='true'] { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
 .family { margin-bottom: 10px; }
-.family-head { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 60px; padding: 10px 12px; text-align: left;
+/* A third of the screen: collage of the 3 best-rated dishes over the name */
+.family-head { display: flex; flex-direction: column; width: 100%; padding: 0; text-align: left; overflow: hidden;
   border-radius: var(--r); background: var(--surface); border: 1px solid var(--line); color: var(--ink); }
+.family-collage { display: grid; gap: 2px; width: 100%; height: clamp(150px, 22vh, 220px); grid-template-columns: 2fr 1fr; grid-template-rows: 1fr 1fr; }
+.family-collage .photo { width: 100%; height: 100%; aspect-ratio: auto; border-radius: 0; font-size: 34px; min-height: 0; }
+.family-collage > :first-child { grid-row: 1 / 3; font-size: 56px; }
+.family-collage.n1 { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+.family-collage.n1 > :first-child { grid-row: auto; }
+.family-collage.n2 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr; }
+.family-collage.n2 > :first-child { grid-row: auto; font-size: 44px; }
+.family-collage.n2 .photo { font-size: 44px; }
+.family-info { display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 10px 14px; }
 .family-head .sp { display: flex; flex-direction: column; min-width: 0; }
+.family-head b { font-size: 17px; }
 .family-head small { color: var(--ink2); font-size: 13px; }
-.family-emojis { font-size: 22px; letter-spacing: -6px; min-width: 52px; }
 .family-chev { color: var(--ink2); display: flex; transition: transform .2s; }
 .family-chev.open { transform: rotate(90deg); }
 .family .mealgrid { margin-top: 10px; }

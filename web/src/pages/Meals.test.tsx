@@ -52,6 +52,8 @@ describe('MealsPage', () => {
     fireEvent.click(group)
     expect(group).toHaveAttribute('aria-pressed', 'true')
     const pasta = screen.getByRole('button', { name: /Pasta2 variations · best ★ 4.5/ })
+    // collage of the best-rated dishes, best first
+    expect([...pasta.querySelector('.family-collage')!.children].map((c) => c.textContent)).toEqual(['🍝', '🍅'])
     expect(screen.getByRole('button', { name: /Oats & chia1 dish/ })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /Pesto pasta/ })).not.toBeInTheDocument() // closed
     fireEvent.click(pasta)

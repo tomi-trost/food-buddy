@@ -4,6 +4,10 @@ export type Release = { id: string; notes: string[] }
 
 export const RELEASES: Release[] = [
   {
+    id: '2026-10-24-family-cards',
+    notes: ['"By dish" in Meals shows each family as a big card with a collage of its three best-rated dishes.'],
+  },
+  {
     id: '2026-10-24-bundles',
     notes: [
       'Made part of a plate from scratch, like pancakes under the fruit? Tap "Select ingredients" while checking a photo or in Edit meal, pick them and tap "Make it its own dish". It becomes one of our meals with its own recipe.',
