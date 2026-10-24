@@ -40,6 +40,30 @@ describe('MealsPage', () => {
     expect(screen.getByRole('link', { name: /Curry/ })).toBeInTheDocument()
   })
 
+  it('groups meals by dish family and opens a family', async () => {
+    mockFetch(() => jsonResponse([
+      card({ id: 1, name: 'Pesto pasta', emoji: '🍝', types: ['dinner'], family: 'Pasta', taste: 4.5 }),
+      card({ id: 2, name: 'Pasta pomodoro', emoji: '🍅', types: ['dinner'], family: 'Pasta', taste: 4 }),
+      card({ id: 3, name: 'Chia pudding', emoji: '🥣', types: ['breakfast'], family: 'Oats & chia', taste: null }),
+    ]))
+    renderAt('/meals', <Route path="/meals" element={<MealsPage />} />)
+    await screen.findByRole('link', { name: /Pesto pasta/ })
+    const group = screen.getByRole('button', { name: 'Group by dish' })
+    fireEvent.click(group)
+    expect(group).toHaveAttribute('aria-pressed', 'true')
+    const pasta = screen.getByRole('button', { name: /Pasta2 variations · best ★ 4.5/ })
+    expect(screen.getByRole('button', { name: /Oats & chia1 dish/ })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /Pesto pasta/ })).not.toBeInTheDocument() // closed
+    fireEvent.click(pasta)
+    expect(pasta).toHaveAttribute('aria-expanded', 'true')
+    expect(within(screen.getByRole('region', { name: 'Pasta' })).getAllByRole('link')).toHaveLength(2)
+
+    fireEvent.click(screen.getByRole('button', { name: /Breakfast/ })) // filters still apply
+    expect(screen.queryByRole('region', { name: 'Pasta' })).not.toBeInTheDocument()
+    fireEvent.click(group)
+    expect(screen.getByRole('link', { name: /Chia pudding/ })).toBeInTheDocument()
+  })
+
   it('invites the first snap when there are no meals', async () => {
     mockFetch(() => jsonResponse([]))
     renderAt('/meals', <Route path="/meals" element={<MealsPage />} />)

@@ -40,6 +40,10 @@ function EditForm({ meal, close }: { meal: Meal; close: React.ReactNode }) {
   const toast = useToast()
   const [name, setName] = useState(meal.name)
   const [emoji, setEmoji] = useState(meal.emoji)
+  const startFamily = meal.family_picked ? meal.family : '' // '' = guessed
+  const [family, setFamily] = useState(startFamily)
+  const library = useQuery({ queryKey: ['meals'], queryFn: api.meals })
+  const families = [...new Set([...(library.data ?? []).map((c) => c.family), meal.family])].filter((f) => f !== 'Other').sort()
   const [picking, setPicking] = useState(false)
   const [types, setTypes] = useState<MealKind[]>(meal.types)
   const [snack, setSnack] = useState<{ snackKind: SnackKind | null; per: MealPer; pieceG: number }>({
@@ -75,7 +79,7 @@ function EditForm({ meal, close }: { meal: Meal; close: React.ReactNode }) {
   const save = useMutation({
     mutationFn: () => {
       const patch: MealPatch = {
-        name: name.trim(), ...(emoji !== meal.emoji ? { emoji } : {}), types, prep_friendly: prepFriendly, prep_minutes: prepMinutes, portions, cost,
+        name: name.trim(), ...(emoji !== meal.emoji ? { emoji } : {}), ...(family.trim() !== startFamily ? { family: family.trim() } : {}), types, prep_friendly: prepFriendly, prep_minutes: prepMinutes, portions, cost,
         items: resolved.map((i) => ({ ingredient_id: i.ingredient!.id, grams: i.grams })),
         per_portion: override,
         ...(stepsChanged ? { steps: cleanSteps(steps) } : {}), // untouched: the model may still write them
@@ -103,6 +107,16 @@ function EditForm({ meal, close }: { meal: Meal; close: React.ReactNode }) {
         </label>
       </div>
       <EmojiPicker open={picking} value={emoji} onPick={setEmoji} onClose={() => setPicking(false)} />
+
+      <label className="field" style={{ marginBottom: 6 }}>
+        Dish family
+        <input value={family} maxLength={40} list="families" placeholder={meal.family_picked ? 'Guess from the name' : `${meal.family} (guessed)`}
+          onChange={(e) => setFamily(e.target.value)} />
+        <datalist id="families">{families.map((f) => <option key={f} value={f} />)}</datalist>
+      </label>
+      <div className="sub" style={{ marginBottom: 14 }}>
+        Groups variations together in Meals (pasta with any sauce is Pasta). Leave it empty and we guess.
+      </div>
 
       <h2>Good for</h2>
       <div className="chips" role="group" aria-label="Meal types">

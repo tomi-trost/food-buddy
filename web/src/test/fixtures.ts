@@ -60,7 +60,7 @@ export const meal = (over: Partial<Meal> = {}): Meal => ({
   per_portion: n(551.7, 51.9, 56, 9.9, 0.8, 0), per_portion_calculated: n(551.7, 51.9, 56, 9.9, 0.8, 0),
   nutrients_overridden: false, logged_count: 1,
   snack_kind: null, per: 'portion', piece_g: null, is_product: false, per_unit: n(551.7, 51.9, 56, 9.9, 0.8, 0), portion_g: 350,
-  origin: 'home', listed: true, place: null,
+  origin: 'home', listed: true, place: null, family: 'Rice & grains', family_picked: false,
   ingredients: [{ ingredient: ING.rice, grams: 400 }, { ingredient: ING.chicken, grams: 300 }],
   score: null, taste: null, cooked_count: 1, last_cooked: '2026-10-01',
   ratings: [
@@ -75,7 +75,7 @@ export const card = (over: Partial<MealCard> = {}): MealCard => ({
   portions: 2, cost: 6, rated_by_me: false, kcal_per_portion: 500, created_at: '2026-10-01T12:00:00Z',
   score: null, taste: null, cooked_count: 1, last_cooked: '2026-10-01',
   snack_kind: null, per: 'portion', piece_g: null, is_product: false, per_unit: n(500, 0, 0, 0, 0, 0), portion_g: 300,
-  origin: 'home', listed: true, place: null,
+  origin: 'home', listed: true, place: null, family: 'Rice & grains', family_picked: false,
   ...over,
 })
 

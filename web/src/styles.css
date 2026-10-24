@@ -170,6 +170,19 @@ svg text { fill: var(--ink2); font-size: 11px; }
 .tab.on { color: var(--accent); font-weight: 600; }
 .fab { width: 56px; height: 56px; border-radius: 14px; background: var(--accent); color: var(--accent-ink); margin: -26px auto 6px; display: grid; place-items: center; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2); }
 
+/* Meals grouped by dish family */
+.groupbtn { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px; font-size: 13px; font-weight: 600; border-radius: 999px; background: none; border: 1px solid var(--line2); color: var(--ink2); }
+.groupbtn[aria-pressed='true'] { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.family { margin-bottom: 10px; }
+.family-head { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 60px; padding: 10px 12px; text-align: left;
+  border-radius: var(--r); background: var(--surface); border: 1px solid var(--line); color: var(--ink); }
+.family-head .sp { display: flex; flex-direction: column; min-width: 0; }
+.family-head small { color: var(--ink2); font-size: 13px; }
+.family-emojis { font-size: 22px; letter-spacing: -6px; min-width: 52px; }
+.family-chev { color: var(--ink2); display: flex; transition: transform .2s; }
+.family-chev.open { transform: rotate(90deg); }
+.family .mealgrid { margin-top: 10px; }
+
 /* Emoji picker + the emoji button in Edit meal */
 .emoji-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(48px, 1fr)); gap: 4px; }
 .emoji-grid button { height: 48px; font-size: 28px; border-radius: var(--r2); background: none; border: 0; }

@@ -62,3 +62,16 @@ export function pickable(cards: MealCard[], type: MealKind, query: string): Meal
       (b.last_cooked ?? '').localeCompare(a.last_cooked ?? '') ||
       a.name.localeCompare(b.name))
 }
+
+export type Family = { family: string; meals: MealCard[]; best: number | null }
+
+/** Meals by dish family, biggest family first ("Other" last); the feed's order inside. */
+export function byFamily(cards: MealCard[]): Family[] {
+  const groups = new Map<string, MealCard[]>()
+  for (const c of cards) groups.set(c.family, [...(groups.get(c.family) ?? []), c])
+  return [...groups].map(([family, meals]) => ({
+    family,
+    meals,
+    best: meals.reduce<number | null>((b, m) => (m.taste !== null && (b === null || m.taste > b) ? m.taste : b), null),
+  })).sort((a, b) => Number(a.family === 'Other') - Number(b.family === 'Other') || b.meals.length - a.meals.length || a.family.localeCompare(b.family))
+}

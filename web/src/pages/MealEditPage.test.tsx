@@ -3,7 +3,7 @@ import { Route } from 'react-router'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { tokenStore } from '../api/client'
 import type { Meal } from '../api/types'
-import { ING, meal } from '../test/fixtures'
+import { card, ING, meal } from '../test/fixtures'
 import { jsonResponse, mockFetch, renderAt } from '../test/utils'
 import { MealEditPage } from './MealEditPage'
 
@@ -18,6 +18,7 @@ const routes = (
 function api(current: Meal = meal()) {
   return mockFetch((url, init) => {
     if (url.startsWith('/api/ingredients')) return jsonResponse([ING.soy, ING.oil])
+    if (url === '/api/meals') return jsonResponse([card({ family: 'Pasta' }), card({ id: 9, family: 'Other' })])
     if (init?.method === 'PATCH') return jsonResponse(current)
     if (init?.method === 'DELETE') return new Response(null, { status: 204 })
     return jsonResponse(current)
@@ -201,5 +202,29 @@ describe('MealEditPage', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Save changes' }))
     await screen.findByText('meal page')
     expect(bodyOf(fetch, 'PATCH')!.body).not.toHaveProperty('emoji')
+  })
+
+  it('picks a dish family from ours or types a new one, and empties it to guess again', async () => {
+    const fetch = api(meal({ family: 'Rice & grains', family_picked: false }))
+    render()
+    const field = await screen.findByLabelText('Dish family')
+    expect(field).toHaveValue('')
+    expect(field).toHaveAttribute('placeholder', 'Rice & grains (guessed)')
+    await waitFor(() => expect(document.querySelectorAll('#families option')).toHaveLength(2)) // Pasta + ours, not Other
+    fireEvent.change(field, { target: { value: ' Bowls ' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    await screen.findByText('meal page')
+    expect(bodyOf(fetch, 'PATCH')!.body.family).toBe('Bowls')
+  })
+
+  it('clears a picked family so it is guessed again, and leaves it out when untouched', async () => {
+    const fetch = api(meal({ family: 'Bowls', family_picked: true }))
+    render()
+    const field = await screen.findByLabelText('Dish family')
+    expect(field).toHaveValue('Bowls')
+    fireEvent.change(field, { target: { value: '' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    await screen.findByText('meal page')
+    expect(bodyOf(fetch, 'PATCH')!.body.family).toBe('')
   })
 })

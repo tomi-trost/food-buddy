@@ -4,6 +4,13 @@ export type Release = { id: string; notes: string[] }
 
 export const RELEASES: Release[] = [
   {
+    id: '2026-10-24-dish-families',
+    notes: [
+      'Tap "By dish" in Meals: pasta with any sauce shows as one Pasta row, chia with any fruit as Oats & chia.',
+      'Wrong family? Change it in Edit meal, or leave it empty and we guess from the name.',
+    ],
+  },
+  {
     id: '2026-10-24-insights',
     notes: [
       'Insights goes back in time: use the arrows or swipe the calories chart right for the week (or day, or month) before.',

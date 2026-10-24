@@ -6,7 +6,7 @@ import type { MealCard, MealKind } from '../api/types'
 import { MEAL_TYPE_SHORT } from '../lib/dates'
 import { useAddFood } from '../add/AddFood'
 import { CookMealSheet } from '../meals/CookSheet'
-import { feed, type FeedSeg, type FeedSort, type FeedType, NEXT_SORT, ORIGIN_LABEL, SORT_LABEL } from '../lib/meals'
+import { byFamily, feed, type FeedSeg, type FeedSort, type FeedType, NEXT_SORT, ORIGIN_LABEL, SORT_LABEL } from '../lib/meals'
 import { KIND_LABEL, perLabel } from '../lib/snacks'
 import { Icon, type IconName } from '../ui/Icon'
 import { Photo } from '../ui/Photo'
@@ -22,9 +22,12 @@ export function MealsPage() {
   const type = (params.get('type') ?? 'all') as FeedType | 'snacks'
   const seg = (params.get('seg') ?? 'all') as FeedSeg
   const sort = (params.get('sort') ?? 'rating') as FeedSort
+  const grouped = params.get('group') === '1'
+  const [open, setOpen] = useState<string[]>([]) // families shown open in the grouped view
   const set = (key: string, value: string) =>
     setParams((p) => {
-      p.set(key, value)
+      if (value) p.set(key, value)
+      else p.delete(key)
       return p
     }, { replace: true })
   const cards = useQuery({ queryKey: ['meals'], queryFn: api.meals })
@@ -38,6 +41,9 @@ export function MealsPage() {
     <>
       <div className="top">
         <h1>Meals</h1>
+        <button className="groupbtn" aria-label="Group by dish" aria-pressed={grouped} onClick={() => set('group', grouped ? '' : '1')}>
+          <Icon name="layers" size={18} /> By dish
+        </button>
       </div>
       <Toggle<FeedType | 'snacks'>
         label="Meal type"
@@ -68,41 +74,25 @@ export function MealsPage() {
         </button>
       </div>
       {cards.isError && <p className="error" role="alert">{cards.error.message}</p>}
-      <div className="mealgrid">
-        {list.map((m) => (
-          <div key={m.id} className="mealcard-wrap">
-            <Link to={`/meals/${m.id}`} className="mealcard">
-              <div style={{ position: 'relative' }}>
-                <Photo url={m.photo_url} emoji={m.emoji} seed={m.id} alt={m.name} />
-                <span className="badge" style={{ position: 'absolute', top: 8, right: 8 }}>
-                  {m.taste !== null ? <><Icon name="star" size={12} fill /> {Math.round(m.taste * 10) / 10}</> : 'unrated'}
+      {grouped ? (
+        byFamily(list).map((f) => {
+          const shown = open.includes(f.family)
+          return (
+            <section key={f.family} className="family" aria-label={f.family}>
+              <button className="family-head" aria-expanded={shown}
+                onClick={() => setOpen(shown ? open.filter((x) => x !== f.family) : [...open, f.family])}>
+                <span className="family-emojis" aria-hidden>{f.meals.slice(0, 3).map((m) => m.emoji).join('')}</span>
+                <span className="sp">
+                  <b>{f.family}</b>
+                  <small>{f.meals.length} {f.meals.length === 1 ? 'dish' : 'variations'}{f.best !== null ? ` · best ★ ${Math.round(f.best * 10) / 10}` : ''}</small>
                 </span>
-                {!snacks && (
-                  <span className="badge" style={{ position: 'absolute', top: 8, left: 8 }}>
-                    {m.types.map((t: MealKind) => MEAL_TYPE_SHORT[t]).join(' / ')}
-                  </span>
-                )}
-              </div>
-              <div className="b">
-                <h3>{m.name}</h3>
-                {snacks ? <SnackLines m={m} /> : (
-                  <>
-                    <div className="sub">
-                      {m.origin === 'home'
-                        ? `${m.prep_minutes} min · ${(m.cost / m.portions).toFixed(2)} €/portion`
-                        : `${ORIGIN_LABEL[m.origin]}${m.place ? ` · ${m.place}` : ''}`}
-                    </div>
-                    <div className="sub">{m.origin === 'home' ? `Cooked ${m.cooked_count}×` : `Had it ${m.cooked_count}×`}</div>
-                  </>
-                )}
-              </div>
-            </Link>
-            <button className="icon mealcard-log" aria-label={`Log ${m.name}`} onClick={() => setLogging(m.id)}>
-              <Icon name="plus" size={18} />
-            </button>
-          </div>
-        ))}
-      </div>
+                <span className={`family-chev${shown ? ' open' : ''}`}><Icon name="chev" size={16} /></span>
+              </button>
+              {shown && <MealGrid list={f.meals} snacks={snacks} onLog={setLogging} />}
+            </section>
+          )
+        })
+      ) : <MealGrid list={list} snacks={snacks} onLog={setLogging} />}
       {cards.isSuccess && !list.length && (snacks ? (
         <div className="card" style={{ textAlign: 'center' }}>
           <p className="sub">No snacks yet. Snap a home-made one, or scan a pack and switch on “Save to our snacks”.</p>
@@ -116,6 +106,46 @@ export function MealsPage() {
       ) : <p className="sub">No meals match this filter.</p>)}
       <CookMealSheet mealId={logging} initialType={type === 'all' ? undefined : kind as MealKind} onClose={() => setLogging(null)} />
     </>
+  )
+}
+
+function MealGrid({ list, snacks, onLog }: { list: MealCard[]; snacks: boolean; onLog: (id: number) => void }) {
+  return (
+    <div className="mealgrid">
+      {list.map((m) => (
+        <div key={m.id} className="mealcard-wrap">
+          <Link to={`/meals/${m.id}`} className="mealcard">
+            <div style={{ position: 'relative' }}>
+              <Photo url={m.photo_url} emoji={m.emoji} seed={m.id} alt={m.name} />
+              <span className="badge" style={{ position: 'absolute', top: 8, right: 8 }}>
+                {m.taste !== null ? <><Icon name="star" size={12} fill /> {Math.round(m.taste * 10) / 10}</> : 'unrated'}
+              </span>
+              {!snacks && (
+                <span className="badge" style={{ position: 'absolute', top: 8, left: 8 }}>
+                  {m.types.map((t: MealKind) => MEAL_TYPE_SHORT[t]).join(' / ')}
+                </span>
+              )}
+            </div>
+            <div className="b">
+              <h3>{m.name}</h3>
+              {snacks ? <SnackLines m={m} /> : (
+                <>
+                  <div className="sub">
+                    {m.origin === 'home'
+                      ? `${m.prep_minutes} min · ${(m.cost / m.portions).toFixed(2)} €/portion`
+                      : `${ORIGIN_LABEL[m.origin]}${m.place ? ` · ${m.place}` : ''}`}
+                  </div>
+                  <div className="sub">{m.origin === 'home' ? `Cooked ${m.cooked_count}×` : `Had it ${m.cooked_count}×`}</div>
+                </>
+              )}
+            </div>
+          </Link>
+          <button className="icon mealcard-log" aria-label={`Log ${m.name}`} onClick={() => onLog(m.id)}>
+            <Icon name="plus" size={18} />
+          </button>
+        </div>
+      ))}
+    </div>
   )
 }
 

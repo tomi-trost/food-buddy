@@ -123,7 +123,7 @@ describe('a product’s page', () => {
 
 describe('editing a snack', () => {
   const editApi = (current: Meal) => mockFetch((url, init) => {
-    if (url.startsWith('/api/ingredients')) return jsonResponse([])
+    if (url.startsWith('/api/ingredients') || url === '/api/meals') return jsonResponse([])
     if (init?.method === 'PATCH') return jsonResponse(current)
     return jsonResponse(current)
   })

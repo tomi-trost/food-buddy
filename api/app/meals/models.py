@@ -50,6 +50,7 @@ class Meal(TimestampMixin, Base):
     origin: Mapped[str] = mapped_column(String(6), default="home", server_default="home")
     listed: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
     place: Mapped[str | None] = mapped_column(String(80))  # bought/out: shop or restaurant
+    family: Mapped[str | None] = mapped_column(String(40))  # picked by us; else guessed (families)
 
     ingredients: Mapped[list["MealIngredient"]] = relationship(
         back_populates="meal", cascade="all, delete-orphan", lazy="selectin"

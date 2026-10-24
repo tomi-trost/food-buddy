@@ -12,6 +12,7 @@ from app.auth.service import household_members
 from app.inventory.service import deduct, mark_used_up
 from app.logs.models import FoodLog
 from app.logs.service import snack_nutrients
+from app.meals.families import family_of
 from app.meals.models import TYPES, CookLog, Meal, MealIngredient
 from app.meals.recipes import template_steps
 from app.meals.schemas import (
@@ -88,7 +89,13 @@ def snack_info(meal: Meal) -> dict:
         is_product=meal.is_product,
         per_unit=NutrientsOut(**{k: round(v, 2) for k, v in asdict(per_unit(meal)).items()}),
         portion_g=round(portion_grams(meal), 1),
-    ).model_dump() | {"origin": meal.origin, "listed": meal.listed, "place": meal.place}
+    ).model_dump() | {
+        "origin": meal.origin,
+        "listed": meal.listed,
+        "place": meal.place,
+        "family": family_of(meal),
+        "family_picked": meal.family is not None,
+    }
 
 
 def log_entry(
@@ -431,6 +438,8 @@ async def update_meal(session: AsyncSession, meal: Meal, body: MealPatch) -> Non
         meal.steps, meal.steps_source = body.steps, "ours"  # the model won't overwrite them
     if body.listed is not None:
         meal.listed = body.listed
+    if body.family is not None:
+        meal.family = body.family.strip() or None
     await session.flush()
     await _refresh_logs(session, meal)
     await session.commit()

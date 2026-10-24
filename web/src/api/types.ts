@@ -62,7 +62,7 @@ export type SnackInfo = {
 /** Cooked by us, bought in a shop or eaten out. Bought / out food is logged for its nutrition
  *  only (one portion, cost = what we paid) and isn't in our meals unless saved there (listed). */
 export type Origin = 'home' | 'bought' | 'out'
-export type OriginInfo = { origin: Origin; listed: boolean; place: string | null }
+export type OriginInfo = { origin: Origin; listed: boolean; place: string | null; family: string; family_picked: boolean } // family: dish family, ours or guessed
 
 export type MealCard = MealStats & SnackInfo & OriginInfo & {
   id: number
@@ -265,6 +265,7 @@ export type MealPatch = Partial<{
   piece_g: number
   product_per100: Nutrients // products: the pack's values
   listed: boolean // bought / eaten out: true = save to our meals
+  family: string // dish family; '' = guess it again
 }>
 
 export type LogEntry = {

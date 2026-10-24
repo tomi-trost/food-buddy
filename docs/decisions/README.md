@@ -26,5 +26,6 @@
 | [0025](0025-snacks-are-meals.md) | Snacks are meals (products as one-ingredient meals) | accepted |
 | [0026](0026-rating-sliders-taste-stars.md) | Effort/filling sliders, stars = taste, snacks rated on taste | accepted |
 | [0027](0027-bought-and-eaten-out.md) | Bought / eaten-out food is logged, not added to our meals | accepted |
+| [0028](0028-dish-families.md) | Dish families group variations of the same dish | accepted |
 
 Template: Context · Decision · Alternatives · Consequences.

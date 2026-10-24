@@ -141,6 +141,8 @@ class MealPatch(BaseModel):
     piece_g: float | None = Field(default=None, gt=0, le=2000)
     product_per100: NutrientsIn | None = None  # products: the values on the pack
     listed: bool | None = None  # bought / eaten out: true = save it to our meals
+    # Dish family; "" = guess it again from the name and ingredients
+    family: str | None = Field(default=None, max_length=40)
 
     _items = field_validator("items")(_unique_ingredients)
 
@@ -203,6 +205,8 @@ class OriginInfo(BaseModel):
     origin: Origin
     listed: bool
     place: str | None
+    family: str  # dish family: ours if picked, else guessed
+    family_picked: bool
 
 
 class SnackInfo(BaseModel):
