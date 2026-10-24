@@ -12,7 +12,7 @@ from app.auth.service import household_members
 from app.inventory.service import deduct, mark_used_up
 from app.logs.models import FoodLog
 from app.logs.service import snack_nutrients
-from app.meals.families import family_of
+from app.meals.families import Families, household_families
 from app.meals.models import TYPES, CookLog, Meal, MealIngredient
 from app.meals.recipes import template_steps
 from app.meals.schemas import (
@@ -81,7 +81,7 @@ def amount_of(meal: Meal, portions: float) -> float:
     return round(portions * portion_grams(meal) / one, 1)
 
 
-def snack_info(meal: Meal) -> dict:
+def snack_info(meal: Meal, families: Families) -> dict:
     return SnackInfo(
         snack_kind=meal.snack_kind,
         per=meal.per,
@@ -93,7 +93,7 @@ def snack_info(meal: Meal) -> dict:
         "origin": meal.origin,
         "listed": meal.listed,
         "place": meal.place,
-        "family": family_of(meal),
+        "family": families.of(meal),
         "family_picked": meal.family is not None,
     }
 
@@ -210,7 +210,7 @@ async def meal_out(session: AsyncSession, user: User, meal: Meal) -> MealOut:
         ],
         created_at=meal.created_at,
         undo_until=_undo_until_for(meal, user),
-        **snack_info(meal),
+        **snack_info(meal, await household_families(session, meal.household_id)),
     )
 
 
@@ -232,6 +232,7 @@ async def meal_cards(session: AsyncSession, user: User) -> list[MealCard]:
     ids = [m.id for m in meals]
     stats = await cook_stats(session, ids)
     ratings = await ratings_by_meal(session, ids)
+    families = await household_families(session, user.household_id)
     cards = []
     for m in meals:
         portion = per_portion(m)
@@ -255,7 +256,7 @@ async def meal_cards(session: AsyncSession, user: User) -> list[MealCard]:
                 rated_by_me=any(r.user_id == user.id for r in rs),
                 kcal_per_portion=round(portion.kcal, 1),
                 created_at=m.created_at,
-                **snack_info(m),
+                **snack_info(m, families),
             )
         )
     return cards

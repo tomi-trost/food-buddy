@@ -64,6 +64,33 @@ describe('MealsPage', () => {
     expect(screen.getByRole('link', { name: /Chia pudding/ })).toBeInTheDocument()
   })
 
+  it('shows what a family we made learned and stops matching a keyword', async () => {
+    let put: unknown
+    const mama = { name: "Mama's", members: 2, words: ['chicken'], ingredients: [{ id: 6, name: 'Broccoli' }], blocked_words: ['roasted'], blocked_ingredients: [] }
+    mockFetch((url, init) => {
+      if (url === '/api/families' ) return jsonResponse([mama, { ...mama, name: 'Weeknight', members: 1, words: [], ingredients: [], blocked_words: [] }])
+      if (url === '/api/families/blocks') {
+        put = JSON.parse(String(init!.body))
+        return jsonResponse(mama)
+      }
+      return jsonResponse([
+        card({ id: 1, name: 'Chicken broccoli', family: "Mama's", family_picked: true }),
+        card({ id: 2, name: 'Quick stir-fry', family: 'Weeknight', family_picked: true }),
+      ])
+    })
+    renderAt('/meals?group=1', <Route path="/meals" element={<MealsPage />} />)
+    fireEvent.click(await screen.findByRole('button', { name: /Mama's1 dish/ }))
+    const learned = await screen.findByLabelText("What Mama's matches")
+    expect(learned).toHaveTextContent('Learned from your 2 picks')
+    fireEvent.click(within(learned).getByRole('button', { name: 'Stop matching Broccoli' }))
+    await vi.waitFor(() => expect(put).toEqual({ name: "Mama's", blocked_words: ['roasted'], blocked_ingredients: [6] }))
+    fireEvent.click(within(learned).getByRole('button', { name: 'Match roasted again' }))
+    await vi.waitFor(() => expect(put).toEqual({ name: "Mama's", blocked_words: [], blocked_ingredients: [] }))
+
+    fireEvent.click(screen.getByRole('button', { name: /Weeknight1 dish/ }))
+    expect(screen.getByText(/Put one more meal in “Weeknight”/)).toBeInTheDocument()
+  })
+
   it('invites the first snap when there are no meals', async () => {
     mockFetch(() => jsonResponse([]))
     renderAt('/meals', <Route path="/meals" element={<MealsPage />} />)

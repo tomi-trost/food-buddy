@@ -11,6 +11,7 @@ from app.barcode.router import router as barcode_router
 from app.inventory.router import router as inventory_router
 from app.jobs import jobs_app
 from app.logs.router import router as logs_router
+from app.meals.families_router import router as families_router
 from app.meals.router import router as meals_router
 from app.nutrition.router import router as nutrition_router
 from app.plan.router import router as plan_router
@@ -55,6 +56,7 @@ async def reauth(next: str = "/") -> RedirectResponse:
 api.include_router(auth_router)
 api.include_router(analysis_router)
 api.include_router(meals_router)
+api.include_router(families_router)
 api.include_router(push_router)
 api.include_router(nutrition_router)
 api.include_router(barcode_router)

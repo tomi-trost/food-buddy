@@ -1,5 +1,5 @@
 import type {
-  AnalysisJob, CatalogItem, CookIn, Day, Insights, LogEntry, Sources, LogPatch, Reward, SnackIn, HouseholdPatch, Ingredient, Me, Meal, MealCard, MealCreate, MealKind, MealPatch, MealType, MePatch, Plan, PushConfig, PushKind, Suggestion, SnackLogged, PlanMode, Product, Rating, RegisterBody, Shopping, StockItem, WizardCell,
+  AnalysisJob, CatalogItem, CookIn, Day, Insights, LearnedFamily, LogEntry, Sources, LogPatch, Reward, SnackIn, HouseholdPatch, Ingredient, Me, Meal, MealCard, MealCreate, MealKind, MealPatch, MealType, MePatch, Plan, PushConfig, PushKind, Suggestion, SnackLogged, PlanMode, Product, Rating, RegisterBody, Shopping, StockItem, WizardCell,
 } from './types'
 import { reportReachable } from '../lib/online'
 import { shrinkPhoto } from '../lib/photoResize'
@@ -163,6 +163,9 @@ export const api = {
   cookable: () => json<MealCard[]>('/inventory/cookable'),
   patchMeal: (id: number, patch: MealPatch) =>
     json<Meal>(`/meals/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),
+  families: () => json<LearnedFamily[]>('/families'),
+  setFamilyBlocks: (name: string, blocked_words: string[], blocked_ingredients: number[]) =>
+    json<LearnedFamily>('/families/blocks', { method: 'PUT', body: JSON.stringify({ name, blocked_words, blocked_ingredients }) }),
   async setMealPhoto(id: number, file: File) {
     const form = new FormData()
     form.append('photo', await shrinkPhoto(file))

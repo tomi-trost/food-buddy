@@ -1,6 +1,16 @@
 from datetime import date
 
-from sqlalchemy import ARRAY, Boolean, Date, Float, ForeignKey, String, Text
+from sqlalchemy import (
+    ARRAY,
+    Boolean,
+    Date,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -76,3 +86,16 @@ class CookLog(TimestampMixin, Base):
     meal_id: Mapped[int] = mapped_column(ForeignKey("meal.id", ondelete="CASCADE"))
     user_id: Mapped[int] = mapped_column(ForeignKey("app_user.id", ondelete="CASCADE"))
     cooked_on: Mapped[date] = mapped_column(Date)
+
+
+class FamilyBlock(Base):
+    """Words and ingredients a learned dish family should stop matching on (see families)."""
+
+    __tablename__ = "family_block"
+    __table_args__ = (UniqueConstraint("household_id", "name"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    household_id: Mapped[int] = mapped_column(ForeignKey("household.id", ondelete="CASCADE"))
+    name: Mapped[str] = mapped_column(String(40))
+    blocked_words: Mapped[list[str]] = mapped_column(ARRAY(String(40)), default=list)
+    blocked_ingredients: Mapped[list[int]] = mapped_column(ARRAY(Integer), default=list)

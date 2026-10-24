@@ -6,6 +6,7 @@ import type { MealCard, MealKind } from '../api/types'
 import { MEAL_TYPE_SHORT } from '../lib/dates'
 import { useAddFood } from '../add/AddFood'
 import { CookMealSheet } from '../meals/CookSheet'
+import { FamilyLearned } from '../meals/FamilyLearned'
 import { byFamily, feed, type FeedSeg, type FeedSort, type FeedType, NEXT_SORT, ORIGIN_LABEL, SORT_LABEL } from '../lib/meals'
 import { KIND_LABEL, perLabel } from '../lib/snacks'
 import { Icon, type IconName } from '../ui/Icon'
@@ -24,6 +25,8 @@ export function MealsPage() {
   const sort = (params.get('sort') ?? 'rating') as FeedSort
   const grouped = params.get('group') === '1'
   const [open, setOpen] = useState<string[]>([]) // families shown open in the grouped view
+  const learned = useQuery({ queryKey: ['families'], queryFn: api.families, enabled: grouped })
+  const learnedOf = (name: string) => learned.data?.find((f) => f.name === name)
   const set = (key: string, value: string) =>
     setParams((p) => {
       if (value) p.set(key, value)
@@ -88,6 +91,7 @@ export function MealsPage() {
                 </span>
                 <span className={`family-chev${shown ? ' open' : ''}`}><Icon name="chev" size={16} /></span>
               </button>
+              {shown && learnedOf(f.family) && <FamilyLearned family={learnedOf(f.family)!} />}
               {shown && <MealGrid list={f.meals} snacks={snacks} onLog={setLogging} />}
             </section>
           )

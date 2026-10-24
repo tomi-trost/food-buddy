@@ -3,7 +3,7 @@
 import pytest
 
 from app.meals.families import OTHER, guess_family
-from tests.conftest import register
+from tests.conftest import ingredient_ids, register
 from tests.test_meals import body
 
 
@@ -46,3 +46,83 @@ async def test_family_is_guessed_picked_and_reset(client, auth, seeded, queue):
     assert too_long.status_code == 422
     stranger = await register(client, email="x@example.com", household_name="Other")
     assert (await client.patch(url, json={"family": "Mine"}, headers=stranger)).status_code == 404
+
+
+@pytest.mark.parametrize(
+    ("name", "ingredients", "family"),
+    [
+        ("Chicken breast with roasted vegetables", [], "Protein & veg plates"),  # ours, was Meat
+        ("Sunday dinner", ["Chicken thigh", "Potato", "Zucchini"], "Protein & veg plates"),
+        ("Tofu with broccoli", [], "Protein & veg plates"),
+        ("Chicken rice bowl", ["Rice (cooked)", "Chicken breast", "Broccoli"], "Rice & grains"),
+        ("Teriyaki", ["Rice (cooked)", "Chicken breast", "Broccoli"], "Rice & grains"),  # starch
+        ("Grilled chicken", ["Chicken breast"], "Meat & fish"),  # no vegetables
+        ("Potato gratin", [], "Potatoes"),
+        ("Gnocchi with butter", [], "Potatoes"),  # a potato base, like sweet potato
+    ],
+)
+def test_protein_and_veg_plates(name, ingredients, family):
+    assert guess_family(name, ingredients) == family
+
+
+async def plate(client, auth, seeded, name, *ingredients, family=None) -> dict:
+    ids = await ingredient_ids(seeded, *ingredients)
+    payload = await body(
+        seeded,
+        name=name,
+        meal_type="dinner",
+        items=[{"ingredient_id": i, "grams": 300 - 50 * n} for n, i in enumerate(ids)],
+    )
+    meal = (await client.post("/api/meals", json=payload, headers=auth)).json()
+    if family:
+        url = f"/api/meals/{meal['id']}"
+        meal = (await client.patch(url, json={"family": family}, headers=auth)).json()
+    return meal
+
+
+async def test_a_family_we_make_learns_from_its_meals(client, auth, seeded, queue):
+    await plate(client, auth, seeded, "Mama's broccoli chicken", "Chicken breast", "Broccoli",
+                "Spinach", family="Mama's")  # fmt: skip
+    one = (await client.get("/api/families", headers=auth)).json()
+    assert one == [{"name": "Mama's", "members": 1, "words": [], "ingredients": [],
+                    "blocked_words": [], "blocked_ingredients": []}]  # fmt: skip
+    await plate(client, auth, seeded, "Broccoli chicken bake", "Chicken breast", "Broccoli",
+                "Olive oil", family="Mama's")  # fmt: skip
+
+    learned = (await client.get("/api/families", headers=auth)).json()[0]
+    assert learned["members"] == 2
+    assert learned["words"] == ["broccoli", "chicken"]  # in both names
+    assert [i["name"] for i in learned["ingredients"]] == ["Broccoli", "Chicken breast"]
+
+    new = await plate(client, auth, seeded, "Chicken skewers", "Chicken breast", "Broccoli")
+    assert (new["family"], new["family_picked"]) == (
+        "Mama's",
+        False,
+    )  # guessed from what it learned
+    other = await plate(client, auth, seeded, "Broccoli soup", "Broccoli", "Onions")
+    assert other["family"] == "Soups & stews"  # 1 word + 1 ingredient of 4 learned: not enough
+    mine = await plate(client, auth, seeded, "Chicken broccoli", "Chicken breast", "Broccoli",
+                       family="Weeknight")  # fmt: skip
+    assert mine["family"] == "Weeknight"  # our pick always wins
+
+
+async def test_tell_a_family_to_stop_matching_a_word(client, auth, seeded, queue):
+    for name in ("Broccoli chicken", "Chicken with broccoli"):
+        await plate(client, auth, seeded, name, "Chicken breast", "Broccoli", family="Mama's")
+    broccoli = (await ingredient_ids(seeded, "Broccoli"))[0]
+    blocks = {"name": "Mama's", "blocked_words": [" Broccoli "], "blocked_ingredients": [broccoli]}
+    response = await client.put("/api/families/blocks", json=blocks, headers=auth)
+    assert response.status_code == 200, response.text
+    f = response.json()
+    assert (f["words"], [i["name"] for i in f["ingredients"]]) == (["chicken"], ["Chicken breast"])
+    assert (f["blocked_words"], f["blocked_ingredients"][0]["name"]) == (["broccoli"], "Broccoli")
+
+    soup = await plate(client, auth, seeded, "Broccoli chicken soup", "Broccoli", "Chicken breast")
+    assert soup["family"] == "Mama's"  # chicken (word + ingredient) is all it matches on now
+
+    unknown = await client.put("/api/families/blocks", json={"name": "Nope"}, headers=auth)
+    assert unknown.status_code == 404
+    stranger = await register(client, email="x@example.com", household_name="Other")
+    theirs = await client.put("/api/families/blocks", json=blocks, headers=stranger)
+    assert theirs.status_code == 404
+    assert (await client.get("/api/families", headers=stranger)).json() == []

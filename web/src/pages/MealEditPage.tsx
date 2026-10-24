@@ -72,6 +72,7 @@ function EditForm({ meal, close }: { meal: Meal; close: React.ReactNode }) {
 
   const changed = () => {
     qc.invalidateQueries({ queryKey: ['meals'] })
+    qc.invalidateQueries({ queryKey: ['families'] }) // a picked family teaches the guesser
     qc.invalidateQueries({ queryKey: ['day'] })
     qc.invalidateQueries({ queryKey: ['insights'] })
     qc.invalidateQueries({ queryKey: ['plan'] })

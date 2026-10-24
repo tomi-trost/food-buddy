@@ -182,6 +182,8 @@ svg text { fill: var(--ink2); font-size: 11px; }
 .family-chev { color: var(--ink2); display: flex; transition: transform .2s; }
 .family-chev.open { transform: rotate(90deg); }
 .family .mealgrid { margin-top: 10px; }
+.family-learned { margin: 10px 2px 0; }
+.chip.off { text-decoration: line-through; color: var(--ink2); background: none; border: 1px dashed var(--line2); }
 
 /* Emoji picker + the emoji button in Edit meal */
 .emoji-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(48px, 1fr)); gap: 4px; }

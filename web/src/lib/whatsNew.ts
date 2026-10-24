@@ -8,6 +8,7 @@ export const RELEASES: Release[] = [
     notes: [
       'Tap "By dish" in Meals: pasta with any sauce shows as one Pasta row, chia with any fruit as Oats & chia.',
       'Wrong family? Change it in Edit meal, or leave it empty and we guess from the name.',
+      'Chicken or fish with vegetables is a "Protein & veg plates" family. Make your own family: from two meals on, new ones like them land there by themselves.',
     ],
   },
   {

@@ -302,6 +302,16 @@ export type MemberInsights = {
   meal_counts: Record<MealKind, number> // entries per meal type over the range
 }
 
+/** A family we put meals in, and what it learned from them to guess new meals into it. */
+export type LearnedFamily = {
+  name: string
+  members: number // meals we put in it ourselves (it learns from 2)
+  words: string[]
+  ingredients: { id: number; name: string }[]
+  blocked_words: string[]
+  blocked_ingredients: { id: number; name: string }[]
+}
+
 export type SourceGroup = 'protein' | 'carbs' | 'fat' | 'fiber' | 'sugar'
 /** The ingredients someone ate most, under the nutrient they bring (most often first). */
 export type Sources = { groups: Record<SourceGroup, { name: string; emoji: string; times: number; grams: number }[]> }
