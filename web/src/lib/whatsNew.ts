@@ -4,6 +4,14 @@ export type Release = { id: string; notes: string[] }
 
 export const RELEASES: Release[] = [
   {
+    id: '2026-10-24-discard-amounts',
+    notes: [
+      'Changed your mind about a photo? Tap ✕ on the banner or the bin at the top, while it\'s analyzing or after. Undo brings it back.',
+      'Type any amount, down to 1 g or ml (0.1 of a piece). The − and + buttons still step as before.',
+      'The Snacks card on Home just counts now: snacks you add are in it already.',
+    ],
+  },
+  {
     id: '2026-10-15-steps-editor',
     notes: ['Recipe steps in Edit meal are easier to read: each step grows to fit its text, with move and remove buttons grouped above it.'],
   },

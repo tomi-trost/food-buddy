@@ -24,6 +24,9 @@ export function snackNutrients(s: Amounted): Nutrients {
 
 export const amountStep = (per: SnackPer) => (isCounted(per) ? 0.5 : 5)
 
+/** Smallest amount you can log: the −/+ buttons step, but any amount can be typed. */
+export const amountMin = (per: SnackPer) => (isCounted(per) ? 0.1 : 1)
+
 /** "portion", "piece", "100 g", "100 ml": what the values are for. */
 export const perLabel = (per: SnackPer) => (isCounted(per) ? per : per === '100ml' ? '100 ml' : '100 g')
 

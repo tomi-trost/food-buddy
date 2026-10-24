@@ -159,7 +159,7 @@ svg text { fill: var(--ink2); font-size: 11px; }
 .pending-space { height: 64px; }
 .pending-wrap { position: fixed; left: 50%; transform: translateX(-50%); width: calc(100% - 24px); max-width: 456px;
   bottom: calc(var(--tabbar-h) + 10px + env(safe-area-inset-bottom)); z-index: 4; }
-.pending { display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 8px 10px; border-radius: var(--r);
+.pending { display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 8px 52px 8px 10px; border-radius: var(--r);
   background: var(--surface); border: 1px solid var(--line2); color: var(--ink); text-decoration: none; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12); }
 .pending.ready { border-color: var(--accent); }
 .pending .sp { display: flex; flex-direction: column; min-width: 0; }
@@ -167,6 +167,8 @@ svg text { fill: var(--ink2); font-size: 11px; }
 .pending small { color: var(--ink2); font-size: 12px; }
 .pending-photo { width: 40px; height: 40px; aspect-ratio: 1; border-radius: 8px; flex: none; font-size: 20px; }
 .pending-act { flex: none; font-size: 13px; font-weight: 600; color: var(--accent); padding: 0 4px; }
+.pending-x { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 44px; height: 44px;
+  display: grid; place-items: center; border: 0; background: none; color: var(--ink2); }
 .pending.ready .pending-act { background: var(--accent); color: var(--accent-ink); border-radius: 999px; padding: 6px 12px; }
 
 /* No connection: pinned to the top of every screen */

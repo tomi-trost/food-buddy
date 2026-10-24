@@ -35,9 +35,9 @@ describe('units', () => {
   })
 
   it('steps in the ingredient unit', () => {
-    expect(amountStepper(ING.eggs)).toEqual({ step: 1, min: 0.5, max: 100, decimals: 1 })
-    expect(amountStepper(ING.oil)).toMatchObject({ step: 25, min: 5, decimals: 0 })
-    expect(amountStepper(ING.chicken)).toEqual({ step: 25, min: 5, max: 5000, decimals: 0 })
+    expect(amountStepper(ING.eggs)).toEqual({ step: 1, min: 0.1, max: 100, decimals: 1 })
+    expect(amountStepper(ING.oil)).toMatchObject({ step: 25, min: 1, decimals: 1 })
+    expect(amountStepper(ING.chicken)).toEqual({ step: 25, min: 1, max: 5000, decimals: 1 })
     expect(stockStep(ING.eggs)).toBe(50) // one egg
     expect(stockStep(ING.oil)).toBe(91) // 100 ml
     expect(stockStep(ING.chicken)).toBe(50)

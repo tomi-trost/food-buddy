@@ -38,6 +38,6 @@ export function formatAmount(grams: number, u: Counted, up = false): string {
 
 /** Stepper settings in the ingredient's own unit. */
 export function amountStepper(u: Counted) {
-  if (isCounted(u)) return { step: 1, min: 0.5, max: Math.max(1, Math.floor(5000 / per(u))), decimals: 1 }
-  return { step: 25, min: 5, max: u.unit === 'ml' ? Math.floor(5000 / per(u)) : 5000, decimals: 0 }
+  if (isCounted(u)) return { step: 1, min: 0.1, max: Math.max(1, Math.floor(5000 / per(u))), decimals: 1 }
+  return { step: 25, min: 1, max: u.unit === 'ml' ? Math.floor(5000 / per(u)) : 5000, decimals: 1 }
 }

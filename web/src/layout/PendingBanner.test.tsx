@@ -17,8 +17,10 @@ const routes = (
   </>
 )
 
-function serve(open: () => AnalysisJob[]) {
+function serve(open: () => AnalysisJob[], extra: (url: string) => Response | undefined = () => undefined) {
   return mockFetch((url) => {
+    const hit = extra(url)
+    if (hit) return hit
     if (url === '/api/auth/me') return jsonResponse({ id: 1, name: 'Tomi' })
     if (url === '/api/analyses/open') return jsonResponse(open())
     return new Response('img')
@@ -68,5 +70,22 @@ describe('PendingBanner', () => {
     expect(link).toHaveTextContent('+1 more waiting')
     fireEvent.click(link)
     expect(screen.getByText('snack page')).toBeInTheDocument()
+  })
+
+  it('discards the photo from the banner, and Undo brings it back', async () => {
+    let jobs = [analysisJob({ id: 5, status: 'running' })]
+    const fetch = serve(() => jobs, (url) => {
+      if (url === '/api/analyses/5/discard') { const j = analysisJob({ id: 5, closed: true }); jobs = []; return jsonResponse(j) }
+      if (url === '/api/analyses/5/reopen') { jobs = [analysisJob({ id: 5, status: 'running' })]; return jsonResponse(jobs[0]) }
+    })
+    renderAt('/', routes)
+    await screen.findByRole('link', { name: /Analyzing your meal…/ })
+    fireEvent.click(screen.getByRole('button', { name: 'Discard this photo' }))
+    await vi.waitFor(() => expect(screen.queryByRole('link', { name: /Analyzing your meal…/ })).not.toBeInTheDocument())
+    expect(screen.getByText('home')).toBeInTheDocument() // stays where you are
+    expect(fetch.mock.calls.some(([url, init]) => url === '/api/analyses/5/discard' && init?.method === 'POST')).toBe(true)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }))
+    expect(await screen.findByRole('link', { name: /Analyzing your meal…/ })).toBeInTheDocument()
   })
 })

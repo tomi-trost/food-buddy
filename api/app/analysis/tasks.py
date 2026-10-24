@@ -2,6 +2,7 @@ import logging
 from datetime import UTC, datetime
 
 import httpx
+from procrastinate.exceptions import AlreadyEnqueued
 from sqlalchemy import update
 
 from app.analysis.models import AnalysisJob
@@ -13,6 +14,14 @@ from app.push.tasks import notify_ready
 from app.vision.providers import chain_from_settings
 
 log = logging.getLogger(__name__)
+
+
+async def queue_analysis(job_id: int) -> None:
+    """Queue the model run once: a second request while it's still waiting is a no-op."""
+    try:
+        await analyze_photo.configure(queueing_lock=f"analysis-{job_id}").defer_async(job_id=job_id)
+    except AlreadyEnqueued:
+        pass
 
 
 @jobs_app.task(name="analyze_photo", queue="vision")

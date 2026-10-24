@@ -2,7 +2,9 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router'
 import { api } from '../api/client'
 import { banner, isBusy, POLL_BUSY_MS, POLL_IDLE_MS } from '../lib/pending'
+import { Icon } from '../ui/Icon'
 import { Photo } from '../ui/Photo'
+import { useDiscardPhoto } from './discard'
 
 export const OPEN_ANALYSES = ['analyses', 'open']
 
@@ -14,6 +16,7 @@ export function PendingBanner() {
     queryFn: api.openAnalyses,
     refetchInterval: (q) => ((q.state.data ?? []).some(isBusy) ? POLL_BUSY_MS : POLL_IDLE_MS),
   })
+  const discard = useDiscardPhoto()
   const b = banner(open.data ?? [], me.data?.id)
   if (!b) return null
 
@@ -29,6 +32,9 @@ export function PendingBanner() {
           </span>
           <span className="pending-act">{b.action}</span>
         </Link>
+        <button className="pending-x" aria-label="Discard this photo" disabled={discard.isPending} onClick={() => discard.mutate(b.job.id)}>
+          <Icon name="close" size={18} />
+        </button>
       </div>
     </>
   )

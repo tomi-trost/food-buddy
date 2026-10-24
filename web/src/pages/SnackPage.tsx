@@ -3,10 +3,11 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { api, ApiError } from '../api/client'
 import type { AnalysisJob, SnackKind, SnackPer, SnackResult } from '../api/types'
+import { DiscardButton } from '../layout/discard'
 import { OPEN_ANALYSES } from '../layout/PendingBanner'
 import { todayISO } from '../lib/dates'
 import {
-  amountStep, amountUnit, type Crossed, crossedValues, isTreatKind, KIND_EMOJI as EMOJI, KIND_LABEL, perLabel, SNACK_KINDS,
+  amountMin, amountStep, amountUnit, type Crossed, crossedValues, isTreatKind, KIND_EMOJI as EMOJI, KIND_LABEL, perLabel, SNACK_KINDS,
   snackNutrients, switchPer,
 } from '../lib/snacks'
 import { Icon } from '../ui/Icon'
@@ -20,7 +21,6 @@ import { useToast } from '../ui/Toast'
 export function SnackPage() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
-  const toast = useToast()
   const qc = useQueryClient()
   const job = useQuery({
     queryKey: ['analysis', id],
@@ -32,14 +32,6 @@ export function SnackPage() {
     qc.invalidateQueries({ queryKey: OPEN_ANALYSES })
   }
   const retry = useMutation({ mutationFn: () => api.retryAnalysis(Number(id)), onSuccess: update })
-  const discard = useMutation({
-    mutationFn: () => api.discardAnalysis(Number(id)),
-    onSuccess: (updated) => {
-      update(updated)
-      navigate('/', { replace: true })
-      toast('Photo discarded')
-    },
-  })
   const label = job.data?.kind === 'label'
   const close = <button className="icon" aria-label="Close" onClick={() => navigate('/')}><Icon name="close" /></button>
 
@@ -58,10 +50,10 @@ export function SnackPage() {
   if (job.data?.status === 'done' && job.data.snack) {
     return <SnackForm analysisId={job.data.id} photoUrl={job.data.photo_url} label={label} initial={job.data.snack} close={close} />
   }
-  const error = job.error ?? retry.error ?? discard.error
+  const error = job.error ?? retry.error
   return (
     <>
-      <div className="top">{close}<span className="sub">{label ? 'Reading label…' : 'Identifying snack…'}</span><span style={{ width: 44 }} /></div>
+      <div className="top">{close}<span className="sub">{label ? 'Reading label…' : 'Identifying snack…'}</span>{job.data ? <DiscardButton id={job.data.id} /> : <span style={{ width: 44 }} />}</div>
       {job.data?.status === 'failed' ? (
         <section className="card">
           <h3>Couldn't read this photo</h3>
@@ -81,11 +73,6 @@ export function SnackPage() {
         </>
       )}
       {error && <p className="error" role="alert">{error.message}</p>}
-      {job.data && (
-        <button className="textbtn" style={{ marginTop: 12 }} disabled={discard.isPending} onClick={() => discard.mutate()}>
-          Discard this photo
-        </button>
-      )}
     </>
   )
 }
@@ -144,7 +131,7 @@ function SnackForm({ analysisId, photoUrl, label, initial, close }: {
 
   return (
     <>
-      <div className="top">{close}<span className="sub">{label ? 'Read from label' : 'Detected from photo'}</span><span style={{ width: 44 }} /></div>
+      <div className="top">{close}<span className="sub">{label ? 'Read from label' : 'Detected from photo'}</span><DiscardButton id={analysisId} /></div>
       <div className="row" style={{ gap: 12, marginBottom: 12 }}>
         <Photo url={photoUrl} emoji={EMOJI[snack.kind]} alt="" style={{ width: 72, height: 72, aspectRatio: '1', fontSize: 36, flex: 'none' }} />
         <div className="sp">
@@ -185,7 +172,7 @@ function SnackForm({ analysisId, photoUrl, label, initial, close }: {
       </section>
       <div className="card row" style={{ marginTop: 14 }}>
         <div className="sp"><h3>Amount</h3><div className="sub">{snack.per === 'piece' ? 'how many' : snack.per === '100ml' ? 'ml you drank' : 'grams you ate'}</div></div>
-        <Stepper label="amount" value={snack.amount} step={amountStep(snack.per)} min={amountStep(snack.per)} max={2000}
+        <Stepper label="amount" value={snack.amount} step={amountStep(snack.per)} min={amountMin(snack.per)} max={2000}
           unit={amountUnit(snack.per, snack.amount)} onChange={(amount) => setSnack((s) => ({ ...s, amount }))} />
       </div>
       {crossed && (

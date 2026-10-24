@@ -4,6 +4,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { useAddFood } from '../add/AddFood'
 import { api, ApiError } from '../api/client'
 import type { AnalysisJob, AnalysisResult, MealKind, Nutrients, Rating } from '../api/types'
+import { DiscardButton } from '../layout/discard'
 import { OPEN_ANALYSES } from '../layout/PendingBanner'
 import { todayISO } from '../lib/dates'
 import { DEFAULT_RATING, RatingFields } from '../meals/RatingFields'
@@ -70,7 +71,7 @@ export function AnalysisPage() {
       <div className="top">
         {close}
         <span className="sub">{job.data?.status === 'failed' ? '' : 'Analyzing…'}</span>
-        <span style={{ width: 44 }} />
+        {job.data ? <DiscardButton id={job.data.id} /> : <span style={{ width: 44 }} />}
       </div>
       <Photo url={job.data?.photo_url} emoji="🍽️" alt="Your meal" style={{ aspectRatio: '16 / 9' }} />
       {job.isError && <p className="error" role="alert">{job.error.message}</p>}
@@ -98,16 +99,8 @@ function Waiting({ job }: { job: AnalysisJob }) {
     },
   })
   const retry = useMutation({ mutationFn: () => api.retryAnalysis(job.id), onSuccess: update })
-  const discard = useMutation({
-    mutationFn: () => api.discardAnalysis(job.id),
-    onSuccess: (updated) => {
-      update(updated)
-      navigate('/', { replace: true })
-      toast('Photo discarded')
-    },
-  })
   const failed = job.status === 'failed'
-  const error = [rate, retry, discard].find((m) => m.isError)?.error
+  const error = [rate, retry].find((m) => m.isError)?.error
 
   return (
     <>
@@ -140,9 +133,6 @@ function Waiting({ job }: { job: AnalysisJob }) {
           <button className="btn ghost" style={{ marginTop: 12 }} onClick={() => navigate('/')}>Check it later</button>
         </>
       )}
-      <button className="textbtn" style={{ marginTop: 12 }} disabled={discard.isPending} onClick={() => discard.mutate()}>
-        Discard this photo
-      </button>
     </>
   )
 }
@@ -222,7 +212,7 @@ function SnapFlow({ analysisId, photoUrl, result, rated, chosenType, saveOnly, c
           <button className="icon" aria-label="Back" onClick={() => setStep('verdict')}><Icon name="back" /></button>
         )}
         <span className="sub">Step {step === 'verdict' ? 1 : 2} of 2</span>
-        <span style={{ width: 44 }} />
+        <DiscardButton id={analysisId} />
       </div>
       {step === 'verdict' ? (
         <>

@@ -1,5 +1,4 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
 import { Link } from 'react-router'
 import { api } from '../api/client'
 import type { LogEntry, Me } from '../api/types'
@@ -8,13 +7,11 @@ import { treatSugarToday } from '../lib/snacks'
 import { ProgressBar } from '../ui/charts'
 import { Icon } from '../ui/Icon'
 import { useToast } from '../ui/Toast'
-import { LogSnackSheet } from './LogSnackSheet'
 
 export function SnacksCard({ me, entries }: { me: Me; entries: LogEntry[] }) {
   const qc = useQueryClient()
   const toast = useToast()
   const today = todayISO()
-  const [logging, setLogging] = useState(false)
   const rewards = useQuery({ queryKey: ['rewards', today], queryFn: () => api.rewards(today) })
   const mine = rewards.data?.find((r) => r.user_id === me.id)
   const use = useMutation({
@@ -42,7 +39,6 @@ export function SnacksCard({ me, entries }: { me: Me; entries: LogEntry[] }) {
               <div className="sub">{over ? `Over your ${goal} g goal` : `Treat sugar goal ${goal} g`}</div>
             </div>
           </Link>
-          <button className="btn sm ghost" onClick={() => setLogging(true)}><Icon name="plus" size={16} /> Log</button>
         </div>
         <div style={{ marginTop: 10 }}>
           <ProgressBar pct={goal ? (sugar / goal) * 100 : 0} color={over ? 'var(--bad)' : 'var(--sg)'} />
@@ -62,7 +58,6 @@ export function SnacksCard({ me, entries }: { me: Me; entries: LogEntry[] }) {
           </div>
         )}
       </div>
-      <LogSnackSheet open={logging} onClose={() => setLogging(false)} />
     </>
   )
 }

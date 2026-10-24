@@ -7,9 +7,9 @@ from sqlalchemy import select
 
 from app.analysis.models import AnalysisJob, AnalysisRating
 from app.analysis.photos import InvalidPhoto, normalize_photo, save_photo
-from app.analysis.queue import close, drop_early_ratings, lock_job, lock_open_job
+from app.analysis.queue import close, lock_job, lock_open_job
 from app.analysis.schemas import AnalysisJobOut, JobBy
-from app.analysis.tasks import analyze_photo
+from app.analysis.tasks import queue_analysis
 from app.auth.deps import CurrentUser, Session
 from app.auth.models import User
 from app.config import get_settings
@@ -109,7 +109,7 @@ async def create_analysis(
     session.add(job)
     await session.commit()
     await session.refresh(job)
-    await analyze_photo.defer_async(job_id=job.id)
+    await queue_analysis(job.id)
     return await job_out(session, user, job)
 
 
@@ -137,7 +137,7 @@ async def create_text_analysis(body: TextIn, user: CurrentUser, session: Session
     session.add(job)
     await session.commit()
     await session.refresh(job)
-    await analyze_photo.defer_async(job_id=job.id)
+    await queue_analysis(job.id)
     return await job_out(session, user, job)
 
 
@@ -186,8 +186,21 @@ async def discard_analysis(job_id: int, user: CurrentUser, session: Session) -> 
         raise HTTPException(status.HTTP_409_CONFLICT, "This photo was already posted")
     if job.closed_at is None:
         close(job)
-        await drop_early_ratings(session, job)
+        job.discarded = True  # early ratings stay, so Undo brings them back too
         await session.commit()
+    return await job_out(session, user, job)
+
+
+@router.post("/{job_id}/reopen")
+async def reopen_analysis(job_id: int, user: CurrentUser, session: Session) -> AnalysisJobOut:
+    """Undo a discard: the photo is back in the banner, as it was."""
+    job = await lock_job(session, user, job_id)
+    if not job.discarded:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Only a discarded photo can be brought back")
+    job.closed_at, job.discarded = None, False
+    await session.commit()
+    if job.status == "queued":  # the worker skips discarded jobs: queue it again
+        await queue_analysis(job.id)
     return await job_out(session, user, job)
 
 
@@ -199,7 +212,7 @@ async def retry_analysis(job_id: int, user: CurrentUser, session: Session) -> An
     job.status, job.error, job.finished_at = "queued", None, None
     job.raw = job.result = None
     await session.commit()
-    await analyze_photo.defer_async(job_id=job.id)
+    await queue_analysis(job.id)
     return await job_out(session, user, job)
 
 

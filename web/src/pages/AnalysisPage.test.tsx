@@ -273,16 +273,42 @@ describe('waiting in the background', () => {
     expect(fetch.mock.calls.some(([url, init]) => url === '/api/analyses/5/retry' && init?.method === 'POST')).toBe(true)
   })
 
-  it('discards the photo and goes home', async () => {
+  it('discards the photo while it is analyzing, goes home and can undo it', async () => {
     const fetch = api((url) => {
       if (url === '/api/analyses/5/discard') return jsonResponse(analysisJob({ closed: true }))
+      if (url === '/api/analyses/5/reopen') return jsonResponse(analysisJob({ status: 'running' }))
       if (isJob(url)) return jsonResponse(analysisJob({ status: 'running' }))
     })
     render()
     fireEvent.click(await screen.findByRole('button', { name: 'Discard this photo' }))
     expect(await screen.findByText('home')).toBeInTheDocument()
     expect(screen.getByText('Photo discarded')).toBeInTheDocument()
+    expect(fetch.mock.calls.some(([url, init]) => url === '/api/analyses/5/discard' && init?.method === 'POST')).toBe(true)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }))
+    await vi.waitFor(() =>
+      expect(fetch.mock.calls.some(([url, init]) => url === '/api/analyses/5/reopen' && init?.method === 'POST')).toBe(true))
+  })
+
+  it('discards an analyzed photo from the check screen', async () => {
+    const fetch = api((url) => (url === '/api/analyses/5/discard' ? jsonResponse({ ...doneJob(), closed: true }) : undefined))
+    render()
+    await screen.findByRole('heading', { name: 'Chicken rice bowl' })
+    fireEvent.click(screen.getByRole('button', { name: 'Discard this photo' }))
+    expect(await screen.findByText('home')).toBeInTheDocument()
     expect(fetch.mock.calls.some(([url]) => url === '/api/analyses/5/discard')).toBe(true)
+  })
+
+  it('says so when the undo fails', async () => {
+    api((url) => {
+      if (url === '/api/analyses/5/discard') return jsonResponse(analysisJob({ closed: true }))
+      if (url === '/api/analyses/5/reopen') return jsonResponse({ detail: 'Only a discarded photo can be brought back' }, 409)
+      if (isJob(url)) return jsonResponse(analysisJob({ status: 'running' }))
+    })
+    render()
+    fireEvent.click(await screen.findByRole('button', { name: 'Discard this photo' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Undo' }))
+    expect(await screen.findByText("Couldn't bring the photo back")).toBeInTheDocument()
   })
 
   it('says so when opening a discarded photo', async () => {

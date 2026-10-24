@@ -6,6 +6,7 @@ import type { LogEntry } from '../api/types'
 import { analysisJob, logEntry, me, memberInsights, reward } from '../test/fixtures'
 import { jsonResponse, mockFetch, renderAt } from '../test/utils'
 import { SnackPage } from '../pages/SnackPage'
+import { LogSnackSheet } from './LogSnackSheet'
 import { SnacksCard } from './SnacksCard'
 import { SnacksInsights } from './SnacksInsights'
 
@@ -35,41 +36,15 @@ beforeEach(() => {
 })
 
 describe('SnacksCard', () => {
-  it('shows treat sugar, logs from the list and uses a croissant pass', async () => {
-    const fetch = api()
+  it('shows treat sugar and uses a croissant pass, with no log button (snacks count themselves)', async () => {
+    api()
     renderAt('/', <Route path="/" element={<SnacksCard me={me()} entries={[cookie]} />} />)
     expect(screen.getByText('1 snack today · 10 g treat sugar')).toBeInTheDocument()
     expect(await screen.findByText('1 available — you earned it')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Log/ })).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Use pass' }))
     expect(await screen.findByText('Enjoy your croissant!')).toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('button', { name: /Log/ }))
-    const sheet = screen.getByRole('dialog', { name: 'Log a snack' })
-    fireEvent.click(await within(sheet).findByRole('button', { name: /Chips/ }))
-    expect(fetch.mock.calls.find(([u]) => u === '/api/snacks')).toBeUndefined() // confirm first
-    fireEvent.click(within(sheet).getByRole('button', { name: 'Log snack' }))
-    await screen.findByText('Cookie logged · 10 g treat sugar')
-    const [, init] = fetch.mock.calls.find(([u]) => u === '/api/snacks')!
-    expect(JSON.parse(String(init!.body))).toMatchObject({ name: 'Chips', kind: 'savory', source: 'list', per: 'piece', amount: 1 })
-  })
-
-  it('lets you set the portion and fix the values before logging from the list', async () => {
-    const fetch = api()
-    renderAt('/', <Route path="/" element={<SnacksCard me={me()} entries={[]} />} />)
-    fireEvent.click(screen.getByRole('button', { name: /Log/ }))
-    const sheet = screen.getByRole('dialog', { name: 'Log a snack' })
-    fireEvent.click(await within(sheet).findByRole('button', { name: /Cookie/ }))
-    fireEvent.click(within(sheet).getByLabelText('Less amount')) // half a piece
-    fireEvent.click(within(sheet).getByRole('button', { name: 'Edit values' }))
-    fireEvent.change(within(sheet).getByLabelText('sugar (g)'), { target: { value: '9' } })
-    expect(within(sheet).getByTestId('macro-sugar')).toHaveTextContent('5 g') // 9 × 0.5 = 4.5
-    fireEvent.click(within(sheet).getByRole('button', { name: 'Log snack' }))
-    await screen.findByText(/Cookie logged/)
-    const [, init] = fetch.mock.calls.find(([u]) => u === '/api/snacks')!
-    const body = JSON.parse(String(init!.body))
-    expect(body).toMatchObject({ name: 'Cookie', amount: 0.5 })
-    expect(body.per_unit.sugar).toBe(9)
   })
 
   it('links to the snack insights', () => {
@@ -84,6 +59,37 @@ describe('SnacksCard', () => {
     renderAt('/', <Route path="/" element={<SnacksCard me={me()} entries={[lots]} />} />)
     expect(screen.getByText('Over your 50 g goal')).toBeInTheDocument()
     expect(await screen.findByText('1 / 3 treat-free days to the next one')).toBeInTheDocument()
+  })
+})
+
+describe('LogSnackSheet', () => {
+  it('logs from the list after confirming', async () => {
+    const fetch = api()
+    renderAt('/', <Route path="/" element={<LogSnackSheet open onClose={() => {}} />} />)
+    const sheet = screen.getByRole('dialog', { name: 'Log a snack' })
+    fireEvent.click(await within(sheet).findByRole('button', { name: /Chips/ }))
+    expect(fetch.mock.calls.find(([u]) => u === '/api/snacks')).toBeUndefined() // confirm first
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Log snack' }))
+    await screen.findByText('Cookie logged · 10 g treat sugar')
+    const [, init] = fetch.mock.calls.find(([u]) => u === '/api/snacks')!
+    expect(JSON.parse(String(init!.body))).toMatchObject({ name: 'Chips', kind: 'savory', source: 'list', per: 'piece', amount: 1 })
+  })
+
+  it('lets you set the portion and fix the values before logging from the list', async () => {
+    const fetch = api()
+    renderAt('/', <Route path="/" element={<LogSnackSheet open onClose={() => {}} />} />)
+    const sheet = screen.getByRole('dialog', { name: 'Log a snack' })
+    fireEvent.click(await within(sheet).findByRole('button', { name: /Cookie/ }))
+    fireEvent.click(within(sheet).getByLabelText('Less amount')) // half a piece
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Edit values' }))
+    fireEvent.change(within(sheet).getByLabelText('sugar (g)'), { target: { value: '9' } })
+    expect(within(sheet).getByTestId('macro-sugar')).toHaveTextContent('5 g') // 9 × 0.5 = 4.5
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Log snack' }))
+    await screen.findByText(/Cookie logged/)
+    const [, init] = fetch.mock.calls.find(([u]) => u === '/api/snacks')!
+    const body = JSON.parse(String(init!.body))
+    expect(body).toMatchObject({ name: 'Cookie', amount: 0.5 })
+    expect(body.per_unit.sugar).toBe(9)
   })
 })
 
@@ -110,6 +116,24 @@ describe('SnackPage', () => {
     expect(await screen.findByText('home')).toBeInTheDocument()
     const [, init] = fetch.mock.calls.find(([u]) => u === '/api/snacks')!
     expect(JSON.parse(String(init!.body))).toMatchObject({ source: 'label', per: '100g', amount: 50, per_unit: per100 })
+  })
+
+  it('takes a typed amount below the stepper step (2 g) but not zero', async () => {
+    api((url) =>
+      url === '/api/analyses/7'
+        ? jsonResponse(analysisJob({ id: 7, kind: 'label', status: 'done', snack: { name: 'Oat bar', kind: 'sweet', per: '100g', amount: 45, per_unit: n(450, 26) } }))
+        : url.endsWith('/photo') ? new Response('img') : undefined,
+    )
+    renderAt('/snack/7', <Route path="/snack/:id" element={<SnackPage />} />)
+    const input = await screen.findByRole('textbox', { name: 'amount' })
+    fireEvent.focus(input)
+    fireEvent.change(input, { target: { value: '2' } })
+    fireEvent.blur(input)
+    expect(screen.getByTestId('macro-kcal')).toHaveTextContent('9') // 450 × 2 / 100
+    fireEvent.focus(input)
+    fireEvent.change(input, { target: { value: '0' } })
+    fireEvent.blur(input)
+    expect(input).toHaveValue('1')
   })
 })
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { LogEntry } from '../api/types'
-import { amountHint, amountStep, amountUnit, crossedValues, isTreat, isTreatKind, perLabel, snackNutrients, switchPer, treatSugarToday } from './snacks'
+import { amountHint, amountMin, amountStep, amountUnit, crossedValues, isTreat, isTreatKind, perLabel, snackNutrients, switchPer, treatSugarToday } from './snacks'
 import { logEntry } from '../test/fixtures'
 
 const n = (kcal: number, sugar: number) => ({ kcal, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar })
@@ -23,6 +23,7 @@ describe('snacks', () => {
   it('counts portions like pieces', () => {
     expect(snackNutrients({ per: 'portion', amount: 1.5, per_unit: n(250, 12) }).kcal).toBe(375)
     expect([perLabel('portion'), amountUnit('portion', 1), amountUnit('portion', 2), amountStep('portion')]).toEqual(['portion', ' portion', ' portions', 0.5])
+    expect([amountMin('piece'), amountMin('100g'), amountMin('100ml')]).toEqual([0.1, 1, 1]) // any amount can be typed
     expect(amountHint('portion')).toBe('how many portions')
   })
 

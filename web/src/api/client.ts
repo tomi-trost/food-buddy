@@ -143,6 +143,7 @@ export const api = {
   rateAnalysis: (id: number, rating: Rating) =>
     json<AnalysisJob>(`/analyses/${id}/rating`, { method: 'PUT', body: JSON.stringify(rating) }),
   discardAnalysis: (id: number) => json<AnalysisJob>(`/analyses/${id}/discard`, { method: 'POST' }),
+  reopenAnalysis: (id: number) => json<AnalysisJob>(`/analyses/${id}/reopen`, { method: 'POST' }),
   retryAnalysis: (id: number) => json<AnalysisJob>(`/analyses/${id}/retry`, { method: 'POST' }),
   searchIngredients: (q: string, limit = 30) =>
     json<Ingredient[]>(`/ingredients?${new URLSearchParams({ q, limit: String(limit) })}`),

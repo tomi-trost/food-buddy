@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { api } from '../api/client'
 import type { Meal, MealKind } from '../api/types'
 import { MEAL_TYPE_LABEL, todayISO } from '../lib/dates'
-import { amountHint, amountStep, amountUnit, isCounted, piecesIn, snackNutrients } from '../lib/snacks'
+import { amountHint, amountMin, amountStep, amountUnit, isCounted, piecesIn, snackNutrients } from '../lib/snacks'
 import { Sheet } from '../ui/Sheet'
 import { Stepper } from '../ui/Stepper'
 import { Toggle } from '../ui/Toggle'
@@ -89,7 +89,7 @@ export function CookSheet({ meal, open, onClose, initialType }: {
       {snack ? (
         <div className="row" style={{ justifyContent: 'space-between', margin: '12px 0' }}>
           <span>Amount <small className="sub">{amountHint(meal.per)}</small></span>
-          <Stepper label="amount" value={amount} onChange={setAmount} step={amountStep(meal.per)} min={amountStep(meal.per)}
+          <Stepper label="amount" value={amount} onChange={setAmount} step={amountStep(meal.per)} min={amountMin(meal.per)}
             max={isCounted(meal.per) ? 50 : 5000} unit={amountUnit(meal.per, amount)} />
         </div>
       ) : (

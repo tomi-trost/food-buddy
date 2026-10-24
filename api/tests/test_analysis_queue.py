@@ -146,7 +146,7 @@ async def test_second_post_of_same_photo_says_already_posted(client, auth, seede
     assert job["meal_id"] == first.json()["id"]
 
 
-async def test_discard_closes_job_and_drops_early_ratings(client, auth, seeded):
+async def test_discard_closes_job(client, auth, seeded):
     partner = await partner_of(client, auth)
     job_id = await snap(client, auth)
     await client.put(f"/api/analyses/{job_id}/rating", json=RATING, headers=auth)
@@ -162,6 +162,62 @@ async def test_discard_closes_job_and_drops_early_ratings(client, auth, seeded):
     assert late.status_code == 409
     rated = await client.put(f"/api/analyses/{job_id}/rating", json=RATING, headers=auth)
     assert rated.status_code == 409
+
+
+async def test_undo_discard_brings_the_photo_back_with_its_rating(client, auth, seeded):
+    partner = await partner_of(client, auth)
+    job_id = await snap(client, auth)
+    await finish(seeded, job_id)
+    await client.put(f"/api/analyses/{job_id}/rating", json=RATING, headers=auth)
+    await client.post(f"/api/analyses/{job_id}/discard", headers=auth)
+
+    response = await client.post(f"/api/analyses/{job_id}/reopen", headers=partner)
+    assert response.status_code == 200, response.text
+    job = response.json()
+    assert job["closed"] is False and job["status"] == "done"
+    assert [j["id"] for j in await open_jobs(client, auth)] == [job_id]
+    mine = (await client.get(f"/api/analyses/{job_id}", headers=auth)).json()
+    assert mine["my_rating"]["taste"] == 4.5
+    # and it can be posted as usual
+    posted = await client.post(
+        "/api/meals", json=await body(seeded, analysis_id=job_id), headers=auth
+    )
+    assert posted.status_code == 201, posted.text
+
+
+async def test_undo_discard_while_waiting_queues_the_model_again_once(client, auth, queue):
+    job_id = await snap(client, auth)
+    await client.post(f"/api/analyses/{job_id}/discard", headers=auth)
+    for j in queue.jobs.values():  # the worker picked it up and skipped it
+        j["status"] = "succeeded"
+    await client.post(f"/api/analyses/{job_id}/reopen", headers=auth)
+    todo = [j for j in queue.jobs.values() if j["status"] == "todo"]
+    assert [j["args"] for j in todo] == [{"job_id": job_id}]
+
+    # discarded and brought back before the worker got to it: still queued only once
+    await client.post(f"/api/analyses/{job_id}/discard", headers=auth)
+    await client.post(f"/api/analyses/{job_id}/reopen", headers=auth)
+    assert len([j for j in queue.jobs.values() if j["status"] == "todo"]) == 1
+
+
+async def test_only_a_discarded_photo_can_be_brought_back(client, auth, seeded):
+    open_id = await snap(client, auth)
+    assert (await client.post(f"/api/analyses/{open_id}/reopen", headers=auth)).status_code == 409
+
+    posted_id = await snap(client, auth)
+    await client.post("/api/meals", json=await body(seeded, analysis_id=posted_id), headers=auth)
+    assert (await client.post(f"/api/analyses/{posted_id}/reopen", headers=auth)).status_code == 409
+
+    logged_id = await snap(client, auth, kind="snack")
+    await client.post("/api/snacks", json=SNACK_IN | {"analysis_id": logged_id}, headers=auth)
+    assert (await client.post(f"/api/analyses/{logged_id}/reopen", headers=auth)).status_code == 409
+
+    stranger = await register(client, email="x@example.com")
+    discarded = await snap(client, auth)
+    await client.post(f"/api/analyses/{discarded}/discard", headers=auth)
+    assert (
+        await client.post(f"/api/analyses/{discarded}/reopen", headers=stranger)
+    ).status_code == 404
 
 
 async def test_discard_twice_is_fine_but_not_after_post(client, auth, seeded):
@@ -185,6 +241,8 @@ async def test_retry_requeues_failed_job_only(client, auth, seeded, queue):
     assert not_failed.status_code == 409
 
     await finish(seeded, job_id, status="failed")
+    for j in queue.jobs.values():  # the worker ran it (and it failed)
+        j["status"] = "failed"
     response = await client.post(f"/api/analyses/{job_id}/retry", headers=auth)
     assert response.status_code == 202, response.text
     job = response.json()

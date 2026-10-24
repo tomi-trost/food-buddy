@@ -36,6 +36,8 @@ class AnalysisJob(TimestampMixin, Base):
     # the meal to the library without logging it as eaten
     meal_type: Mapped[str | None] = mapped_column(String(10))
     save_only: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Closed by "Discard" (not posted or logged): only these can be brought back with Undo
+    discarded: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
 
 
 class AnalysisRating(Base):
