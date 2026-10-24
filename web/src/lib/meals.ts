@@ -1,4 +1,4 @@
-import type { Fill, MealCard, MealKind, Rating } from '../api/types'
+import type { MealCard, MealKind, Rating, Slider } from '../api/types'
 
 /** "Today" / "Yesterday" / "N days ago" between two YYYY-MM-DD dates. */
 export function ago(dateISO: string | null, todayISO: string): string {
@@ -9,20 +9,21 @@ export function ago(dateISO: string | null, todayISO: string): string {
 
 export const againLabel = (v: number) => (v >= 5 ? 'yes' : v >= 3 ? 'maybe' : 'no')
 
-export const FILL_LABEL: Record<Fill, string> = { hungry: 'left us hungry', right: 'just right', heavy: 'too heavy' }
+/** Words for the 7 slider steps, −3 … +3. */
+export const EFFORT_STEPS = ['Not really', 'Hardly', 'Not quite', 'Meh', 'Fairly', 'Mostly', 'Totally'] as const
+export const FILL_STEPS = ['Left us hungry', 'Still hungry', 'A bit light', 'Just right', 'A bit heavy', 'Heavy', 'Too heavy'] as const
 
-/** The mock's "How filling" tip from both people's answers. */
+export const stepLabel = (steps: readonly string[], v: Slider) => steps[v + 3]
+
+/** The "How filling" tip from both people's answers (the average slider). */
 export function fillTip(ratings: (Rating | null)[]): string | null {
-  const fills = ratings.flatMap((r) => (r ? [r.fill] : []))
+  const fills = ratings.flatMap((r) => (r && r.fill !== null ? [r.fill] : []))
   if (!fills.length) return null
-  const hungry = fills.filter((f) => f === 'hungry').length
-  const heavy = fills.filter((f) => f === 'heavy').length
-  if (hungry > heavy) return 'Left us hungry. Try +50 g rice/pasta or +100 g lentils/chickpeas for fiber.'
-  if (heavy > hungry) return 'A bit heavy. Try −50 g carbs or swap part of them for veg.'
+  const avg = fills.reduce<number>((a, f) => a + f, 0) / fills.length
+  if (avg <= -1) return 'Left us hungry. Try +50 g rice/pasta or +100 g lentils/chickpeas for fiber.'
+  if (avg >= 1) return 'A bit heavy. Try −50 g carbs or swap part of them for veg.'
   return 'Portion feels right.'
 }
-
-export const scoreOf = (r: Rating) => (r.taste + r.again + r.effort) / 3
 
 export type FeedType = 'all' | MealKind
 export type FeedSeg = 'all' | 'top' | 'quick' | 'cheap'

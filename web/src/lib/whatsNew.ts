@@ -4,6 +4,14 @@ export type Release = { id: string; notes: string[] }
 
 export const RELEASES: Release[] = [
   {
+    id: '2026-10-24-rating-sliders',
+    notes: [
+      'Worth the effort and How filling are sliders now, from "not really" to "totally" with meh in the middle.',
+      'The stars on a meal are its average taste.',
+      'Snacks only ask how they tasted and if you\'d have them again.',
+    ],
+  },
+  {
     id: '2026-10-24-discard-amounts',
     notes: [
       'Changed your mind about a photo? Tap ✕ on the banner or the bin at the top, while it\'s analyzing or after. Undo brings it back.',

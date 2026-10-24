@@ -1,7 +1,9 @@
-import type { Fill, Rating } from '../api/types'
+import type { Rating } from '../api/types'
+import { EFFORT_STEPS, FILL_STEPS } from '../lib/meals'
+import { StepSlider } from '../ui/Slider'
 import { Stars } from '../ui/Stars'
 
-export const DEFAULT_RATING: Rating = { taste: 4, again: 3, effort: 3, fill: 'right' }
+export const DEFAULT_RATING: Rating = { taste: 4, again: 3, effort: 0, fill: 0 }
 
 function Choice<T extends string | number>({ label, value, options, onChange }: {
   label: string
@@ -20,8 +22,9 @@ function Choice<T extends string | number>({ label, value, options, onChange }: 
   )
 }
 
-/** Taste, make again, worth the effort, how filling: shared by the rate sheet and the waiting screen. */
-export function RatingFields({ draft, set }: { draft: Rating; set: (patch: Partial<Rating>) => void }) {
+/** Taste, make again, worth the effort, how filling: shared by the rate sheet and the waiting screen.
+ *  A snack isn't cooked: taste and "have it again?" only. */
+export function RatingFields({ draft, set, snack = false }: { draft: Rating; set: (patch: Partial<Rating>) => void; snack?: boolean }) {
   return (
     <>
       <h2>Taste</h2>
@@ -30,16 +33,18 @@ export function RatingFields({ draft, set }: { draft: Rating; set: (patch: Parti
         <b>{draft.taste}</b>
       </div>
       <div className="sub" style={{ marginTop: 4 }}>Tap the left half of a star for a half point</div>
-      <h2>Make it again?</h2>
-      <Choice label="Make it again" value={draft.again} onChange={(again) => set({ again })}
+      <h2>{snack ? 'Have it again?' : 'Make it again?'}</h2>
+      <Choice label={snack ? 'Have it again' : 'Make it again'} value={draft.again} onChange={(again) => set({ again })}
         options={[[5, 'Yes'], [3, 'Maybe'], [1, 'No']]} />
-      <h2>Worth the effort?</h2>
-      <Choice label="Worth the effort" value={draft.effort} onChange={(effort) => set({ effort })}
-        options={[[5, 'Totally'], [3, 'Meh'], [1, 'Not really']]} />
-      <h2>How filling was it?</h2>
-      <Choice<Fill> label="How filling" value={draft.fill} onChange={(fill) => set({ fill })}
-        options={[['hungry', 'Left us hungry'], ['right', 'Just right'], ['heavy', 'Too heavy']]} />
-      <div className="sub" style={{ marginTop: 6 }}>Helps us tune carbs and fiber in the recipe.</div>
+      {!snack && (
+        <>
+          <h2>Worth the effort?</h2>
+          <StepSlider label="Worth the effort" value={draft.effort ?? 0} steps={EFFORT_STEPS} onChange={(effort) => set({ effort })} />
+          <h2>How filling was it?</h2>
+          <StepSlider label="How filling" value={draft.fill ?? 0} steps={FILL_STEPS} onChange={(fill) => set({ fill })} />
+          <div className="sub" style={{ marginTop: 6 }}>Helps us tune carbs and fiber in the recipe.</div>
+        </>
+      )}
     </>
   )
 }

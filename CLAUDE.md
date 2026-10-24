@@ -78,4 +78,4 @@ Deferred (not now): M3 second comparison, refresh tokens + login rate limit, Ope
 - Warm, food-forward look; one accent color; light + dark via CSS tokens on `:root`.
 - Mobile first: 390×844 target, tap targets ≥44px, no horizontal scroll.
 - Navigation: tabs Home / Meals / [+ Add food] / Plan / Ingredients (Fridge + Pantry sections); Insights + Settings via Home header.
-- Ratings: 3 axes per person — Taste (1–5), Make again (yes/maybe/no), Worth the effort (yes/meh/no).
+- Ratings per person — Taste (0.5–5 stars; the stars shown are the average taste), Make again (yes/maybe/no), Worth the effort + How filling (7-step sliders, −3…+3). Snacks: taste + "Have it again?" only (decision 0026).

@@ -50,6 +50,6 @@ class AnalysisRating(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("app_user.id", ondelete="CASCADE"))
     taste: Mapped[Decimal] = mapped_column(Numeric(2, 1))
     again: Mapped[int] = mapped_column(SmallInteger)
-    effort: Mapped[int] = mapped_column(SmallInteger)
-    fill: Mapped[str] = mapped_column(String(10), default="right")
+    effort: Mapped[int | None] = mapped_column(SmallInteger)  # −3…+3, empty for snacks
+    fill: Mapped[int | None] = mapped_column(SmallInteger)
     note: Mapped[str | None] = mapped_column(Text)

@@ -166,7 +166,7 @@ async def test_delete_removes_the_meal_and_its_log_entries(client, auth, seeded,
     )
     await client.put(
         f"/api/meals/{meal['id']}/rating",
-        json={"taste": 4, "again": 5, "effort": 5},
+        json={"taste": 4, "again": 5, "effort": 3},
         headers=other,
     )
     assert (await client.get(f"/api/meals/{meal['id']}", headers=auth)).json()["logged_count"] == 2
@@ -198,7 +198,7 @@ async def test_other_households_cannot_edit_or_delete(client, auth, seeded, queu
 async def test_remove_my_rating_only(client, auth, seeded, queue):
     other = await partner(client, auth)
     meal = await post(client, auth, seeded)
-    rating = {"taste": 4, "again": 5, "effort": 3}
+    rating = {"taste": 4, "again": 5, "effort": 0}
     for headers in (auth, other):
         await client.put(f"/api/meals/{meal['id']}/rating", json=rating, headers=headers)
 

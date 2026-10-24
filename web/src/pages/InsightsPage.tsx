@@ -148,7 +148,7 @@ function Overview({ members, selected, meId, onWho, meals }: {
             {top.map((m) => (
               <Link key={m.id} to={`/meals/${m.id}`} className="row" style={{ textDecoration: 'none' }}>
                 <Photo url={m.photo_url} emoji={m.emoji} seed={m.id} alt="" style={{ width: 56, height: 56, aspectRatio: '1', fontSize: 28, flex: 'none' }} />
-                <div className="sp"><h3>{m.name}</h3><div className="sub"><StarNum value={m.score ?? 0} /></div></div>
+                <div className="sp"><h3>{m.name}</h3><div className="sub"><StarNum value={m.taste ?? 0} /></div></div>
               </Link>
             ))}
           </div>

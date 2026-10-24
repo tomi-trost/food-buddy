@@ -135,13 +135,13 @@ function SlotRow({ slot, onClick }: { slot: PlanSlot; onClick: () => void }) {
         {slot.mode === 'cook' && m && (
           <div className="sub" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <Icon name="flame" size={12} /> Cook · {m.prep_minutes} of {slot.minutes} min
-            {m.score !== null && <> · <StarNum value={m.score} /></>}
+            {m.taste !== null && <> · <StarNum value={m.taste} /></>}
           </div>
         )}
         {slot.mode === 'prep' && (
           <div className="sub" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <Icon name="box" size={12} /> Meal prep · no cooking
-            {m?.score != null && <> · <StarNum value={m.score} /></>}
+            {m?.taste != null && <> · <StarNum value={m.taste} /></>}
           </div>
         )}
       </div>

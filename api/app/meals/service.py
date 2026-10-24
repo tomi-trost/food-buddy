@@ -30,7 +30,7 @@ from app.meals.undo import ran_out_of, stock_of, undo_record, undo_until
 from app.nutrition.macros import Nutrients, total
 from app.nutrition.models import Ingredient
 from app.nutrition.schemas import IngredientOut, NutrientsOut
-from app.ratings.models import Rating, meal_score
+from app.ratings.models import Rating, is_snack_only, meal_score, meal_taste
 
 
 def recipe_nutrients(meal: Meal) -> Nutrients:
@@ -189,6 +189,7 @@ async def meal_out(session: AsyncSession, user: User, meal: Meal) -> MealOut:
         nutrients_overridden=meal.nutrients_override is not None,
         logged_count=logged or 0,
         score=meal_score(ratings),
+        taste=meal_taste(ratings),
         cooked_count=stats[0],
         last_cooked=stats[1],
         ratings=[
@@ -239,6 +240,7 @@ async def meal_cards(session: AsyncSession, user: User) -> list[MealCard]:
                 portions=m.portions,
                 cost=effective_cost(m),
                 score=meal_score(rs),
+                taste=meal_taste(rs),
                 cooked_count=count,
                 last_cooked=last,
                 rated_by_me=any(r.user_id == user.id for r in rs),
@@ -250,6 +252,16 @@ async def meal_cards(session: AsyncSession, user: User) -> list[MealCard]:
     return cards
 
 
+def apply_rating(rating, body: RatingIn, *, snack: bool) -> None:
+    """Meals default the sliders to the middle; snacks aren't cooked, so they have none."""
+    rating.taste, rating.again, rating.note = body.taste, body.again, body.note
+    if snack:
+        rating.effort = rating.fill = None
+    else:
+        rating.effort = 0 if body.effort is None else body.effort
+        rating.fill = 0 if body.fill is None else body.fill
+
+
 async def save_rating(session: AsyncSession, user: User, meal: Meal, body: RatingIn) -> None:
     rating = await session.scalar(
         select(Rating).where(Rating.meal_id == meal.id, Rating.user_id == user.id)
@@ -257,8 +269,7 @@ async def save_rating(session: AsyncSession, user: User, meal: Meal, body: Ratin
     if rating is None:
         rating = Rating(meal_id=meal.id, user_id=user.id)
         session.add(rating)
-    rating.taste, rating.again, rating.effort = body.taste, body.again, body.effort
-    rating.fill, rating.note = body.fill, body.note
+    apply_rating(rating, body, snack=is_snack_only(meal.types))
     await session.commit()
 
 
@@ -368,7 +379,7 @@ async def post_meal(session: AsyncSession, user: User, body: MealCreate) -> Meal
     )
     if analysis:
         close(analysis, meal_id=meal.id)
-        await move_early_ratings(session, analysis, meal.id)
+        await move_early_ratings(session, analysis, meal.id, snack=is_snack_only(meal.types))
     await session.commit()
     return meal
 

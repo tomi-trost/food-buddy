@@ -14,6 +14,7 @@ from app.auth.deps import CurrentUser, Session
 from app.auth.models import User
 from app.config import get_settings
 from app.meals.schemas import RatingIn
+from app.meals.service import apply_rating
 
 router = APIRouter(prefix="/analyses", tags=["analysis"])
 
@@ -173,8 +174,7 @@ async def rate_early(
     if rating is None:
         rating = AnalysisRating(job_id=job.id, user_id=user.id)
         session.add(rating)
-    rating.taste, rating.again, rating.effort = body.taste, body.again, body.effort
-    rating.fill, rating.note = body.fill, body.note
+    apply_rating(rating, body, snack=job.meal_type == "snack")
     await session.commit()
     return await job_out(session, user, job)
 

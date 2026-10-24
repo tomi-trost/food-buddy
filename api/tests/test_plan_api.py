@@ -39,9 +39,7 @@ async def make_meal(session, name, types, minutes, portions, items, tags=(), tas
     session.add(meal)
     await session.flush()
     if taste is not None:
-        session.add(
-            Rating(meal_id=meal.id, user_id=1, taste=taste, again=5, effort=5, fill="right")
-        )
+        session.add(Rating(meal_id=meal.id, user_id=1, taste=taste, again=5, effort=3, fill=0))
     await session.commit()
     return meal.id
 

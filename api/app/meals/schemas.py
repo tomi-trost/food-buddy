@@ -8,7 +8,10 @@ from app.snacks.schemas import NutrientsIn, SnackKind
 
 MealType = Literal["breakfast", "lunch", "dinner", "snack"]  # snacks are meals too (0025)
 MealPer = Literal["portion", "piece", "100g", "100ml"]  # how a snack is logged
-Fill = Literal["hungry", "right", "heavy"]
+
+
+def _slider():  # 7 steps, −3…+3, 0 = meh / just right
+    return Field(default=None, ge=-3, le=3)
 
 
 def _half_steps(v: float) -> float:
@@ -146,8 +149,8 @@ class MealPatch(BaseModel):
 class RatingIn(BaseModel):
     taste: float = Field(ge=0.5, le=5)
     again: Literal[1, 3, 5]
-    effort: Literal[1, 3, 5]
-    fill: Fill = "right"
+    effort: int | None = _slider()  # worth the effort: not really … totally; empty for snacks
+    fill: int | None = _slider()  # how filling: left us hungry … too heavy; empty for snacks
     note: str | None = Field(default=None, max_length=500)
 
     _taste = field_validator("taste")(_half_steps)
@@ -166,7 +169,8 @@ class MealIngredientOut(BaseModel):
 
 
 class MealStats(BaseModel):
-    score: float | None
+    score: float | None  # sorting and the menu
+    taste: float | None  # the stars: average taste
     cooked_count: int
     last_cooked: date | None
 

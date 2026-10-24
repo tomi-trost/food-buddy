@@ -47,7 +47,7 @@ function RateForm({ meal, meId, onClose }: { meal: Meal; meId: number; onClose: 
   return (
     <>
       <h1>Rate {meal.name}</h1>
-      <RatingFields draft={draft} set={set} />
+      <RatingFields draft={draft} set={set} snack={meal.types.length === 1 && meal.types[0] === 'snack'} />
       {error && <p className="error" role="alert">{error.message}</p>}
       <button className="btn" style={{ marginTop: 20 }} disabled={save.isPending || remove.isPending} onClick={() => save.mutate()}>
         Save rating

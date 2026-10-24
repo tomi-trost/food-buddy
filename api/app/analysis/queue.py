@@ -44,7 +44,9 @@ def close(job: AnalysisJob, meal_id: int | None = None) -> None:
     job.meal_id = meal_id
 
 
-async def move_early_ratings(session: AsyncSession, job: AnalysisJob, meal_id: int) -> None:
+async def move_early_ratings(
+    session: AsyncSession, job: AnalysisJob, meal_id: int, *, snack: bool = False
+) -> None:
     early = await session.scalars(select(AnalysisRating).where(AnalysisRating.job_id == job.id))
     for r in early:
         session.add(
@@ -53,8 +55,8 @@ async def move_early_ratings(session: AsyncSession, job: AnalysisJob, meal_id: i
                 user_id=r.user_id,
                 taste=r.taste,
                 again=r.again,
-                effort=r.effort,
-                fill=r.fill,
+                effort=None if snack else (r.effort or 0),  # rated as a meal, posted as a snack
+                fill=None if snack else (r.fill or 0),
                 note=r.note,
             )
         )

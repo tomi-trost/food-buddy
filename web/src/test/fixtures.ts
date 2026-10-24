@@ -61,10 +61,10 @@ export const meal = (over: Partial<Meal> = {}): Meal => ({
   nutrients_overridden: false, logged_count: 1,
   snack_kind: null, per: 'portion', piece_g: null, is_product: false, per_unit: n(551.7, 51.9, 56, 9.9, 0.8, 0), portion_g: 350,
   ingredients: [{ ingredient: ING.rice, grams: 400 }, { ingredient: ING.chicken, grams: 300 }],
-  score: null, cooked_count: 1, last_cooked: '2026-10-01',
+  score: null, taste: null, cooked_count: 1, last_cooked: '2026-10-01',
   ratings: [
     { user_id: 1, name: 'Tomi', color: '#b9532f', rating: null },
-    { user_id: 2, name: 'Partner', color: '#5d8582', rating: { taste: 4.5, again: 5, effort: 3, fill: 'hungry' } },
+    { user_id: 2, name: 'Partner', color: '#5d8582', rating: { taste: 4.5, again: 5, effort: 0, fill: -3 } },
   ],
   ...over,
 })
@@ -72,7 +72,7 @@ export const meal = (over: Partial<Meal> = {}): Meal => ({
 export const card = (over: Partial<MealCard> = {}): MealCard => ({
   id: 1, name: 'Meal', emoji: '🍽️', photo_url: null, types: ['dinner'], tags: [], prep_minutes: 30,
   portions: 2, cost: 6, rated_by_me: false, kcal_per_portion: 500, created_at: '2026-10-01T12:00:00Z',
-  score: null, cooked_count: 1, last_cooked: '2026-10-01',
+  score: null, taste: null, cooked_count: 1, last_cooked: '2026-10-01',
   snack_kind: null, per: 'portion', piece_g: null, is_product: false, per_unit: n(500, 0, 0, 0, 0, 0), portion_g: 300,
   ...over,
 })
@@ -81,9 +81,9 @@ const slotCard = (id: number, name: string, emoji: string, over: Partial<MealCar
   card({ id, name, emoji, ...over })
 
 export const plan = (over: Partial<Plan> = {}): Plan => {
-  const toast = slotCard(1, 'Avocado egg toast', '🥑', { types: ['breakfast'], prep_minutes: 10, score: 4.5 })
-  const bowl = slotCard(2, 'Chicken rice bowl', '🍚', { types: ['lunch'], prep_minutes: 20, score: 4 })
-  const stirfry = slotCard(3, 'Chicken stir-fry', '🍗', { types: ['dinner'], prep_minutes: 25, score: 4.8 })
+  const toast = slotCard(1, 'Avocado egg toast', '🥑', { types: ['breakfast'], prep_minutes: 10, score: 4.5, taste: 4.5 })
+  const bowl = slotCard(2, 'Chicken rice bowl', '🍚', { types: ['lunch'], prep_minutes: 20, score: 4, taste: 4 })
+  const stirfry = slotCard(3, 'Chicken stir-fry', '🍗', { types: ['dinner'], prep_minutes: 25, score: 4.8, taste: 5 })
   return {
     id: 1, week_start: '2026-10-05', status: 'draft',
     wizard: Array.from({ length: 7 }, () => [

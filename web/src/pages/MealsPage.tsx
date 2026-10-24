@@ -70,7 +70,7 @@ export function MealsPage() {
               <div style={{ position: 'relative' }}>
                 <Photo url={m.photo_url} emoji={m.emoji} seed={m.id} alt={m.name} />
                 <span className="badge" style={{ position: 'absolute', top: 8, right: 8 }}>
-                  {m.score !== null ? <><Icon name="star" size={12} fill /> {Math.round(m.score * 10) / 10}</> : 'unrated'}
+                  {m.taste !== null ? <><Icon name="star" size={12} fill /> {Math.round(m.taste * 10) / 10}</> : 'unrated'}
                 </span>
                 {!snacks && (
                   <span className="badge" style={{ position: 'absolute', top: 8, left: 8 }}>

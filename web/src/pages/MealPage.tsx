@@ -4,7 +4,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { api } from '../api/client'
 import { useMe } from '../api/hooks'
 import { MEAL_TYPE_LABEL, todayISO } from '../lib/dates'
-import { ago, againLabel, FILL_LABEL, fillTip } from '../lib/meals'
+import { ago, againLabel, EFFORT_STEPS, FILL_STEPS, fillTip, stepLabel } from '../lib/meals'
 import { AddToPlanSheet } from '../meals/AddToPlanSheet'
 import { CookSheet } from '../meals/CookSheet'
 import { RateSheet } from '../meals/RateSheet'
@@ -76,12 +76,12 @@ export function MealPage() {
             {!m.is_product && <span className="chip"><Icon name="clock" size={14} /> {m.prep_minutes} min</span>}
             {!m.is_product && <span className="chip">{m.cost.toFixed(2)} € total · {(m.cost / m.portions).toFixed(2)} € / portion</span>}
             {!m.is_product && <span className="chip"><Icon name="users" size={14} /> {m.portions} portions</span>}
-            {m.score !== null && <span className="chip"><StarNum value={m.score} /></span>}
+            {m.taste !== null && <span className="chip"><StarNum value={m.taste} /></span>}
           </div>
           <div className="macro" style={{ margin: '14px 0 0', '--n': 3 } as CSSProperties} aria-label="Stats">
             <div><b>{m.cooked_count}×</b><small>{snackOnly ? 'eaten' : 'cooked'}</small></div>
             <div><b>{ago(m.last_cooked, today)}</b><small>{snackOnly ? 'last eaten' : 'last cooked'}</small></div>
-            <div><b>{m.score !== null ? Math.round(m.score * 10) / 10 : '–'}</b><small>avg rating</small></div>
+            <div><b>{m.taste !== null ? Math.round(m.taste * 10) / 10 : '–'}</b><small>avg taste</small></div>
           </div>
           {(() => {
             const mine = m.ratings.find((r) => r.user_id === me.id)?.rating
@@ -153,7 +153,7 @@ export function MealPage() {
                 <div className="card">
                   <h3>How filling</h3>
                   <div className="sub" style={{ margin: '4px 0' }}>
-                    {m.ratings.flatMap((r) => (r.rating ? [FILL_LABEL[r.rating.fill]] : [])).join(' · ')}
+                    {m.ratings.flatMap((r) => (r.rating && r.rating.fill !== null ? [stepLabel(FILL_STEPS, r.rating.fill)] : [])).join(' · ')}
                   </div>
                   <div className="row" style={{ gap: 6, marginTop: 6 }}>
                     <Icon name="leaf" size={16} /><span>{fillTip(m.ratings.map((r) => r.rating))}</span>
@@ -177,7 +177,9 @@ export function MealPage() {
                       <Stars value={r.rating.taste} size={18} /><span className="sub">{r.rating.taste}</span>
                     </div>
                     <div className="sub">
-                      Make again: {againLabel(r.rating.again)} · Worth the effort: {againLabel(r.rating.effort)} · Filling: {FILL_LABEL[r.rating.fill]}
+                      {r.rating.effort === null || r.rating.fill === null
+                        ? <>Have it again: {againLabel(r.rating.again)}</>
+                        : <>Make again: {againLabel(r.rating.again)} · Worth the effort: {stepLabel(EFFORT_STEPS, r.rating.effort).toLowerCase()} · Filling: {stepLabel(FILL_STEPS, r.rating.fill).toLowerCase()}</>}
                     </div>
                   </>
                 ) : (

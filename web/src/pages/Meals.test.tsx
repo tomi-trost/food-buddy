@@ -12,14 +12,14 @@ beforeEach(() => tokenStore.set('tok'))
 describe('MealsPage', () => {
   it('shows cards, filters and cycles the sort', async () => {
     mockFetch(() => jsonResponse([
-      card({ id: 1, name: 'Oats', types: ['breakfast'], score: 4.6, cooked_count: 9 }),
+      card({ id: 1, name: 'Oats', types: ['breakfast'], score: 4.2, taste: 4.6, cooked_count: 9 }),
       card({ id: 2, name: 'Curry', types: ['dinner'], score: null, cost: 16, portions: 4 }),
     ]))
     renderAt('/meals', <Route path="/meals" element={<MealsPage />} />)
 
     const oats = await screen.findByRole('link', { name: /Oats/ })
     expect(oats).toHaveAttribute('href', '/meals/1')
-    expect(within(oats).getByText('4.6')).toBeInTheDocument()
+    expect(within(oats).getByText('4.6')).toBeInTheDocument() // the stars: taste, not the score
     expect(within(oats).getByText('Cooked 9×')).toBeInTheDocument()
     expect(within(screen.getByRole('link', { name: /Curry/ })).getByText('unrated')).toBeInTheDocument()
     expect(within(screen.getByRole('link', { name: /Curry/ })).getByText('30 min · 4.00 €/portion')).toBeInTheDocument()
@@ -84,7 +84,7 @@ describe('MealPage', () => {
     expect(within(screen.getByLabelText('Your rating')).getByText('Not rated yet')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Ratings' }))
     expect(screen.getAllByText('Not rated yet')).toHaveLength(2) // my card on top and in the tab
-    expect(screen.getByText(/Make again: yes · Worth the effort: maybe · Filling: left us hungry/)).toBeInTheDocument()
+    expect(screen.getByText(/Make again: yes · Worth the effort: meh · Filling: left us hungry/)).toBeInTheDocument()
   })
 
   it('opens the rating sheet after posting and saves half stars', async () => {
@@ -94,15 +94,45 @@ describe('MealPage', () => {
     const sheet = await screen.findByRole('dialog', { name: 'Rate meal' })
     fireEvent.click(within(sheet).getByLabelText('3.5 stars'))
     fireEvent.click(within(sheet).getByRole('button', { name: 'No' }))
-    fireEvent.click(within(sheet).getByRole('button', { name: 'Too heavy' }))
+    const effort = within(sheet).getByRole('slider', { name: 'Worth the effort' })
+    expect(effort).toHaveValue('0')
+    expect(effort).toHaveAttribute('aria-valuetext', 'Meh')
+    fireEvent.change(effort, { target: { value: '2' } })
+    expect(effort).toHaveAttribute('aria-valuetext', 'Mostly')
+    fireEvent.change(within(sheet).getByRole('slider', { name: 'How filling' }), { target: { value: '3' } })
     fireEvent.click(within(sheet).getByRole('button', { name: 'Save rating' }))
     await screen.findByText('Rating saved')
-    expect(saved).toEqual({ taste: 3.5, again: 1, effort: 3, fill: 'heavy' })
+    expect(saved).toEqual({ taste: 3.5, again: 1, effort: 2, fill: 3 })
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
+  it('shows the average taste, and rates a snack on taste and "have it again" only', async () => {
+    const snack = meal({
+      types: ['snack'], snack_kind: 'sweet', score: 4.25, taste: 4.5,
+      ratings: [{ user_id: 2, name: 'Partner', color: '#5d8582', rating: { taste: 4.5, again: 5, effort: null, fill: null } }, { user_id: 1, name: 'Tomi', color: '#b9532f', rating: null }],
+    })
+    let saved: unknown
+    mockFetch((url, init) => {
+      if (url === '/api/auth/me') return jsonResponse(me())
+      if (init?.method === 'PUT') saved = JSON.parse(String(init.body))
+      return jsonResponse(snack)
+    })
+    renderMeal()
+    expect(await screen.findByLabelText('Stats')).toHaveTextContent('4.5avg taste')
+    fireEvent.click(screen.getByRole('button', { name: 'Ratings' }))
+    expect(screen.getByText('Have it again: yes')).toBeInTheDocument()
+
+    fireEvent.click(within(screen.getByLabelText('Your rating')).getByRole('button', { name: 'Rate' }))
+    const sheet = screen.getByRole('dialog', { name: 'Rate meal' })
+    expect(within(sheet).queryByRole('slider')).not.toBeInTheDocument()
+    expect(within(sheet).queryByText('How filling was it?')).not.toBeInTheDocument()
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Yes' }))
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Save rating' }))
+    await vi.waitFor(() => expect(saved).toMatchObject({ taste: 4, again: 5 }))
+  })
+
   it('removes my rating', async () => {
-    const rated = meal({ ratings: [{ user_id: 1, name: 'Tomi', color: '#b9532f', rating: { taste: 4, again: 5, effort: 5, fill: 'right' } }, meal().ratings[1]] })
+    const rated = meal({ ratings: [{ user_id: 1, name: 'Tomi', color: '#b9532f', rating: { taste: 4, again: 5, effort: 3, fill: 0 } }, meal().ratings[1]] })
     const fetch = mockFetch((url, init) => {
       if (url === '/api/auth/me') return jsonResponse(me())
       if (init?.method === 'DELETE') return jsonResponse(meal())

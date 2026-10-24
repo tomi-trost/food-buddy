@@ -33,17 +33,19 @@ export type AnalysisItem = {
   nutrients: Nutrients | null
 }
 
-export type Fill = 'hungry' | 'right' | 'heavy'
+/** A 7-step slider: −3…+3, 0 = meh / just right. */
+export type Slider = -3 | -2 | -1 | 0 | 1 | 2 | 3
 
 export type Rating = {
   taste: number // 0.5–5 in half steps
   again: 1 | 3 | 5
-  effort: 1 | 3 | 5
-  fill: Fill
+  effort: Slider | null // worth the effort: not really … totally; null for snacks (not cooked)
+  fill: Slider | null // how filling: left us hungry … too heavy; null for snacks
   note?: string | null
 }
 
-export type MealStats = { score: number | null; cooked_count: number; last_cooked: string | null }
+/** score: taste, again and effort, for sorting and the menu; taste: what the stars show. */
+export type MealStats = { score: number | null; taste: number | null; cooked_count: number; last_cooked: string | null }
 
 /** How a meal is logged as a snack: per portion, per piece of piece_g grams, or per 100 g / ml. */
 export type MealPer = 'portion' | 'piece' | '100g' | '100ml'

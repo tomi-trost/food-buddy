@@ -81,7 +81,7 @@ async def test_insights_is_household_scoped_and_validated(client, auth, seeded, 
 
 async def test_insights_count_meals_rated_per_member(client, auth, seeded, queue):
     meal = (await client.post("/api/meals", json=await body(seeded), headers=auth)).json()
-    rating = {"taste": 4, "again": 5, "effort": 5, "fill": "right"}
+    rating = {"taste": 4, "again": 5, "effort": 3, "fill": 0}
     await client.put(f"/api/meals/{meal['id']}/rating", json=rating, headers=auth)
     data = (await client.get(f"/api/insights?end={TODAY.isoformat()}", headers=auth)).json()
     assert data["members"][0]["meals_rated"] == 1

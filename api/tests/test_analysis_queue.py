@@ -6,7 +6,7 @@ from tests.fakes import vision_transport
 from tests.test_analysis import process
 from tests.test_meals import body
 
-RATING = {"taste": 4.5, "again": 5, "effort": 3, "fill": "right"}
+RATING = {"taste": 4.5, "again": 5, "effort": 0, "fill": 0}
 SNACK_IN = {
     "eaten_on": "2026-10-04",
     "name": "Cookie",

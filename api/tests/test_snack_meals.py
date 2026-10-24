@@ -11,9 +11,10 @@ from app.meals.models import CookLog, Meal
 from app.nutrition.matching import match_ingredient
 from app.nutrition.models import Ingredient
 from app.plan.generator import Candidate, generate
-from tests.conftest import ingredient_ids, register
-from tests.test_analysis_queue import partner_of
+from tests.conftest import ingredient_ids, jpeg_bytes, register
+from tests.test_analysis_queue import finish, partner_of
 from tests.test_meals import TODAY, stock
+from tests.test_meals import body as meal_body
 from tests.test_snacks import COOKIE, analyze, snack
 
 pytestmark = pytest.mark.usefixtures("queue")
@@ -353,11 +354,52 @@ async def test_partner_gets_you_too_for_a_snack_and_it_logs_as_a_snack(client, a
     )
 
 
-async def test_snacks_are_rated_like_meals(client, auth, seeded):
+async def test_snacks_are_rated_on_taste_and_again_only(client, auth, seeded):
     meal = await pudding(client, auth, seeded)
-    rating = {"taste": 4.5, "again": 5, "effort": 5}
+    rating = {"taste": 4.5, "again": 3, "effort": 3, "fill": 2}  # not cooked: sliders dropped
     response = await client.put(f"/api/meals/{meal['id']}/rating", json=rating, headers=auth)
-    assert response.status_code == 200 and response.json()["score"] is not None
+    assert response.status_code == 200, response.text
+    out = response.json()
+    mine = out["ratings"][0]["rating"]
+    assert (mine["effort"], mine["fill"]) == (None, None)
+    assert out["score"] == pytest.approx((4.5 + 3) / 2) and out["taste"] == 4.5
+
+
+async def test_early_snack_rating_has_no_sliders_and_a_meal_posted_from_it_gets_the_middle(
+    client, auth, seeded
+):
+    files = {"photo": ("p.jpg", jpeg_bytes(), "image/jpeg")}
+    ids = []
+    for meal_type in ("snack", "lunch"):
+        data = {"kind": "meal", "meal_type": meal_type}
+        job = (await client.post("/api/analyses", files=files, data=data, headers=auth)).json()
+        rated = await client.put(
+            f"/api/analyses/{job['id']}/rating",
+            json={"taste": 4, "again": 5, "effort": -3, "fill": 3},
+            headers=auth,
+        )
+        ids.append(job["id"])
+        assert rated.status_code == 200, rated.text
+    snack, lunch = ids
+    early = (await client.get(f"/api/analyses/{snack}", headers=auth)).json()["my_rating"]
+    assert (early["effort"], early["fill"]) == (None, None)
+    # the snack photo checked as a lunch after all: rated like a meal, sliders in the middle
+    await finish(seeded, snack)
+    posted = await client.post(
+        "/api/meals", json=await meal_body(seeded, analysis_id=snack), headers=auth
+    )
+    meal = (await client.get(f"/api/meals/{posted.json()['id']}", headers=auth)).json()
+    assert (meal["ratings"][0]["rating"]["effort"], meal["ratings"][0]["rating"]["fill"]) == (0, 0)
+    # a lunch photo posted as a snack: the sliders go
+    await finish(seeded, lunch)
+    as_snack = await meal_body(seeded, analysis_id=lunch) | {
+        "meal_type": "snack",
+        "snack_kind": "sweet",
+    }
+    posted = await client.post("/api/meals", json=as_snack, headers=auth)
+    assert posted.status_code == 201, posted.text
+    meal = (await client.get(f"/api/meals/{posted.json()['id']}", headers=auth)).json()
+    assert meal["ratings"][0]["rating"]["effort"] is None
 
 
 async def test_snack_photos_are_analyzed_as_meals_with_the_snack_hint(client, auth, session):

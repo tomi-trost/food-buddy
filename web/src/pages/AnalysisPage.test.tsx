@@ -183,7 +183,7 @@ describe('snap flow', () => {
   })
 })
 
-const RATED = { taste: 4.5, again: 5, effort: 3, fill: 'right' } as const
+const RATED = { taste: 4.5, again: 5, effort: 0, fill: 0 } as const
 const isJob = (url: string) => url === '/api/analyses/5'
 
 async function postFromVerdict() {
@@ -211,7 +211,15 @@ describe('waiting in the background', () => {
     expect(screen.getByRole('button', { name: 'Update rating' })).toBeInTheDocument()
     const [, init] = fetch.mock.calls.find(([url]) => url === '/api/analyses/5/rating')!
     expect(init!.method).toBe('PUT')
-    expect(JSON.parse(String(init!.body))).toEqual({ taste: 4, again: 5, effort: 3, fill: 'right' })
+    expect(JSON.parse(String(init!.body))).toEqual({ taste: 4, again: 5, effort: 0, fill: 0 })
+  })
+
+  it('rates a snack photo on taste and "have it again" only', async () => {
+    api((url) => (isJob(url) ? jsonResponse(analysisJob({ status: 'running', meal_type: 'snack' })) : undefined))
+    render()
+    const card = await screen.findByRole('region', { name: 'Rate it while you wait' })
+    expect(within(card).getByRole('heading', { name: 'Have it again?' })).toBeInTheDocument()
+    expect(within(card).queryByRole('slider')).not.toBeInTheDocument()
   })
 
   it('shows an earlier rating and lets me leave to check later', async () => {

@@ -125,7 +125,7 @@ function Waiting({ job }: { job: AnalysisJob }) {
         <>
           <section className="card" style={{ marginTop: 12 }} aria-label="Rate it while you wait">
             <h3>{job.my_rating ? 'Your rating' : 'Rate it while you wait'}</h3>
-            <RatingFields draft={draft} set={(patch) => setDraft((d) => ({ ...d, ...patch }))} />
+            <RatingFields draft={draft} set={(patch) => setDraft((d) => ({ ...d, ...patch }))} snack={job.meal_type === 'snack'} />
             <button className="btn" style={{ marginTop: 16 }} disabled={rate.isPending} onClick={() => rate.mutate()}>
               {job.my_rating ? 'Update rating' : 'Save rating'}
             </button>

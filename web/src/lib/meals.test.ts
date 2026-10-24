@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import type { Slider } from '../api/types'
 import { card } from '../test/fixtures'
-import { ago, feed, fillTip, pickable } from './meals'
+import { ago, EFFORT_STEPS, feed, FILL_STEPS, fillTip, pickable, stepLabel } from './meals'
 
 describe('ago', () => {
   it('describes days since a date', () => {
@@ -12,12 +13,20 @@ describe('ago', () => {
 })
 
 describe('fillTip', () => {
-  const r = (fill: 'hungry' | 'right' | 'heavy') => ({ taste: 4, again: 5 as const, effort: 5 as const, fill })
-  it('follows the majority, like the mock', () => {
-    expect(fillTip([r('hungry'), null])).toMatch(/^Left us hungry/)
-    expect(fillTip([r('heavy'), r('right')])).toMatch(/^A bit heavy/)
-    expect(fillTip([r('hungry'), r('heavy')])).toBe('Portion feels right.')
-    expect(fillTip([null, null])).toBeNull()
+  const r = (fill: Slider | null) => ({ taste: 4, again: 5 as const, effort: 0 as const, fill })
+  it('follows the average slider', () => {
+    expect(fillTip([r(-2), null])).toMatch(/^Left us hungry/)
+    expect(fillTip([r(3), r(-1)])).toMatch(/^A bit heavy/) // average +1
+    expect(fillTip([r(-3), r(3)])).toBe('Portion feels right.')
+    expect(fillTip([r(-1), r(0)])).toBe('Portion feels right.') // a bit light only
+    expect(fillTip([null, r(null)])).toBeNull() // nobody rated, or a snack
+  })
+})
+
+describe('slider words', () => {
+  it('names each of the 7 steps with meh / just right in the middle', () => {
+    expect([stepLabel(EFFORT_STEPS, -3), stepLabel(EFFORT_STEPS, 0), stepLabel(EFFORT_STEPS, 3)]).toEqual(['Not really', 'Meh', 'Totally'])
+    expect([stepLabel(FILL_STEPS, -3), stepLabel(FILL_STEPS, 0), stepLabel(FILL_STEPS, 3)]).toEqual(['Left us hungry', 'Just right', 'Too heavy'])
   })
 })
 

@@ -23,7 +23,7 @@ describe('banner', () => {
   it('invites rating while my meal is analyzing, until I have rated', () => {
     const b = banner([analysisJob({ status: 'running' })], ME)!
     expect(b).toMatchObject({ title: 'Analyzing your meal…', action: 'Rate it', href: '/analysis/5', busy: true, more: 0 })
-    const rated = analysisJob({ my_rating: { taste: 4, again: 5, effort: 3, fill: 'right' } })
+    const rated = analysisJob({ my_rating: { taste: 4, again: 5, effort: 0, fill: 0 } })
     expect(banner([rated], ME)!.action).toBe('Open')
   })
 

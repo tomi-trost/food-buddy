@@ -20,7 +20,7 @@ async def partner_of(client, owner):
     return await register(client, email="partner@example.com", name="Partner", invite_code=code)
 
 
-RATE = {"taste": 4.5, "again": 5, "effort": 3, "fill": "hungry"}
+RATE = {"taste": 4.5, "again": 5, "effort": 0, "fill": -2}
 
 
 async def test_feed_lists_household_meals_with_stats(client, auth, seeded, queue):
@@ -52,13 +52,14 @@ async def test_rating_upserts_and_scores_like_the_mock(client, auth, seeded, que
 
     await client.put(
         f"/api/meals/{meal['id']}/rating",
-        json={"taste": 2.5, "again": 1, "effort": 3, "fill": "right"},
+        json={"taste": 2.5, "again": 1, "effort": 0, "fill": 0},
         headers=partner,
     )
     # edit own rating: still one rating per person
-    edited = {"taste": 5, "again": 5, "effort": 5, "fill": "right", "note": "best one"}
+    edited = {"taste": 5, "again": 5, "effort": 3, "fill": 0, "note": "best one"}
     detail = (await client.put(f"/api/meals/{meal['id']}/rating", json=edited, headers=auth)).json()
     assert detail["score"] == pytest.approx((5 + (2.5 + 1 + 3) / 3) / 2)
+    assert detail["taste"] == pytest.approx((5 + 2.5) / 2)  # the stars: taste only
     assert {r["name"]: r["rating"]["taste"] for r in detail["ratings"]} == {
         "Tomi": 5,
         "Partner": 2.5,
@@ -67,16 +68,35 @@ async def test_rating_upserts_and_scores_like_the_mock(client, auth, seeded, que
     card = (await client.get("/api/meals", headers=partner)).json()[0]
     assert card["rated_by_me"] is True
     assert card["score"] == pytest.approx(detail["score"])
+    assert card["taste"] == pytest.approx(3.75)
+
+
+async def test_sliders_map_onto_the_score_and_default_to_the_middle(client, auth, seeded, queue):
+    meal = await post(client, auth, seeded)
+    url = f"/api/meals/{meal['id']}/rating"
+    rated = (await client.put(url, json={"taste": 5, "again": 5, "effort": 3}, headers=auth)).json()
+    assert rated["score"] == 5 and rated["taste"] == 5  # totally worth it = 5
+    rated = (
+        await client.put(url, json={"taste": 5, "again": 5, "effort": -3}, headers=auth)
+    ).json()
+    assert rated["score"] == pytest.approx((5 + 5 + 1) / 3)  # not really = 1
+    rated = (await client.put(url, json={"taste": 4, "again": 3}, headers=auth)).json()
+    mine = next(r["rating"] for r in rated["ratings"] if r["name"] == "Tomi")
+    assert (mine["effort"], mine["fill"]) == (0, 0)  # meh, just right
+    assert rated["score"] == pytest.approx((4 + 3 + 3) / 3)
 
 
 @pytest.mark.parametrize(
     "bad",
     [
-        {"taste": 4.3, "again": 5, "effort": 5},
-        {"taste": 0, "again": 5, "effort": 5},
-        {"taste": 5.5, "again": 5, "effort": 5},
-        {"taste": 4, "again": 4, "effort": 5},
-        {"taste": 4, "again": 5, "effort": 5, "fill": "stuffed"},
+        {"taste": 4.3, "again": 5, "effort": 3},
+        {"taste": 0, "again": 5, "effort": 3},
+        {"taste": 5.5, "again": 5, "effort": 3},
+        {"taste": 4, "again": 4, "effort": 3},
+        {"taste": 4, "again": 5, "effort": 4},
+        {"taste": 4, "again": 5, "effort": 1.5},
+        {"taste": 4, "again": 5, "fill": -4},
+        {"taste": 4, "again": 5, "fill": "hungry"},
     ],
 )
 async def test_rating_validation(client, auth, seeded, queue, bad):

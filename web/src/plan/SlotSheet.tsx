@@ -42,7 +42,7 @@ export function SlotSheet({ plan, day, type, onClose }: { plan: Plan; day: numbe
                 <Photo url={m.photo_url} emoji={m.emoji} seed={m.id} alt="" style={{ width: 56, height: 56, aspectRatio: '1', fontSize: 28, flex: 'none' }} />
                 <div className="sp">
                   <h3>{m.name}{slot.meal?.id === m.id ? ' ✓' : ''}</h3>
-                  <div className="sub">{m.prep_minutes} min{m.score !== null ? ` · rated ${Math.round(m.score * 10) / 10}` : ' · new'}</div>
+                  <div className="sub">{m.prep_minutes} min{m.taste !== null ? ` · ★ ${Math.round(m.taste * 10) / 10}` : ' · new'}</div>
                 </div>
               </button>
             ))}
