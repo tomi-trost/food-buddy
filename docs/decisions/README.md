@@ -25,5 +25,6 @@
 | [0021](0021-usda-ingredient-catalog.md) | Curated catalog of common foods from USDA and Ciqual | accepted |
 | [0025](0025-snacks-are-meals.md) | Snacks are meals (products as one-ingredient meals) | accepted |
 | [0026](0026-rating-sliders-taste-stars.md) | Effort/filling sliders, stars = taste, snacks rated on taste | accepted |
+| [0027](0027-bought-and-eaten-out.md) | Bought / eaten-out food is logged, not added to our meals | accepted |
 
 Template: Context · Decision · Alternatives · Consequences.

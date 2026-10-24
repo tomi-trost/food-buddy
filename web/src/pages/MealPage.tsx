@@ -1,10 +1,10 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type CSSProperties, useEffect, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { api } from '../api/client'
 import { useMe } from '../api/hooks'
 import { MEAL_TYPE_LABEL, todayISO } from '../lib/dates'
-import { ago, againLabel, EFFORT_STEPS, FILL_STEPS, fillTip, stepLabel } from '../lib/meals'
+import { ago, againLabel, EFFORT_STEPS, FILL_STEPS, fillTip, ORIGIN_LABEL, stepLabel } from '../lib/meals'
 import { AddToPlanSheet } from '../meals/AddToPlanSheet'
 import { CookSheet } from '../meals/CookSheet'
 import { RateSheet } from '../meals/RateSheet'
@@ -15,6 +15,7 @@ import { MacroTiles } from '../ui/Macro'
 import { Photo } from '../ui/Photo'
 import { StarNum, Stars } from '../ui/Stars'
 import { Toggle } from '../ui/Toggle'
+import { useToast } from '../ui/Toast'
 import { formatAmount } from '../lib/units'
 import { KIND_LABEL, perLabel } from '../lib/snacks'
 
@@ -41,13 +42,25 @@ export function MealPage() {
 
   const m = meal.data
   const today = todayISO()
-  const snackOnly = !!m && m.types.every((t) => t === 'snack') // eaten, not cooked; never planned
+  const qc = useQueryClient()
+  const toast = useToast()
+  const keep = useMutation({
+    mutationFn: () => api.patchMeal(Number(id), { listed: true }),
+    onSuccess: (updated) => {
+      qc.setQueryData(['meal', id], updated)
+      qc.invalidateQueries({ queryKey: ['meals'] })
+      toast('Saved to our meals')
+    },
+  })
+  const notCooked = !!m && m.origin !== 'home' // bought / eaten out: no recipe, rated once saved
+  const snackOnly = !!m && (notCooked || m.types.every((t) => t === 'snack')) // eaten, not cooked; never planned
+  const noRecipe = !!m && (m.is_product || notCooked)
   const sections: { value: Tab; label: string }[] = [
-    ...(m?.is_product ? [] : [{ value: 'recipe' as const, label: 'Recipe' }]),
+    ...(noRecipe ? [] : [{ value: 'recipe' as const, label: 'Recipe' }]),
     { value: 'nutrition', label: 'Nutrition' },
-    { value: 'ratings', label: 'Ratings' },
+    ...(m?.listed === false ? [] : [{ value: 'ratings' as const, label: 'Ratings' }]),
   ]
-  const shown: Tab = m?.is_product && tab === 'recipe' ? 'nutrition' : tab
+  const shown: Tab = (noRecipe && tab === 'recipe') || (m?.listed === false && tab === 'ratings') ? 'nutrition' : tab
 
   return (
     <>
@@ -73,9 +86,11 @@ export function MealPage() {
             {m.types.includes('snack') && (
               <span className="chip">{Math.round(m.per_unit.kcal)} kcal / {perLabel(m.per)}{m.per === 'piece' && m.piece_g ? ` (${m.piece_g} g)` : ''}</span>
             )}
-            {!m.is_product && <span className="chip"><Icon name="clock" size={14} /> {m.prep_minutes} min</span>}
-            {!m.is_product && <span className="chip">{m.cost.toFixed(2)} € total · {(m.cost / m.portions).toFixed(2)} € / portion</span>}
-            {!m.is_product && <span className="chip"><Icon name="users" size={14} /> {m.portions} portions</span>}
+            {notCooked && <span className="chip">{ORIGIN_LABEL[m.origin]}{m.place ? ` · ${m.place}` : ''}</span>}
+            {notCooked && !m.cost_estimated && <span className="chip">{m.cost.toFixed(2)} € paid</span>}
+            {!noRecipe && <span className="chip"><Icon name="clock" size={14} /> {m.prep_minutes} min</span>}
+            {!noRecipe && <span className="chip">{m.cost.toFixed(2)} € total · {(m.cost / m.portions).toFixed(2)} € / portion</span>}
+            {!noRecipe && <span className="chip"><Icon name="users" size={14} /> {m.portions} portions</span>}
             {m.taste !== null && <span className="chip"><StarNum value={m.taste} /></span>}
           </div>
           <div className="macro" style={{ margin: '14px 0 0', '--n': 3 } as CSSProperties} aria-label="Stats">
@@ -83,7 +98,17 @@ export function MealPage() {
             <div><b>{ago(m.last_cooked, today)}</b><small>{snackOnly ? 'last eaten' : 'last cooked'}</small></div>
             <div><b>{m.taste !== null ? Math.round(m.taste * 10) / 10 : '–'}</b><small>avg taste</small></div>
           </div>
-          {(() => {
+          {!m.listed && (
+            <div className="card row" style={{ marginTop: 14 }} aria-label="Not in our meals">
+              <div className="sp">
+                <h3>Not in our meals</h3>
+                <div className="sub">Logged for today only. Save it to rate it and log it again later.</div>
+              </div>
+              <button className="btn sm ghost" disabled={keep.isPending} onClick={() => keep.mutate()}>Save to our meals</button>
+            </div>
+          )}
+          {keep.isError && <p className="error" role="alert">{keep.error.message}</p>}
+          {m.listed && (() => {
             const mine = m.ratings.find((r) => r.user_id === me.id)?.rating
             return (
               <div className="card row" style={{ marginTop: 14 }} aria-label="Your rating">

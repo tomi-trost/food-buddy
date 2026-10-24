@@ -4,6 +4,14 @@ export type Release = { id: string; notes: string[] }
 
 export const RELEASES: Release[] = [
   {
+    id: '2026-10-24-bought-ate-out',
+    notes: [
+      'Bought it or ate out? Pick Bought or Ate out when you check a photo: it counts for today without a recipe, rating or a spot in your meals.',
+      'Add the place and price if you like. Insights shows how often you ate out each week or month.',
+      'Liked it? Open it from Today and tap "Save to our meals".',
+    ],
+  },
+  {
     id: '2026-10-24-rating-sliders',
     notes: [
       'Worth the effort and How filling are sliders now, from "not really" to "totally" with meh in the middle.',

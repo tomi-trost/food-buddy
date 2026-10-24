@@ -60,6 +60,7 @@ export const meal = (over: Partial<Meal> = {}): Meal => ({
   per_portion: n(551.7, 51.9, 56, 9.9, 0.8, 0), per_portion_calculated: n(551.7, 51.9, 56, 9.9, 0.8, 0),
   nutrients_overridden: false, logged_count: 1,
   snack_kind: null, per: 'portion', piece_g: null, is_product: false, per_unit: n(551.7, 51.9, 56, 9.9, 0.8, 0), portion_g: 350,
+  origin: 'home', listed: true, place: null,
   ingredients: [{ ingredient: ING.rice, grams: 400 }, { ingredient: ING.chicken, grams: 300 }],
   score: null, taste: null, cooked_count: 1, last_cooked: '2026-10-01',
   ratings: [
@@ -74,6 +75,7 @@ export const card = (over: Partial<MealCard> = {}): MealCard => ({
   portions: 2, cost: 6, rated_by_me: false, kcal_per_portion: 500, created_at: '2026-10-01T12:00:00Z',
   score: null, taste: null, cooked_count: 1, last_cooked: '2026-10-01',
   snack_kind: null, per: 'portion', piece_g: null, is_product: false, per_unit: n(500, 0, 0, 0, 0, 0), portion_g: 300,
+  origin: 'home', listed: true, place: null,
   ...over,
 })
 
@@ -124,7 +126,7 @@ export const shopping = (over: Partial<Shopping> = {}): Shopping => ({
 const WEEK_TO_OCT_4 = ['2026-09-28', '2026-09-29', '2026-09-30', '2026-10-01', '2026-10-02', '2026-10-03', '2026-10-04']
 
 export const memberInsights = (over: Partial<MemberInsights> = {}): MemberInsights => ({
-  user_id: 1, name: 'Tomi', color: '#b9532f', goals: { kcal: 2200, protein: 110, fiber: 30, sugar: 50 }, meals_rated: 3,
+  user_id: 1, name: 'Tomi', color: '#b9532f', goals: { kcal: 2200, protein: 110, fiber: 30, sugar: 50 }, meals_rated: 3, not_cooked: { out: 0, bought: 0, spent: 0 },
   days: Array.from({ length: 7 }, (_, i) => ({
     date: WEEK_TO_OCT_4[i],
     kcal: 2000 + i * 50, protein: 120, carbs: 230, fat: 70, fiber: i % 2 ? 32 : 24, sugar: 30, treats: 0, treat_sugar: 0,

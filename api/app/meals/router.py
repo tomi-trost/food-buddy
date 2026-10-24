@@ -33,6 +33,9 @@ async def list_meals(user: CurrentUser, session: Session) -> list[MealCard]:
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_meal(body: MealCreate, user: CurrentUser, session: Session) -> MealOut:
     meal = await post_meal(session, user, body)
+    if body.origin != "home":  # bought / eaten out: no recipe, nothing to rate
+        await suggest_to_others(session, user, meal, body.meal_type, body.eaten_on)
+        return await meal_out(session, user, meal)
     await generate_recipe.defer_async(meal_id=meal.id)
     if body.eaten:
         await remind_rate.configure(schedule_in={"minutes": RATE_AFTER_MIN}).defer_async(

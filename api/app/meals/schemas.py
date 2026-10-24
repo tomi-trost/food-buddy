@@ -8,6 +8,7 @@ from app.snacks.schemas import NutrientsIn, SnackKind
 
 MealType = Literal["breakfast", "lunch", "dinner", "snack"]  # snacks are meals too (0025)
 MealPer = Literal["portion", "piece", "100g", "100ml"]  # how a snack is logged
+Origin = Literal["home", "bought", "out"]  # cooked by us, bought in a shop, eaten out
 
 
 def _slider():  # 7 steps, −3…+3, 0 = meh / just right
@@ -43,8 +44,22 @@ class MealCreate(BaseModel):
     snack_kind: SnackKind | None = None  # snacks: required
     per: MealPer = "portion"  # snacks: how it's logged from now on
     piece_g: float | None = Field(default=None, gt=0, le=2000)  # per = piece
+    # Bought / eaten out: logged for the nutrition only (no recipe, stock or rating), one
+    # portion, `cost` = what we paid, and not in our meals until saved there
+    origin: Origin = "home"
+    place: str | None = Field(default=None, max_length=80)
 
     _servings = field_validator("servings_eaten")(_half_steps)
+
+    @model_validator(mode="after")
+    def not_cooked(self) -> "MealCreate":
+        if self.origin != "home" and not self.eaten:
+            raise ValueError("Only home-cooked meals can be saved for later")
+        if self.origin != "home" and self.used_up:
+            raise ValueError("Bought or eaten-out food doesn't use up our ingredients")
+        if self.origin == "home" and self.place:
+            raise ValueError("A place is for bought or eaten-out food")
+        return self
 
     @model_validator(mode="after")
     def snack_fields(self) -> "MealCreate":
@@ -124,6 +139,7 @@ class MealPatch(BaseModel):
     per: MealPer | None = None  # with piece_g when it's piece
     piece_g: float | None = Field(default=None, gt=0, le=2000)
     product_per100: NutrientsIn | None = None  # products: the values on the pack
+    listed: bool | None = None  # bought / eaten out: true = save it to our meals
 
     _items = field_validator("items")(_unique_ingredients)
 
@@ -175,6 +191,12 @@ class MealStats(BaseModel):
     last_cooked: date | None
 
 
+class OriginInfo(BaseModel):
+    origin: Origin
+    listed: bool
+    place: str | None
+
+
 class SnackInfo(BaseModel):
     snack_kind: SnackKind | None
     per: MealPer
@@ -184,7 +206,7 @@ class SnackInfo(BaseModel):
     portion_g: float  # grams one portion weighs (whole recipe ÷ portions)
 
 
-class MealCard(MealStats, SnackInfo):
+class MealCard(MealStats, SnackInfo, OriginInfo):
     """Feed item."""
 
     id: int
@@ -201,7 +223,7 @@ class MealCard(MealStats, SnackInfo):
     created_at: datetime
 
 
-class MealOut(MealStats, SnackInfo):
+class MealOut(MealStats, SnackInfo, OriginInfo):
     id: int
     name: str
     emoji: str

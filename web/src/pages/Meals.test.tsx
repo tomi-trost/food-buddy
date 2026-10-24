@@ -131,6 +131,32 @@ describe('MealPage', () => {
     await vi.waitFor(() => expect(saved).toMatchObject({ taste: 4, again: 5 }))
   })
 
+  it('shows eaten-out food as not in our meals and saves it there', async () => {
+    const out = meal({ origin: 'out', listed: false, place: 'Trattoria Rosa', cost: 14.5, cost_estimated: false, portions: 1, prep_minutes: 0, steps: [] })
+    let patched: unknown
+    mockFetch((url, init) => {
+      if (url === '/api/auth/me') return jsonResponse(me())
+      if (init?.method === 'PATCH') {
+        patched = JSON.parse(String(init.body))
+        return jsonResponse({ ...out, listed: true })
+      }
+      return jsonResponse(out)
+    })
+    renderMeal()
+    expect(await screen.findByText('🍽️ Ate out · Trattoria Rosa')).toBeInTheDocument()
+    expect(screen.getByText('14.50 € paid')).toBeInTheDocument()
+    expect(screen.queryByText(/min$/)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Your rating')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Recipe' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Ratings' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Add to plan/ })).not.toBeInTheDocument()
+
+    fireEvent.click(within(screen.getByLabelText('Not in our meals')).getByRole('button', { name: 'Save to our meals' }))
+    expect(await screen.findByText('Saved to our meals')).toBeInTheDocument()
+    expect(patched).toEqual({ listed: true })
+    expect(screen.getByLabelText('Your rating')).toBeInTheDocument() // rate it once it's ours
+  })
+
   it('removes my rating', async () => {
     const rated = meal({ ratings: [{ user_id: 1, name: 'Tomi', color: '#b9532f', rating: { taste: 4, again: 5, effort: 3, fill: 0 } }, meal().ratings[1]] })
     const fetch = mockFetch((url, init) => {

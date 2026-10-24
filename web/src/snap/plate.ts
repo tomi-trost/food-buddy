@@ -1,4 +1,4 @@
-import type { AnalysisResult, Ingredient, MealCreate, MealKind, MealPer, Nutrients, SnackKind } from '../api/types'
+import type { AnalysisResult, Ingredient, MealCreate, MealKind, MealPer, Nutrients, Origin, SnackKind } from '../api/types'
 import { scale, sum } from '../lib/macros'
 
 /** One line on the verdict. Grams are for ONE plate (what the photo shows). */
@@ -73,8 +73,18 @@ export function toMealCreate(args: {
   analysisId: number | null
   perPortion?: Nutrients | null // typed-in values instead of the ingredients'
   snack?: SnackChoice // when mealType is snack
+  origin?: Origin // bought / out: one portion, cost = what we paid, nothing used up
+  place?: string
 }): MealCreate {
   const resolved = args.items.filter((i) => i.ingredient && i.grams > 0)
+  const origin = args.origin ?? 'home'
+  if (origin !== 'home') {
+    return {
+      ...toMealCreate({ ...args, origin: 'home', eaten: true, portions: 1, usedUp: [] }),
+      origin,
+      place: args.place?.trim() || null,
+    }
+  }
   return {
     name: args.name.trim(),
     meal_type: args.mealType,

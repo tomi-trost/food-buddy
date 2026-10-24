@@ -59,7 +59,12 @@ export type SnackInfo = {
   portion_g: number // grams in one portion
 }
 
-export type MealCard = MealStats & SnackInfo & {
+/** Cooked by us, bought in a shop or eaten out. Bought / out food is logged for its nutrition
+ *  only (one portion, cost = what we paid) and isn't in our meals unless saved there (listed). */
+export type Origin = 'home' | 'bought' | 'out'
+export type OriginInfo = { origin: Origin; listed: boolean; place: string | null }
+
+export type MealCard = MealStats & SnackInfo & OriginInfo & {
   id: number
   name: string
   emoji: string
@@ -74,7 +79,7 @@ export type MealCard = MealStats & SnackInfo & {
   created_at: string
 }
 
-export type Meal = MealStats & SnackInfo & {
+export type Meal = MealStats & SnackInfo & OriginInfo & {
   id: number
   name: string
   emoji: string
@@ -124,6 +129,8 @@ export type MealCreate = {
   snack_kind?: SnackKind | null // snacks
   per?: MealPer
   piece_g?: number | null
+  origin?: Origin
+  place?: string | null
 }
 
 export type AnalysisResult = {
@@ -256,6 +263,7 @@ export type MealPatch = Partial<{
   per: MealPer
   piece_g: number
   product_per100: Nutrients // products: the pack's values
+  listed: boolean // bought / eaten out: true = save to our meals
 }>
 
 export type LogEntry = {
@@ -288,6 +296,7 @@ export type MemberInsights = {
   goals: Goals
   meals_rated: number
   days: DayTotals[]
+  not_cooked: { out: number; bought: number; spent: number } // over the range
 }
 
 export type Insights = { members: MemberInsights[] }

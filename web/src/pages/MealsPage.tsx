@@ -6,7 +6,7 @@ import type { MealCard, MealKind } from '../api/types'
 import { MEAL_TYPE_SHORT } from '../lib/dates'
 import { useAddFood } from '../add/AddFood'
 import { CookMealSheet } from '../meals/CookSheet'
-import { feed, type FeedSeg, type FeedSort, type FeedType, NEXT_SORT, SORT_LABEL } from '../lib/meals'
+import { feed, type FeedSeg, type FeedSort, type FeedType, NEXT_SORT, ORIGIN_LABEL, SORT_LABEL } from '../lib/meals'
 import { KIND_LABEL, perLabel } from '../lib/snacks'
 import { Icon } from '../ui/Icon'
 import { Photo } from '../ui/Photo'
@@ -82,8 +82,12 @@ export function MealsPage() {
                 <h3>{m.name}</h3>
                 {snacks ? <SnackLines m={m} /> : (
                   <>
-                    <div className="sub">{m.prep_minutes} min · {(m.cost / m.portions).toFixed(2)} €/portion</div>
-                    <div className="sub">{`Cooked ${m.cooked_count}×`}</div>
+                    <div className="sub">
+                      {m.origin === 'home'
+                        ? `${m.prep_minutes} min · ${(m.cost / m.portions).toFixed(2)} €/portion`
+                        : `${ORIGIN_LABEL[m.origin]}${m.place ? ` · ${m.place}` : ''}`}
+                    </div>
+                    <div className="sub">{m.origin === 'home' ? `Cooked ${m.cooked_count}×` : `Had it ${m.cooked_count}×`}</div>
                   </>
                 )}
               </div>

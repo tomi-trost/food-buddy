@@ -17,6 +17,10 @@ class Meal(TimestampMixin, Base):
     A snack is a meal typed `snack` (0025): `snack_kind` for treats, `per` for how it's logged
     (portion | piece of `piece_g` grams | 100g | 100ml). A product (scanned, label) is a snack with
     one household-owned ingredient holding its values (`is_product`).
+
+    Not everything eaten is cooked: `origin` bought (a shop) or out (a restaurant) is logged for
+    the nutrition only, with no recipe, stock or rating, and stays out of our meals (`listed`)
+    unless we save it there.
     """
 
     __tablename__ = "meal"
@@ -43,6 +47,9 @@ class Meal(TimestampMixin, Base):
     per: Mapped[str] = mapped_column(String(8), default="portion", server_default="portion")
     piece_g: Mapped[float | None] = mapped_column(Float)  # per = piece: one piece weighs this
     is_product: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    origin: Mapped[str] = mapped_column(String(6), default="home", server_default="home")
+    listed: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
+    place: Mapped[str | None] = mapped_column(String(80))  # bought/out: shop or restaurant
 
     ingredients: Mapped[list["MealIngredient"]] = relationship(
         back_populates="meal", cascade="all, delete-orphan", lazy="selectin"

@@ -7,7 +7,7 @@ const day = (over: Partial<DayTotals>): DayTotals => ({
 })
 const member = (days: Partial<DayTotals>[], over: Partial<MemberInsights> = {}): MemberInsights => ({
   user_id: 1, name: 'Tomi', color: '#000', goals: { kcal: 2000, protein: 100, fiber: 30, sugar: 50 },
-  meals_rated: 0, days: days.map(day), ...over,
+  meals_rated: 0, not_cooked: { out: 0, bought: 0, spent: 0 }, days: days.map(day), ...over,
 })
 
 describe('insights math', () => {

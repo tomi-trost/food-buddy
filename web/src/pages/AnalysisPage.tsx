@@ -165,6 +165,9 @@ function SnapFlow({ analysisId, photoUrl, result, rated, chosenType, saveOnly, c
     ...(chosenType === 'snack' ? { prepMinutes: 5, portions: 1 } : { prepMinutes: 30, portions: 2 }),
     cost: 0,
     usedUp: [],
+    origin: 'home',
+    place: '',
+    price: 0,
   }))
   const [costTouched, setCostTouched] = useState(false)
 
@@ -179,8 +182,10 @@ function SnapFlow({ analysisId, photoUrl, result, rated, chosenType, saveOnly, c
         toMealCreate({
           items, name: details.name, mealType: details.mealType, eaten: details.eaten, eatenOn: todayISO(),
           prepMinutes: details.prepMinutes, portions: details.portions, servingsEaten: servings,
-          cost: costTouched ? details.cost : null, usedUp: details.usedUp, analysisId, perPortion: override,
+          cost: details.origin !== 'home' ? details.price || null : costTouched ? details.cost : null,
+          usedUp: details.usedUp, analysisId, perPortion: override,
           snack: details.snackKind ? { kind: details.snackKind, per: details.per, pieceG: details.pieceG } : undefined,
+          origin: details.origin, place: details.place,
         }),
       ),
     onSuccess: (meal) => {
@@ -188,6 +193,11 @@ function SnapFlow({ analysisId, photoUrl, result, rated, chosenType, saveOnly, c
       qc.invalidateQueries({ queryKey: ['day'] })
       qc.invalidateQueries({ queryKey: ['inventory'] })
       qc.invalidateQueries({ queryKey: OPEN_ANALYSES })
+      if (details.origin !== 'home') { // not pushed into the meal: back to the day
+        navigate('/', { replace: true })
+        toast('Logged for today · not added to your meals')
+        return
+      }
       if (!details.eaten) {
         navigate(`/meals/${meal.id}`, { replace: true })
         toast('Saved to your meals for later')

@@ -1,4 +1,4 @@
-import type { MealCard, MealKind, Rating, Slider } from '../api/types'
+import type { MealCard, MealKind, Origin, Rating, Slider } from '../api/types'
 
 /** "Today" / "Yesterday" / "N days ago" between two YYYY-MM-DD dates. */
 export function ago(dateISO: string | null, todayISO: string): string {
@@ -6,6 +6,8 @@ export function ago(dateISO: string | null, todayISO: string): string {
   const days = Math.round((Date.parse(todayISO) - Date.parse(dateISO)) / 86_400_000)
   return days <= 0 ? 'Today' : days === 1 ? 'Yesterday' : `${days} days ago`
 }
+
+export const ORIGIN_LABEL: Record<Origin, string> = { home: '🍳 Cooked', bought: '🛒 Bought', out: '🍽️ Ate out' }
 
 export const againLabel = (v: number) => (v >= 5 ? 'yes' : v >= 3 ? 'maybe' : 'no')
 

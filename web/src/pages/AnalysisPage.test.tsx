@@ -193,6 +193,54 @@ async function postFromVerdict() {
   fireEvent.click(screen.getByRole('button', { name: 'Post meal' }))
 }
 
+describe('bought / eaten out', () => {
+  it('logs eaten-out food without recipe, stock or rating and goes back to the day', async () => {
+    let sent: Record<string, unknown> = {}
+    api((url, init) => {
+      if (url === '/api/meals' && init?.method === 'POST') {
+        sent = JSON.parse(String(init.body))
+        return jsonResponse({ id: 42 }, 201)
+      }
+    })
+    render()
+    fireEvent.click(await screen.findByRole('button', { name: /mystery sauce/ }))
+    fireEvent.click(screen.getByText('Remove “mystery sauce”'))
+    fireEvent.click(screen.getByRole('button', { name: 'Looks right' }))
+    fireEvent.click(screen.getByRole('button', { name: /Ate out/ }))
+    expect(screen.queryByRole('group', { name: 'prep time' })).not.toBeInTheDocument()
+    expect(screen.queryByText('Used up an ingredient?')).not.toBeInTheDocument()
+    expect(screen.queryByText('Auto recipe')).not.toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('Where? (optional)'), { target: { value: 'Trattoria Rosa' } })
+    const price = screen.getByRole('textbox', { name: 'price paid' })
+    fireEvent.focus(price)
+    fireEvent.change(price, { target: { value: '14.5' } })
+    fireEvent.blur(price)
+    fireEvent.click(screen.getByRole('button', { name: 'Log it' }))
+    expect(await screen.findByText('home')).toBeInTheDocument()
+    expect(screen.getByText('Logged for today · not added to your meals')).toBeInTheDocument()
+    expect(sent).toMatchObject({ origin: 'out', place: 'Trattoria Rosa', cost: 14.5, portions: 1, used_up: [], eaten: true })
+  })
+
+  it('asks which shop for bought food and sends no price when we did not note one', async () => {
+    let sent: Record<string, unknown> = {}
+    api((url, init) => {
+      if (url === '/api/meals' && init?.method === 'POST') {
+        sent = JSON.parse(String(init.body))
+        return jsonResponse({ id: 42 }, 201)
+      }
+    })
+    render()
+    fireEvent.click(await screen.findByRole('button', { name: /mystery sauce/ }))
+    fireEvent.click(screen.getByText('Remove “mystery sauce”'))
+    fireEvent.click(screen.getByRole('button', { name: 'Looks right' }))
+    fireEvent.click(screen.getByRole('button', { name: /Bought/ }))
+    expect(screen.getByLabelText('Which shop? (optional)')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Log it' }))
+    await screen.findByText('home')
+    expect(sent).toMatchObject({ origin: 'bought', place: null, cost: null })
+  })
+})
+
 describe('waiting in the background', () => {
   it('rates while the model is still working', async () => {
     let job: AnalysisJob = analysisJob({ status: 'running' })

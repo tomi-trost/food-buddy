@@ -80,6 +80,8 @@ function Overview({ members, selected, meId, onWho, meals }: {
   const days = range === 'day' ? selected.days.slice(-1)
     : range === 'week' ? selected.days
       : month.data?.members.find((m) => m.user_id === selected.user_id)?.days ?? []
+  const notCooked = range === 'week' ? selected.not_cooked
+    : range === 'month' ? month.data?.members.find((m) => m.user_id === selected.user_id)?.not_cooked : undefined
   const g = selected.goals
   const split = macroSplit(days)
   const hits = days.filter((d) => fiberHit(d, g)).length
@@ -136,6 +138,19 @@ function Overview({ members, selected, meId, onWho, meals }: {
         </div>
         <div className="sub">{hits} of {days.length} days hit · avg {Math.round(avg(days, 'fiber'))} g</div>
       </div>
+      {notCooked && (
+        <div className="card row" aria-label="Eating out">
+          <span style={{ fontSize: 24 }} aria-hidden>🍽️</span>
+          <div className="sp">
+            {notCooked.out || notCooked.bought ? (
+              <>
+                <h3>Ate out {notCooked.out}× · bought {notCooked.bought}×</h3>
+                <div className="sub">{notCooked.spent > 0 ? `${notCooked.spent.toFixed(2)} € paid this ${range}` : 'No prices noted'}</div>
+              </>
+            ) : <h3>Everything home-cooked this {range}</h3>}
+          </div>
+        </div>
+      )}
       <div className="macro" style={{ '--n': 3 } as CSSProperties}>
         <div><b>{n ? (meals.reduce((a, m) => a + m.cost / m.portions, 0) / n).toFixed(2) : '–'} €</b><small>avg / portion</small></div>
         <div><b>{n ? Math.round(meals.reduce((a, m) => a + m.prep_minutes, 0) / n) : '–'} min</b><small>avg cook time</small></div>

@@ -169,6 +169,22 @@ describe('InsightsPage', () => {
     expect(screen.getByText('0 of 1 days hit · avg 10 g')).toBeInTheDocument()
   })
 
+  it('counts eating out and bought food for the week, not for a single day', async () => {
+    api({ '/api/insights': { members: [memberInsights({ not_cooked: { out: 2, bought: 1, spent: 31.5 } })] } })
+    renderAt('/insights', <Route path="/insights" element={<InsightsPage />} />)
+    const card = await screen.findByLabelText('Eating out')
+    expect(card).toHaveTextContent('Ate out 2× · bought 1×')
+    expect(card).toHaveTextContent('31.50 € paid this week')
+    fireEvent.click(screen.getByRole('button', { name: 'Day' }))
+    expect(screen.queryByLabelText('Eating out')).not.toBeInTheDocument()
+  })
+
+  it('says so when everything was cooked at home', async () => {
+    api()
+    renderAt('/insights', <Route path="/insights" element={<InsightsPage />} />)
+    expect(await screen.findByLabelText('Eating out')).toHaveTextContent('Everything home-cooked this week')
+  })
+
   it('overview month range loads the last 30 days', async () => {
     const month = memberInsights({
       days: Array.from({ length: 30 }, (_, i) => ({ ...memberInsights().days[0], date: todayISO(new Date(2026, 8, 5 + i)), fiber: i < 10 ? 31 : 5 })),

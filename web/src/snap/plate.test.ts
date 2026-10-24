@@ -41,6 +41,16 @@ describe('plate', () => {
     expect(body).toMatchObject({ eaten: true, eaten_on: '2026-10-04' })
   })
 
+  it('sends bought / eaten-out food as one plate with what we paid, nothing used up', () => {
+    const body = toMealCreate({
+      items: items(), name: 'Pizza', mealType: 'dinner', eaten: false, eatenOn: '2026-10-04', prepMinutes: 20,
+      portions: 4, servingsEaten: 1, cost: 12, usedUp: [2], analysisId: 5, origin: 'out', place: '  Rosa ',
+    })
+    expect(body).toMatchObject({ origin: 'out', place: 'Rosa', portions: 1, used_up: [], eaten: true, eaten_on: '2026-10-04', cost: 12 })
+    expect(toMealCreate({ items: items(), name: 'x', mealType: 'lunch', eaten: true, eatenOn: '2026-10-04',
+      prepMinutes: 5, portions: 1, servingsEaten: 1, cost: null, usedUp: [], analysisId: null, origin: 'bought', place: ' ' }).place).toBeNull()
+  })
+
   it('saves for later without a date or used-up ingredients', () => {
     const body = toMealCreate({
       items: items(), name: 'Bowl', mealType: 'lunch', eaten: false, eatenOn: '2026-10-04', prepMinutes: 20,

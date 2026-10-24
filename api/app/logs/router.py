@@ -80,6 +80,14 @@ class DayTotals(NutrientsOut):
     treat_sugar: float
 
 
+class NotCooked(BaseModel):
+    """Over the range: food eaten out and bought, and what it cost (portions × price paid)."""
+
+    out: int = 0
+    bought: int = 0
+    spent: float = 0
+
+
 class MemberInsights(BaseModel):
     user_id: int
     name: str
@@ -87,6 +95,7 @@ class MemberInsights(BaseModel):
     goals: GoalsOut
     meals_rated: int
     days: list[DayTotals]  # oldest → newest, every day present
+    not_cooked: NotCooked
 
 
 class InsightsOut(BaseModel):
@@ -180,6 +189,26 @@ async def remove_entry(entry_id: int, user: CurrentUser, session: Session) -> Re
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
+async def not_cooked_by_user(session, rows: list[FoodLog]) -> dict[int, NotCooked]:
+    ids = {r.meal_id for r in rows if r.meal_id}
+    meals = {
+        m.id: m
+        for m in await session.scalars(select(Meal).where(Meal.id.in_(ids), Meal.origin != "home"))
+    }
+    out: dict[int, NotCooked] = defaultdict(NotCooked)
+    for r in rows:
+        meal = meals.get(r.meal_id)
+        if meal is None:
+            continue
+        mine = out[r.user_id]
+        if meal.origin == "out":
+            mine.out += 1
+        else:
+            mine.bought += 1
+        mine.spent = round(mine.spent + (meal.cost or 0) * r.servings / meal.portions, 2)
+    return out
+
+
 @router.get("/insights")
 async def insights(
     user: CurrentUser, session: Session, end: date, days: int = Query(default=7, ge=1, le=92)
@@ -194,8 +223,10 @@ async def insights(
         )
     )
     by_user_day: dict[tuple[int, date], list[FoodLog]] = defaultdict(list)
+    rows = list(rows)
     for r in rows:
         by_user_day[(r.user_id, r.eaten_on)].append(r)
+    not_cooked = await not_cooked_by_user(session, rows)
 
     rated = dict(
         (
@@ -233,6 +264,7 @@ async def insights(
                 ),
                 meals_rated=rated.get(m.id, 0),
                 days=series,
+                not_cooked=not_cooked.get(m.id, NotCooked()),
             )
         )
     return InsightsOut(members=members)

@@ -88,7 +88,7 @@ def snack_info(meal: Meal) -> dict:
         is_product=meal.is_product,
         per_unit=NutrientsOut(**{k: round(v, 2) for k, v in asdict(per_unit(meal)).items()}),
         portion_g=round(portion_grams(meal), 1),
-    ).model_dump()
+    ).model_dump() | {"origin": meal.origin, "listed": meal.listed, "place": meal.place}
 
 
 def log_entry(
@@ -217,7 +217,9 @@ def _undo_until_for(meal: Meal, user: User) -> datetime | None:
 async def meal_cards(session: AsyncSession, user: User) -> list[MealCard]:
     meals = list(
         await session.scalars(
-            select(Meal).where(Meal.household_id == user.household_id).order_by(Meal.id.desc())
+            select(Meal)
+            .where(Meal.household_id == user.household_id, Meal.listed.is_(True))
+            .order_by(Meal.id.desc())
         )
     )
     ids = [m.id for m in meals]
@@ -301,7 +303,7 @@ async def cook_again(session: AsyncSession, user: User, meal: Meal, body: CookIn
         amount=body.amount,
     )
     session.add(log)
-    if body.cooked:
+    if body.cooked and meal.origin == "home":  # bought / eaten out never leaves our stock
         if snack and meal.is_product:
             eaten = log.servings * grams_per_amount(meal)
             await deduct(session, user.household_id, {k: eaten for k in recipe})
@@ -324,8 +326,10 @@ async def post_meal(session: AsyncSession, user: User, body: MealCreate) -> Meal
         # Locked: if both of us confirm the same photo, the second one gets 409
         analysis = await lock_open_job(session, user, body.analysis_id)
 
+    cooked = body.origin == "home"
+    portions = body.portions if cooked else 1  # bought / out: the plate we had
     plate = {i.ingredient_id: i.grams for i in body.items}
-    recipe = {k: g * body.portions for k, g in plate.items()}
+    recipe = {k: g * portions for k, g in plate.items()}
     by_weight = sorted(ids, key=lambda k: -plate[k])
 
     meal = Meal(
@@ -339,10 +343,15 @@ async def post_meal(session: AsyncSession, user: User, body: MealCreate) -> Meal
         per=body.per,
         piece_g=body.piece_g,
         tags=[],
-        prep_minutes=body.prep_minutes,
-        portions=body.portions,
+        prep_minutes=body.prep_minutes if cooked else 0,
+        portions=portions,
         cost=body.cost,
-        steps=template_steps([found[k].name for k in by_weight], body.prep_minutes, body.portions),
+        steps=template_steps([found[k].name for k in by_weight], body.prep_minutes, portions)
+        if cooked
+        else [],
+        origin=body.origin,
+        listed=cooked,
+        place=(body.place or "").strip() or None,
         nutrients_override=body.per_portion.model_dump() if body.per_portion else None,
         ingredients=[
             MealIngredient(ingredient_id=k, grams=recipe[k], ingredient=found[k]) for k in ids
@@ -367,8 +376,9 @@ async def post_meal(session: AsyncSession, user: User, body: MealCreate) -> Meal
             )
         )
 
-        await deduct(session, user.household_id, recipe)
-        await mark_used_up(session, user.household_id, body.used_up)
+        if cooked:
+            await deduct(session, user.household_id, recipe)
+            await mark_used_up(session, user.household_id, body.used_up)
         await session.flush()
     meal.undo = undo_record(
         analysis.id if analysis else None,
@@ -417,6 +427,8 @@ async def update_meal(session: AsyncSession, meal: Meal, body: MealPatch) -> Non
         meal.portions = body.portions
     if body.steps is not None:
         meal.steps, meal.steps_source = body.steps, "ours"  # the model won't overwrite them
+    if body.listed is not None:
+        meal.listed = body.listed
     await session.flush()
     await _refresh_logs(session, meal)
     await session.commit()
