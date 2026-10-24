@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { guessMealType, todayISO } from './dates'
+import { addDays, guessMealType, todayISO } from './dates'
 import { templateSteps } from './recipe'
 
 describe('templateSteps (same expectations as api/tests/test_recipes.py)', () => {
@@ -25,5 +25,13 @@ describe('dates', () => {
     expect(guessMealType(new Date(2026, 0, 5, 10, 59))).toBe('breakfast')
     expect(guessMealType(new Date(2026, 0, 5, 15, 0))).toBe('lunch')
     expect(guessMealType(new Date(2026, 0, 5, 16, 0))).toBe('dinner')
+  })
+})
+
+describe('addDays', () => {
+  it('moves by calendar days across months and years', () => {
+    expect(addDays('2026-10-04', -7)).toBe('2026-09-27')
+    expect(addDays('2026-12-31', 1)).toBe('2027-01-01')
+    expect(addDays('2026-03-29', 1)).toBe('2026-03-30') // DST change in Europe
   })
 })

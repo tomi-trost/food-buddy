@@ -4,6 +4,14 @@ export type Release = { id: string; notes: string[] }
 
 export const RELEASES: Release[] = [
   {
+    id: '2026-10-24-insights',
+    notes: [
+      'Insights goes back in time: use the arrows or swipe the calories chart right for the week (or day, or month) before.',
+      'Fiber and sugar sit next to protein, carbs and fat, and "Where it comes from" shows the foods you eat most for each.',
+      'See how many breakfasts, lunches, dinners and snacks you had.',
+    ],
+  },
+  {
     id: '2026-10-24-meals-screen',
     notes: [
       'Meals has a calmer look: a switch for the meal type, small filters (tap again to clear) and the sort on the same row.',

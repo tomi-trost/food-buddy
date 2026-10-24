@@ -298,7 +298,12 @@ export type MemberInsights = {
   meals_rated: number
   days: DayTotals[]
   not_cooked: { out: number; bought: number; spent: number } // over the range
+  meal_counts: Record<MealKind, number> // entries per meal type over the range
 }
+
+export type SourceGroup = 'protein' | 'carbs' | 'fat' | 'fiber' | 'sugar'
+/** The ingredients someone ate most, under the nutrient they bring (most often first). */
+export type Sources = { groups: Record<SourceGroup, { name: string; emoji: string; times: number; grams: number }[]> }
 
 export type Insights = { members: MemberInsights[] }
 

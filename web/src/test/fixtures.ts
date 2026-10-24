@@ -126,7 +126,7 @@ export const shopping = (over: Partial<Shopping> = {}): Shopping => ({
 const WEEK_TO_OCT_4 = ['2026-09-28', '2026-09-29', '2026-09-30', '2026-10-01', '2026-10-02', '2026-10-03', '2026-10-04']
 
 export const memberInsights = (over: Partial<MemberInsights> = {}): MemberInsights => ({
-  user_id: 1, name: 'Tomi', color: '#b9532f', goals: { kcal: 2200, protein: 110, fiber: 30, sugar: 50 }, meals_rated: 3, not_cooked: { out: 0, bought: 0, spent: 0 },
+  user_id: 1, name: 'Tomi', color: '#b9532f', goals: { kcal: 2200, protein: 110, fiber: 30, sugar: 50 }, meals_rated: 3, not_cooked: { out: 0, bought: 0, spent: 0 }, meal_counts: { breakfast: 5, lunch: 6, dinner: 7, snack: 3 },
   days: Array.from({ length: 7 }, (_, i) => ({
     date: WEEK_TO_OCT_4[i],
     kcal: 2000 + i * 50, protein: 120, carbs: 230, fat: 70, fiber: i % 2 ? 32 : 24, sugar: 30, treats: 0, treat_sugar: 0,

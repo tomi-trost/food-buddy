@@ -1,5 +1,5 @@
 import type {
-  AnalysisJob, CatalogItem, CookIn, Day, Insights, LogEntry, LogPatch, Reward, SnackIn, HouseholdPatch, Ingredient, Me, Meal, MealCard, MealCreate, MealKind, MealPatch, MealType, MePatch, Plan, PushConfig, PushKind, Suggestion, SnackLogged, PlanMode, Product, Rating, RegisterBody, Shopping, StockItem, WizardCell,
+  AnalysisJob, CatalogItem, CookIn, Day, Insights, LogEntry, Sources, LogPatch, Reward, SnackIn, HouseholdPatch, Ingredient, Me, Meal, MealCard, MealCreate, MealKind, MealPatch, MealType, MePatch, Plan, PushConfig, PushKind, Suggestion, SnackLogged, PlanMode, Product, Rating, RegisterBody, Shopping, StockItem, WizardCell,
 } from './types'
 import { reportReachable } from '../lib/online'
 import { shrinkPhoto } from '../lib/photoResize'
@@ -179,6 +179,8 @@ export const api = {
     await request(`/log/${id}`, { method: 'DELETE' })
   },
   insights: (end: string, days = 7) => json<Insights>(`/insights?end=${end}&days=${days}`),
+  insightSources: (end: string, days: number, userId: number) =>
+    json<Sources>(`/insights/sources?end=${end}&days=${days}&user_id=${userId}`),
   snackCatalog: () => json<CatalogItem[]>('/snacks/catalog'),
   logSnack: (body: SnackIn) => json<SnackLogged>('/snacks', { method: 'POST', body: JSON.stringify(body) }),
   product: (code: string) => json<Product>(`/barcode/${code}`),

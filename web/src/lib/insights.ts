@@ -1,4 +1,4 @@
-import type { DayTotals, Goals, MemberInsights } from '../api/types'
+import type { DayTotals, Goals, MemberInsights, Nutrients } from '../api/types'
 
 /** Days with anything logged; averages ignore empty days so a forgotten day doesn't drag them down. */
 export const logged = (days: DayTotals[]) => days.filter((d) => d.kcal > 0)
@@ -55,4 +55,29 @@ export function versus(a: MemberInsights, b: MemberInsights): { rows: VersusRow[
     return { label: c.label, a: c.format(va), b: c.format(vb), winner } as VersusRow
   })
   return { rows, points }
+}
+
+export type Range = 'day' | 'week' | 'month'
+export const RANGE_DAYS: Record<Range, number> = { day: 1, week: 7, month: 30 }
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const short = (iso: string) => `${Number(iso.slice(8))} ${MONTHS[Number(iso.slice(5, 7)) - 1]}`
+
+/** What the range shows: "This week", "Yesterday", "Mon 20 Oct", "11 Oct – 17 Oct". */
+export function rangeLabel(range: Range, start: string, end: string, back: number): string {
+  if (range === 'day') {
+    if (back === 0) return 'Today'
+    if (back === 1) return 'Yesterday'
+    const [y, m, d] = end.split('-').map(Number)
+    return `${WEEKDAYS[new Date(y, m - 1, d).getDay()]} ${short(end)}`
+  }
+  if (back === 0) return range === 'week' ? 'Last 7 days' : 'Last 30 days'
+  return `${short(start)} – ${short(end)}`
+}
+
+/** Average per logged day of every nutrient over the range, like `avg`. */
+export function dailyAverage(days: DayTotals[]): Nutrients {
+  const keys = ['kcal', 'protein', 'carbs', 'fat', 'fiber', 'sugar'] as const
+  return Object.fromEntries(keys.map((k) => [k, avg(days, k)])) as Nutrients
 }

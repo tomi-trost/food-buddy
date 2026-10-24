@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import type { DayTotals, MemberInsights } from '../api/types'
-import { avg, challengeProgress, macroSplit, versus } from './insights'
+import { avg, challengeProgress, dailyAverage, macroSplit, rangeLabel, versus } from './insights'
 
 const day = (over: Partial<DayTotals>): DayTotals => ({
   date: '2026-10-04', kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, treats: 0, treat_sugar: 0, ...over,
 })
 const member = (days: Partial<DayTotals>[], over: Partial<MemberInsights> = {}): MemberInsights => ({
   user_id: 1, name: 'Tomi', color: '#000', goals: { kcal: 2000, protein: 100, fiber: 30, sugar: 50 },
-  meals_rated: 0, not_cooked: { out: 0, bought: 0, spent: 0 }, days: days.map(day), ...over,
+  meals_rated: 0, not_cooked: { out: 0, bought: 0, spent: 0 }, meal_counts: { breakfast: 0, lunch: 0, dinner: 0, snack: 0 }, days: days.map(day), ...over,
 })
 
 describe('insights math', () => {
@@ -44,5 +44,24 @@ describe('insights math', () => {
     const m = member([{ kcal: 2100, fiber: 30 }, { kcal: 2300, fiber: 10 }, {}])
     expect(challengeProgress(m, 'fiber')).toBe(1)
     expect(challengeProgress(m, 'kcal')).toBe(1)
+  })
+})
+
+describe('rangeLabel', () => {
+  it('names the range shown', () => {
+    expect(rangeLabel('day', '2026-10-04', '2026-10-04', 0)).toBe('Today')
+    expect(rangeLabel('day', '2026-10-03', '2026-10-03', 1)).toBe('Yesterday')
+    expect(rangeLabel('day', '2026-10-01', '2026-10-01', 3)).toBe('Thu 1 Oct')
+    expect(rangeLabel('week', '2026-09-28', '2026-10-04', 0)).toBe('Last 7 days')
+    expect(rangeLabel('week', '2026-09-21', '2026-09-27', 1)).toBe('21 Sep – 27 Sep')
+    expect(rangeLabel('month', '2026-08-06', '2026-09-04', 1)).toBe('6 Aug – 4 Sep')
+  })
+})
+
+describe('dailyAverage', () => {
+  it('averages every nutrient over the logged days only', () => {
+    const a = dailyAverage([day({ kcal: 2000, fiber: 30, sugar: 40 }), day({ kcal: 0 }), day({ kcal: 1000, fiber: 10, sugar: 20 })])
+    expect(a).toMatchObject({ kcal: 1500, fiber: 20, sugar: 30 })
+    expect(dailyAverage([]).kcal).toBe(0)
   })
 })

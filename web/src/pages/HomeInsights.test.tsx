@@ -155,7 +155,7 @@ describe('HomePage', () => {
 
 describe('InsightsPage', () => {
   it('overview shows calories, macro split, fiber and top rated', async () => {
-    api()
+    const fetch = api()
     renderAt('/insights', <Route path="/insights" element={<InsightsPage />} />)
     expect(await screen.findByText(/avg 2150 · goal 2200/)).toBeInTheDocument()
     expect(screen.getByRole('table', { name: 'Calories per day' })).toHaveTextContent('2026-10-04: 2300 kcal')
@@ -163,20 +163,74 @@ describe('InsightsPage', () => {
     expect(screen.getByText('3 of 7 days hit · avg 27 g')).toBeInTheDocument()
     expect(await screen.findByRole('link', { name: /Bowl/ })).toBeInTheDocument()
 
+    const lastDay = (m: ReturnType<typeof memberInsights>) => ({ ...m, days: m.days.slice(-1) })
+    const week = { members: [memberInsights(), memberInsights({ user_id: 2, name: 'Partner', color: '#5d8582', days: memberInsights().days.map((d) => ({ ...d, fiber: 10 })) })] }
+    fetch.mockImplementation((url) => Promise.resolve(jsonResponse(String(url).includes('days=1&') || String(url).endsWith('days=1')
+      ? { members: week.members.map(lastDay) } : week)))
     fireEvent.click(screen.getByRole('button', { name: 'Day' }))
-    expect(screen.getByText('0 of 1 days hit · avg 24 g')).toBeInTheDocument()
+    expect(await screen.findByText('0 of 1 days hit · avg 24 g')).toBeInTheDocument()
+    expect(fetch).toHaveBeenCalledWith('/api/insights?end=2026-10-04&days=1', expect.anything())
     fireEvent.click(screen.getByRole('button', { name: 'Partner' }))
     expect(screen.getByText('0 of 1 days hit · avg 10 g')).toBeInTheDocument()
   })
 
-  it('counts eating out and bought food for the week, not for a single day', async () => {
+  it('goes back a week at a time with the arrows or a swipe, and never past today', async () => {
+    const fetch = api()
+    renderAt('/insights', <Route path="/insights" element={<InsightsPage />} />)
+    const period = await screen.findByRole('group', { name: 'Period' })
+    expect(period).toHaveTextContent('Last 7 days')
+    expect(within(period).getByRole('button', { name: 'Later week' })).toBeDisabled()
+
+    fireEvent.click(within(period).getByRole('button', { name: 'Earlier week' }))
+    expect(period).toHaveTextContent('21 Sep – 27 Sep')
+    expect(fetch).toHaveBeenCalledWith('/api/insights?end=2026-09-27&days=7', expect.anything())
+
+    const chart = screen.getByRole('table', { name: 'Calories per day' }).closest('.card')!
+    fireEvent.touchStart(chart, { touches: [{ clientX: 50, clientY: 100 }] })
+    fireEvent.touchEnd(chart, { changedTouches: [{ clientX: 200, clientY: 110 }] }) // swipe right: earlier
+    expect(period).toHaveTextContent('14 Sep – 20 Sep')
+    fireEvent.touchStart(chart, { touches: [{ clientX: 50, clientY: 100 }] })
+    fireEvent.touchEnd(chart, { changedTouches: [{ clientX: 60, clientY: 300 }] }) // a scroll, not a swipe
+    expect(period).toHaveTextContent('14 Sep – 20 Sep')
+    fireEvent.touchStart(chart, { touches: [{ clientX: 200, clientY: 100 }] })
+    fireEvent.touchEnd(chart, { changedTouches: [{ clientX: 40, clientY: 100 }] }) // swipe left: later
+    expect(period).toHaveTextContent('21 Sep – 27 Sep')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Month' })) // a new range starts at today again
+    expect(period).toHaveTextContent('Last 30 days')
+  })
+
+  it('shows every nutrient per day, meals eaten per type, and where they come from', async () => {
+    const fetch = api({
+      '/api/insights/sources': { groups: {
+        protein: [{ name: 'Chicken breast', emoji: '🍗', times: 3, grams: 450 }],
+        carbs: [], fat: [], fiber: [{ name: 'Chia seeds', emoji: '🌱', times: 5, grams: 60 }], sugar: [],
+      } },
+    })
+    renderAt('/insights', <Route path="/insights" element={<InsightsPage />} />)
+    const tiles = await screen.findByLabelText('Average per day')
+    await vi.waitFor(() => expect(within(tiles).getByTestId('macro-fiber')).toHaveTextContent('27 g')) // (4 × 24 + 3 × 32) / 7
+    expect(within(tiles).getByTestId('macro-sugar')).toHaveTextContent('30 g')
+    expect(screen.getByLabelText('Meals eaten')).toHaveTextContent('5breakfasts6lunches7dinners3snacks')
+
+    expect(fetch.mock.calls.some(([u]) => String(u).startsWith('/api/insights/sources'))).toBe(false) // only when opened
+    fireEvent.click(screen.getByRole('button', { name: /Where it comes from/ }))
+    const list = await screen.findByLabelText('Where it comes from')
+    expect(await within(list).findByText('Chicken breast')).toBeInTheDocument()
+    expect(within(list).getByText('3× · 450 g')).toBeInTheDocument()
+    expect(fetch).toHaveBeenCalledWith('/api/insights/sources?end=2026-10-04&days=7&user_id=1', expect.anything())
+    fireEvent.click(within(list).getByRole('button', { name: 'Fiber' }))
+    expect(within(list).getByText('Chia seeds')).toBeInTheDocument()
+    fireEvent.click(within(list).getByRole('button', { name: 'Fat' }))
+    expect(within(list).getByText('Nothing logged with fat yet.')).toBeInTheDocument()
+  })
+
+  it('counts eating out and bought food for the range', async () => {
     api({ '/api/insights': { members: [memberInsights({ not_cooked: { out: 2, bought: 1, spent: 31.5 } })] } })
     renderAt('/insights', <Route path="/insights" element={<InsightsPage />} />)
     const card = await screen.findByLabelText('Eating out')
     expect(card).toHaveTextContent('Ate out 2× · bought 1×')
     expect(card).toHaveTextContent('31.50 € paid this week')
-    fireEvent.click(screen.getByRole('button', { name: 'Day' }))
-    expect(screen.queryByLabelText('Eating out')).not.toBeInTheDocument()
   })
 
   it('says so when everything was cooked at home', async () => {

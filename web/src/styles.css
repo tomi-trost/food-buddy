@@ -178,6 +178,11 @@ svg text { fill: var(--ink2); font-size: 11px; }
 .photo-add { position: absolute; right: 10px; bottom: 10px; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px;
   border-radius: 999px; background: var(--surface); color: var(--ink); font-size: 13px; font-weight: 600; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18); cursor: pointer; }
 
+/* Insights: earlier ‹ period › later */
+.period { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.period b { font-size: 15px; }
+.period .icon:disabled { opacity: .35; }
+
 /* Rating sliders: 7 steps, the current word above, end words below */
 .step-slider { margin-top: 4px; }
 .step-slider-now { text-align: center; font-weight: 600; color: var(--accent); min-height: 22px; }

@@ -11,6 +11,7 @@ from app.auth.router import GoalsOut
 from app.auth.service import household_members
 from app.logs.models import FoodLog
 from app.logs.service import snack_nutrients
+from app.logs.sources import sources
 from app.meals.models import CookLog, Meal
 from app.meals.service import per_portion
 from app.nutrition.macros import Nutrients, total
@@ -96,6 +97,7 @@ class MemberInsights(BaseModel):
     meals_rated: int
     days: list[DayTotals]  # oldest → newest, every day present
     not_cooked: NotCooked
+    meal_counts: dict[str, int]  # breakfast | lunch | dinner | snack → entries over the range
 
 
 class InsightsOut(BaseModel):
@@ -189,6 +191,54 @@ async def remove_entry(entry_id: int, user: CurrentUser, session: Session) -> Re
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
+def meal_counts(rows: list[FoodLog], user_id: int) -> dict[str, int]:
+    counts = dict.fromkeys(("breakfast", "lunch", "dinner", "snack"), 0)
+    for r in rows:
+        if r.user_id == user_id and not r.is_reward:
+            counts[r.meal_type] = counts.get(r.meal_type, 0) + 1
+    return counts
+
+
+class SourceItem(BaseModel):
+    name: str
+    emoji: str
+    times: int  # eaten entries that had it
+    grams: float
+
+
+class SourcesOut(BaseModel):
+    groups: dict[str, list[SourceItem]]  # protein | carbs | fat | fiber | sugar
+
+
+@router.get("/insights/sources")
+async def insights_sources(
+    user: CurrentUser,
+    session: Session,
+    end: date,
+    user_id: int,
+    days: int = Query(default=7, ge=1, le=92),
+) -> SourcesOut:
+    """The ingredients someone in the household ate most, grouped by the nutrient they bring."""
+    if user_id not in {m.id for m in await household_members(session, user.household_id)}:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Not in your household")
+    start = end - timedelta(days=days - 1)
+    grouped = await sources(session, user.household_id, user_id, start, end)
+    return SourcesOut(
+        groups={
+            g: [
+                SourceItem(
+                    name=t.ingredient.name,
+                    emoji=t.ingredient.emoji or "",
+                    times=t.times,
+                    grams=round(t.grams),
+                )
+                for t in items
+            ]
+            for g, items in grouped.items()
+        }
+    )
+
+
 async def not_cooked_by_user(session, rows: list[FoodLog]) -> dict[int, NotCooked]:
     ids = {r.meal_id for r in rows if r.meal_id}
     meals = {
@@ -265,6 +315,7 @@ async def insights(
                 meals_rated=rated.get(m.id, 0),
                 days=series,
                 not_cooked=not_cooked.get(m.id, NotCooked()),
+                meal_counts=meal_counts(rows, m.id),
             )
         )
     return InsightsOut(members=members)
