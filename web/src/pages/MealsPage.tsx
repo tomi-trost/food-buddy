@@ -85,31 +85,32 @@ export function MealsPage() {
             const shown = open.includes(f.family)
             return (
               <section key={f.family} className={`family${shown ? ' open' : ''}`} aria-label={f.family}>
-                <button className="family-head" aria-expanded={shown}
-                  onClick={(e) => {
-                    setOpen(shown ? open.filter((x) => x !== f.family) : [...open, f.family])
-                    if (!shown) scrollToTop(e.currentTarget)
-                  }}>
-                  <span className={`family-collage n${f.top.length}`} aria-hidden>
-                    {f.top.map((m) => <Photo key={m.id} url={m.photo_url} emoji={m.emoji} seed={m.id} alt="" />)}
-                  </span>
-                  <span className="family-info">
-                    <span className="sp">
-                      <b>{f.family}</b>
-                      <small>{f.meals.length} {f.meals.length === 1 ? 'dish' : 'variations'}{f.best !== null ? ` · best ★ ${Math.round(f.best * 10) / 10}` : ''}</small>
+                <div className="family-card">
+                  <button className="family-head" aria-expanded={shown}
+                    onClick={(e) => {
+                      setOpen(shown ? open.filter((x) => x !== f.family) : [...open, f.family])
+                      if (!shown) scrollToTop(e.currentTarget)
+                    }}>
+                    <span className={`family-collage n${f.top.length}`} aria-hidden>
+                      {f.top.map((m) => <Photo key={m.id} url={m.photo_url} emoji={m.emoji} seed={m.id} alt="" />)}
                     </span>
-                    <span className={`family-chev${shown ? ' open' : ''}`}><Icon name="chev" size={16} /></span>
-                  </span>
-                </button>
+                    <span className="family-info">
+                      <span className="sp">
+                        <b>{f.family}</b>
+                        <small>{f.meals.length} {f.meals.length === 1 ? 'dish' : 'variations'}{f.best !== null ? ` · best ★ ${Math.round(f.best * 10) / 10}` : ''}</small>
+                      </span>
+                      {shown && f.family !== 'Other' && <span className="family-gear-space" />}
+                      <span className={`family-chev${shown ? ' open' : ''}`}><Icon name="chev" size={16} /></span>
+                    </span>
+                  </button>
+                  {shown && f.family !== 'Other' && ( // settings sit on the open card, next to its chevron
+                    <button className="family-gear" onClick={() => setSettings(f.family)} aria-label={`${f.family} settings`}>
+                      <Icon name="settings" size={18} />
+                    </button>
+                  )}
+                </div>
                 {shown && (
                   <div className="family-body">
-                    {f.family !== 'Other' && (
-                      <div className="family-tools">
-                        <button className="groupbtn" onClick={() => setSettings(f.family)} aria-label={`${f.family} settings`}>
-                          <Icon name="settings" size={16} /> Family settings
-                        </button>
-                      </div>
-                    )}
                     <FamilyMacros family={f.family} avg={f.avg} dishes={f.meals.length} />
                     <MealGrid list={f.meals} snacks={snacks} onLog={setLogging} />
                   </div>

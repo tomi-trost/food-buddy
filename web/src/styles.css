@@ -202,7 +202,11 @@ svg text { fill: var(--ink2); font-size: 11px; }
 .family-body .mealcard-wrap { animation: family-card .42s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--i, 0) * 45ms + 90ms); }
 @keyframes family-open { from { opacity: 0; transform: translateY(-10px) scaleY(.97); } }
 @keyframes family-card { from { opacity: 0; transform: translateY(14px); } }
-.family-tools { display: flex; justify-content: flex-end; margin: 10px 0; }
+.family-card { position: relative; }
+/* Settings on the open card's name row, left of the chevron; the name makes room for it */
+.family-gear { position: absolute; right: 42px; top: calc(100% - 40px - 12px); width: 40px; height: 40px; display: grid; place-items: center;
+  border-radius: 999px; background: none; border: 1px solid var(--line2); color: var(--ink2); animation: family-open .3s both; }
+.family-gear-space { width: 44px; flex: none; } /* keeps the name clear of the ⚙ on top */
 .family-macros { margin: 10px 0 0; }
 .family-kcal { font-size: 20px; } .family-kcal small { font-size: 13px; color: var(--ink2); font-weight: 500; }
 .macro-split { display: flex; gap: 2px; height: 12px; margin-top: 12px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
