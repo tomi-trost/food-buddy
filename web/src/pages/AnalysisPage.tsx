@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { useAddFood } from '../add/AddFood'
+import { SaveOriginal } from '../add/SaveOriginal'
 import { api, ApiError } from '../api/client'
 import type { AnalysisJob, AnalysisResult, DishSuggestion, MealKind, Nutrients, Rating } from '../api/types'
 import { DiscardButton } from '../layout/discard'
@@ -75,6 +76,7 @@ export function AnalysisPage() {
         {job.data ? <DiscardButton id={job.data.id} /> : <span style={{ width: 44 }} />}
       </div>
       <Photo url={job.data?.photo_url} emoji="🍽️" alt="Your meal" style={{ aspectRatio: '16 / 9' }} />
+      {job.data && <SaveOriginal analysisId={job.data.id} />}
       {job.isError && <p className="error" role="alert">{job.error.message}</p>}
       {job.data && <Waiting job={job.data} />}
     </>
@@ -229,6 +231,7 @@ function SnapFlow({ analysisId, photoUrl, result, rated, chosenType, saveOnly, c
       {step === 'verdict' ? (
         <>
           <Photo url={photoUrl} emoji="🍽️" alt="Your meal" style={{ aspectRatio: '16 / 9' }} />
+          <SaveOriginal analysisId={analysisId} />
           <Verdict
             dish={details.name}
             items={items}

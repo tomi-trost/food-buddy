@@ -7,6 +7,7 @@ import { Avatar } from '../ui/Avatar'
 import { Sheet } from '../ui/Sheet'
 import { Stepper } from '../ui/Stepper'
 import { NotificationSettings } from './NotificationSettings'
+import { PhotoSettings } from './PhotoSettings'
 
 export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const navigate = useNavigate()
@@ -85,6 +86,8 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
       </div>
 
       <NotificationSettings partner={h.members.find((m) => m.id !== me.id)?.name ?? 'Partner'} />
+
+      <PhotoSettings />
 
       <h2>Household · {h.name}</h2>
       <div className="card">

@@ -4,6 +4,10 @@ export type Release = { id: string; notes: string[] }
 
 export const RELEASES: Release[] = [
   {
+    id: '2026-10-25-save-photos',
+    notes: ['Want your food photos in Photos too? Switch on Settings → Photos. Photos you take in the app then get a "Save photo to Photos" button while you check them. The steps there set up a "Food Buddy" album.'],
+  },
+  {
     id: '2026-10-25-families-dishes-spoons',
     notes: [
       'Forgot something in one of your dishes? Tap the dish, then "Add an ingredient" under what is in it. It is added to that dish everywhere.',

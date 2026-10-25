@@ -1,9 +1,10 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { Route } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { tokenStore } from '../api/client'
 import { card, meal } from '../test/fixtures'
 import { jsonResponse, mockFetch, renderAt } from '../test/utils'
+import { dropOriginal, getOriginal, setSavePhotos } from '../lib/originals'
 import { useAddFood } from './AddFood'
 
 const photo = () => new File(['x'], 'p.jpg', { type: 'image/jpeg' })
@@ -53,6 +54,27 @@ describe('Add food sheet', () => {
     expect(form(fetch).get('kind')).toBe('meal')
     expect(form(fetch).get('meal_type')).toBe('lunch')
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('keeps the camera original for Photos only when that is switched on', async () => {
+    let { sheet } = setup()
+    fireEvent.change(within(sheet).getByLabelText('Take photo'), { target: { files: [photo()] } })
+    await screen.findByText('analysis page')
+    expect(await getOriginal(9)).toBeNull() // off: nothing kept
+    cleanup()
+
+    setSavePhotos(true)
+    ;({ sheet } = setup())
+    fireEvent.change(within(sheet).getByLabelText('Choose from library'), { target: { files: [photo()] } })
+    await screen.findByText('analysis page')
+    expect(await getOriginal(9)).toBeNull() // already in Photos
+    cleanup()
+
+    ;({ sheet } = setup())
+    fireEvent.change(within(sheet).getByLabelText('Take photo'), { target: { files: [photo()] } })
+    await screen.findByText('analysis page')
+    expect((await getOriginal(9))?.name).toBe('food-buddy-9.jpg')
+    await dropOriginal(9)
   })
 
   it('saves a library photo for later without a meal type, and "Our meals" needs a meal', async () => {

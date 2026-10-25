@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { NavLink, Outlet } from 'react-router'
 import { useAddFood } from '../add/AddFood'
+import { pruneOriginals } from '../lib/originals'
 import { syncPush } from '../lib/push'
 import { Icon, type IconName } from '../ui/Icon'
 import { OfflineBanner } from './OfflineBanner'
@@ -26,6 +27,7 @@ export function AppLayout() {
   const addFood = useAddFood()
   useEffect(() => {
     syncPush().catch(() => {}) // best effort: keeps this phone's subscription current
+    pruneOriginals() // camera originals never saved to Photos
   }, [])
   return (
     <div className="app">

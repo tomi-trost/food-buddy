@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { tokenStore } from '../api/client'
 import { me } from '../test/fixtures'
 import { jsonResponse, mockFetch, renderAt } from '../test/utils'
+import { savePhotosOn } from '../lib/originals'
 import { SettingsSheet } from './SettingsSheet'
 
 const routes = (
@@ -35,6 +36,21 @@ describe('SettingsSheet', () => {
     await waitFor(() =>
       expect(fetch.mock.calls.some(([url]) => url === '/api/household')).toBe(true),
     )
+  })
+
+  it('switches saving photos to Photos on for this phone, with the Shortcut steps', async () => {
+    tokenStore.set('tok')
+    mockFetch(() => jsonResponse(me()))
+    renderAt('/', routes)
+    const toggle = await screen.findByRole('button', { name: 'Save my photos to Photos' })
+    expect(toggle).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.queryByText(/Food Buddy” album/)).not.toBeInTheDocument()
+    fireEvent.click(toggle)
+    expect(toggle).toHaveAttribute('aria-pressed', 'true')
+    expect(savePhotosOn()).toBe(true)
+    expect(screen.getByText(/Save to Photo Album/)).toBeInTheDocument()
+    fireEvent.click(toggle)
+    expect(savePhotosOn()).toBe(false)
   })
 
   it('shows members, invite code and switches accent', async () => {

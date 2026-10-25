@@ -5,6 +5,7 @@ import { tokenStore } from '../api/client'
 import type { AnalysisJob, DishSuggestion } from '../api/types'
 import { analysisJob, doneJob, ING } from '../test/fixtures'
 import { jsonResponse, mockFetch, renderAt } from '../test/utils'
+import { getOriginal, keepOriginal, setSavePhotos } from '../lib/originals'
 import { AnalysisPage } from './AnalysisPage'
 
 function MealStub() {
@@ -35,6 +36,35 @@ function api(over: (url: string, init?: RequestInit) => Response | undefined = (
 beforeEach(() => {
   tokenStore.set('tok')
   vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: () => 'blob:x', revokeObjectURL: () => {} }))
+})
+
+describe('saving the photo to Photos', () => {
+  const original = () => new File(['big jpeg'], 'IMG_9.JPG', { type: 'image/jpeg' })
+
+  it('offers it only when switched on and the original is on this phone', async () => {
+    api()
+    await keepOriginal(5, original()) // off: not kept
+    render()
+    await screen.findByRole('heading', { name: 'Chicken rice bowl' })
+    expect(screen.queryByRole('button', { name: /Save photo to Photos/ })).not.toBeInTheDocument()
+  })
+
+  it('hands the original to the share sheet, then lets it go', async () => {
+    setSavePhotos(true)
+    await keepOriginal(5, original())
+    const share = vi.fn().mockRejectedValueOnce(new DOMException('cancelled', 'AbortError')).mockResolvedValue(undefined)
+    vi.stubGlobal('navigator', { ...navigator, share, canShare: () => true })
+    api()
+    render()
+    const save = await screen.findByRole('button', { name: /Save photo to Photos/ })
+    fireEvent.click(save) // cancelled: still there
+    expect(await screen.findByText(/Not saved/)).toBeInTheDocument()
+    fireEvent.click(save)
+    await vi.waitFor(() => expect(screen.queryByRole('button', { name: /Save photo to Photos/ })).not.toBeInTheDocument())
+    expect(share).toHaveBeenLastCalledWith({ files: [expect.objectContaining({ name: 'food-buddy-5.jpg' })] })
+    expect(await getOriginal(5)).toBeNull()
+    vi.unstubAllGlobals()
+  })
 })
 
 describe('snap flow', () => {

@@ -66,7 +66,7 @@ function AddFoodSheet({ slot, setSlot, openSnack }: { slot: Slot | null; setSlot
         <Toggle<Slot> label="Which meal?" value={slot ?? 'lunch'} onChange={setSlot} stack
           options={(['breakfast', 'lunch', 'dinner', 'snack', 'later'] as const).map((t) => typeOption(t))} />
         <PhotoInput camera label="Take photo" disabled={busy} className="add-hero"
-          onFile={(file) => photo.mutate({ file, kind: 'meal', meal })}>
+          onFile={(file) => photo.mutate({ file, kind: 'meal', meal, camera: true })}>
           <span className="add-ic"><Icon name="camera" size={30} /></span>
           <span className="sp">
             <b>{busy ? 'Uploading photo…' : 'Take a photo'}</b>

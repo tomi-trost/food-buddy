@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router'
 import { api } from '../api/client'
 import type { MealKind } from '../api/types'
 import { OPEN_ANALYSES } from '../layout/PendingBanner'
+import { keepOriginal } from '../lib/originals'
 import { useToast } from '../ui/Toast'
 
 export type PhotoKind = 'meal' | 'label'
@@ -25,9 +26,13 @@ export function useFoodUpload(onSent?: () => void) {
     }
   }
   const photo = useMutation({
-    mutationFn: ({ file, kind, meal }: { file: File; kind: PhotoKind; meal?: MealChoice }) =>
+    // camera: the original can go to Photos later, when that's switched on in Settings
+    mutationFn: ({ file, kind, meal }: { file: File; kind: PhotoKind; meal?: MealChoice; camera?: boolean }) =>
       api.uploadPhoto(file, kind, kind === 'meal' ? meal : undefined),
-    onSuccess: (job, v) => sent(v.kind)(job),
+    onSuccess: async (job, v) => {
+      if (v.camera && v.kind === 'meal') await keepOriginal(job.id, v.file) // before the check screen looks for it
+      sent(v.kind)(job)
+    },
   })
   const text = useMutation({
     mutationFn: ({ text, meal }: { text: string; meal?: MealChoice }) => api.describe(text, meal),
