@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
-import { api } from '../api/client'
+import { api, isQueued, shownError } from '../api/client'
 import type { Meal, MealKind } from '../api/types'
 import { todayISO } from '../lib/dates'
 import { amountHint, amountMin, amountStep, amountUnit, isCounted, piecesIn, snackNutrients } from '../lib/snacks'
@@ -58,12 +58,17 @@ export function CookSheet({ meal, open, onClose, initialType }: {
         ...(snack ? { amount } : { servings_eaten: servings }),
         cooked,
         used_up: cooked ? usedUp : [],
-      }),
+      }, meal.name),
     onSuccess: (updated) => {
       qc.setQueryData(['meal', String(meal.id)], updated)
       for (const key of ['meals', 'day', 'inventory', 'shopping', 'insights', 'rewards']) qc.invalidateQueries({ queryKey: [key] })
       onClose()
       toast(cooked ? 'Logged · ingredients updated' : 'Logged')
+    },
+    onError: (e) => {
+      if (!isQueued(e)) return
+      onClose()
+      toast(e.message)
     },
   })
   const types: MealKind[] = [...MEALS, ...(meal.types.includes('snack') ? ['snack' as const] : [])]
@@ -119,7 +124,7 @@ export function CookSheet({ meal, open, onClose, initialType }: {
           </div>
         </div>
       )}
-      {cook.isError && <p className="error" role="alert">{cook.error.message}</p>}
+      {shownError(cook.error) && <p className="error" role="alert">{cook.error!.message}</p>}
       <button className="btn" disabled={cook.isPending} onClick={() => cook.mutate()}>
         Log {Math.round(kcal)} kcal
       </button>

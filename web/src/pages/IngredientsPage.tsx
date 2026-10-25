@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { api } from '../api/client'
-import type { StockItem } from '../api/types'
+import { api, isQueued } from '../api/client'
+import type { Ingredient, StockItem } from '../api/types'
 import { todayISO } from '../lib/dates'
 import { expiryClass, expiryText, stockStep } from '../lib/stock'
 import { formatAmount } from '../lib/units'
@@ -30,23 +30,42 @@ export function IngredientsPage() {
     qc.invalidateQueries({ queryKey: ['shopping'] })
   }
   const change = useMutation({
-    mutationFn: ({ id, delta }: { id: number; delta: number }) => api.changeStock(id, delta, today),
+    mutationFn: ({ id, delta, name }: { id: number; delta: number; name: string }) => api.changeStock(id, delta, today, name),
+    // shown at once, also offline (then it's sent later: lib/outbox)
+    onMutate: ({ id, delta }) => qc.setQueryData<StockItem[]>(['inventory', today], (list) =>
+      list?.map((i) => (i.ingredient.id === id ? { ...i, grams: Math.max(0, i.grams + delta) } : i))),
     onSuccess: refresh,
+    onError: (e) => {
+      if (isQueued(e)) return
+      refresh()
+      toast(e.message)
+    },
   })
   const add = useMutation({
-    mutationFn: (id: number) => api.addStock(id, today),
+    mutationFn: (i: Ingredient) => api.addStock(i.id, today, undefined, i.name),
     onSuccess: (item) => {
       setLoc(item.ingredient.location)
       setAdding(false)
       refresh()
     },
+    onError: (e) => {
+      if (!isQueued(e)) return toast(e.message)
+      setAdding(false)
+      toast(e.message)
+    },
   })
   const remove = useMutation({
-    mutationFn: ({ id, usedUp }: { id: number; usedUp: boolean; name: string }) => api.removeStock(id, usedUp),
+    mutationFn: ({ id, usedUp, name }: { id: number; usedUp: boolean; name: string }) => api.removeStock(id, usedUp, name),
     onSuccess: (_, v) => {
       setZero(null)
       refresh()
       toast(v.usedUp ? `${v.name} removed · added to shopping list` : `${v.name} removed`)
+    },
+    onError: (e, v) => {
+      if (!isQueued(e)) return toast(e.message)
+      setZero(null)
+      qc.setQueryData<StockItem[]>(['inventory', today], (list) => list?.filter((i) => i.ingredient.id !== v.id))
+      toast(e.message)
     },
   })
 
@@ -96,11 +115,11 @@ export function IngredientsPage() {
                   </div>
                   <div className="stepper" role="group" aria-label={`${ing.name} amount`}>
                     <button aria-label={`Less ${ing.name}`} onClick={() =>
-                      item.grams - step <= 0.01 ? setZero(item) : change.mutate({ id: ing.id, delta: -step })}>
+                      item.grams - step <= 0.01 ? setZero(item) : change.mutate({ id: ing.id, delta: -step, name: ing.name })}>
                       −
                     </button>
                     <b>{formatAmount(item.grams, ing)}</b>
-                    <button aria-label={`More ${ing.name}`} onClick={() => change.mutate({ id: ing.id, delta: step })}>+</button>
+                    <button aria-label={`More ${ing.name}`} onClick={() => change.mutate({ id: ing.id, delta: step, name: ing.name })}>+</button>
                   </div>
                 </div>
               )
@@ -114,7 +133,7 @@ export function IngredientsPage() {
       <Sheet open={adding} onClose={() => setAdding(false)} label="Add ingredient">
         <h1>Add ingredient</h1>
         <div className="sub" style={{ marginBottom: 10 }}>Adds 250 g; adjust with − / + afterwards.</div>
-        <IngredientPicker onPick={(i) => add.mutate(i.id)} />
+        <IngredientPicker onPick={(i) => add.mutate(i)} />
       </Sheet>
 
       <Sheet open={!!zero} onClose={() => setZero(null)} label="Remove ingredient">

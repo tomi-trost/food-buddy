@@ -3,6 +3,7 @@ import { Route } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { tokenStore } from '../api/client'
 import { card, ING, me, meal } from '../test/fixtures'
+import { pending } from '../lib/outbox'
 import { jsonResponse, mockFetch, renderAt } from '../test/utils'
 import { MealPage } from './MealPage'
 import { MealsPage } from './MealsPage'
@@ -343,6 +344,20 @@ describe('MealPage', () => {
     fireEvent.click(within(sheet).getByRole('button', { name: 'Log 828 kcal' }))
     await screen.findByText('Logged · ingredients updated')
     expect(cooked).toEqual({ meal_type: 'dinner', eaten_on: expect.any(String), servings_eaten: 1.5, cooked: true, used_up: [2] })
+  })
+
+  it('logs a meal without a connection: kept on the phone, the sheet closes', async () => {
+    const fetch = mealApi()
+    renderMeal()
+    fireEvent.click(await screen.findByRole('button', { name: /I cooked this again/ }))
+    fetch.mockImplementation(() => Promise.reject(new TypeError('Load failed'))) // signal gone
+    const sheet = screen.getByRole('dialog', { name: 'Log this meal' })
+    fireEvent.click(within(sheet).getByRole('button', { name: /^Log \d+ kcal/ }))
+    expect(await screen.findByText(/No connection: saved on this phone/)).toBeInTheDocument()
+    expect(screen.queryByRole('dialog', { name: 'Log this meal' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    const [kept] = await pending()
+    expect(kept).toMatchObject({ path: '/meals/3/cook', method: 'POST', label: 'Log Chicken rice bowl' })
   })
 
   it('logs leftovers without touching stock or used-up ingredients', async () => {

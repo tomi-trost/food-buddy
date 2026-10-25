@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
-import { api } from '../api/client'
-import type { ShoppingItem } from '../api/types'
+import { api, isQueued } from '../api/client'
+import type { Shopping, ShoppingItem } from '../api/types'
 import { todayISO } from '../lib/dates'
 import { Icon } from '../ui/Icon'
 import { useToast } from '../ui/Toast'
@@ -13,8 +13,16 @@ export function ShoppingView() {
   const navigate = useNavigate()
   const shopping = useQuery({ queryKey: ['shopping'], queryFn: api.shopping })
   const check = useMutation({
-    mutationFn: ({ id, on }: { id: number; on: boolean }) => api.checkItem(id, on),
+    mutationFn: ({ id, on, name }: { id: number; on: boolean; name: string }) => api.checkItem(id, on, name),
+    // ticked at once, also in a shop without signal (then it's sent later: lib/outbox)
+    onMutate: ({ id, on }) => qc.setQueryData<Shopping>(['shopping'], (s) =>
+      s && { ...s, items: s.items.map((i) => (i.ingredient.id === id ? { ...i, checked: on } : i)) }),
     onSuccess: (s) => qc.setQueryData(['shopping'], s),
+    onError: (e) => {
+      if (isQueued(e)) return
+      qc.invalidateQueries({ queryKey: ['shopping'] })
+      toast(e.message)
+    },
   })
   const finish = useMutation({
     mutationFn: () => api.finishShopping(todayISO()),
@@ -43,7 +51,7 @@ export function ShoppingView() {
 
   const line = (i: ShoppingItem) => (
     <button key={i.ingredient.id} style={{ width: '100%', textAlign: 'left' }} aria-pressed={i.checked}
-      aria-label={`${i.ingredient.name}, ${formatAmount(i.buy, i.ingredient, true)}`} onClick={() => check.mutate({ id: i.ingredient.id, on: !i.checked })}>
+      aria-label={`${i.ingredient.name}, ${formatAmount(i.buy, i.ingredient, true)}`} onClick={() => check.mutate({ id: i.ingredient.id, on: !i.checked, name: i.ingredient.name })}>
       <span className={`chk${i.checked ? ' on' : ''}`}>{i.checked && <Icon name="check" size={16} />}</span>
       <span className={`sp${i.checked ? ' done' : ''}`}>
         {i.ingredient.emoji} {i.ingredient.name}

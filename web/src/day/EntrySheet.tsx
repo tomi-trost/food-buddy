@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { api } from '../api/client'
+import { api, isQueued, shownError } from '../api/client'
 import type { LogEntry, LogPatch, MealType, Nutrients } from '../api/types'
 import { MEAL_TYPE_LABEL } from '../lib/dates'
 import { scale } from '../lib/macros'
@@ -42,13 +42,18 @@ function EntryForm({ entry, onClose }: { entry: LogEntry; onClose: () => void })
     mutationFn: () => {
       const ours = !isMeal && entry.meal_id !== null // one of our snacks: values live on the snack
       const patch: LogPatch = isMeal ? { servings, meal_type: mealType } : { servings, ...(perUnit && !ours && { per_unit: perUnit }) }
-      return api.editLog(entry.id, patch)
+      return api.editLog(entry.id, patch, entry.name)
     },
     onSuccess: () => done('Updated'),
+    onError: (e) => isQueued(e) && done(e.message),
   })
-  const remove = useMutation({ mutationFn: () => api.removeLog(entry.id), onSuccess: () => done(`${entry.name} removed from today`) })
+  const remove = useMutation({
+    mutationFn: () => api.removeLog(entry.id, entry.name),
+    onSuccess: () => done(`${entry.name} removed from today`),
+    onError: (e) => isQueued(e) && done(e.message),
+  })
   const busy = save.isPending || remove.isPending
-  const error = save.error ?? remove.error
+  const error = shownError(save.error) ?? shownError(remove.error)
 
   return (
     <>

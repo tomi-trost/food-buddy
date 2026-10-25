@@ -121,7 +121,8 @@ Shared conventions for all sections:
 - [ ] Client-side photo resize before upload (saves mobile data); HEIC check on iPhone
 - [ ] API types generated from OpenAPI
 - [ ] Capacitor Android build (APK sideload)
-- [ ] Offline write queue, failover drill, README/self-hosting docs, go public (license decision)
+- [x] Offline write queue (2026-10-25, decision 0030)
+- [ ] Failover drill, README/self-hosting docs, go public (license decision)
 
 ## Local development
 

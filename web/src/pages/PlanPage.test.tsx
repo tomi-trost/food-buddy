@@ -5,6 +5,7 @@ import { tokenStore } from '../api/client'
 import type { Plan, Shopping } from '../api/types'
 import { card, ING, me, meal, plan, shopping } from '../test/fixtures'
 import { jsonResponse, mockFetch, renderAt } from '../test/utils'
+import { pending } from '../lib/outbox'
 import { AddToPlanSheet } from '../meals/AddToPlanSheet'
 import { PlanPage } from './PlanPage'
 
@@ -121,6 +122,20 @@ describe('Shopping list', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Finished shopping/ }))
     expect(await screen.findByText('ingredients page')).toBeInTheDocument()
+  })
+})
+
+describe('shopping without signal', () => {
+  it('ticks at once and keeps the tick on the phone', async () => {
+    const fetch = api({ plan: plan({ status: 'approved' }), shopping: shopping() })
+    renderAt('/plan?tab=shop', routes)
+    const rice = await screen.findByRole('button', { name: 'Rice (cooked), 600 g' })
+    fetch.mockImplementation(() => Promise.reject(new TypeError('Load failed')))
+    fireEvent.click(rice)
+    await waitFor(() => expect(rice).toHaveAttribute('aria-pressed', 'true'))
+    expect(screen.getByText('2 in cart')).toBeInTheDocument()
+    await waitFor(async () => expect((await pending()).map((c) => c.label)).toEqual(['Tick Rice (cooked)']))
+    expect(rice).toHaveAttribute('aria-pressed', 'true') // not rolled back
   })
 })
 

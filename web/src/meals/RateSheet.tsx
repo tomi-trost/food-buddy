@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { api } from '../api/client'
+import { api, isQueued, shownError } from '../api/client'
 import type { Meal, Rating } from '../api/types'
 import { Sheet } from '../ui/Sheet'
 import { useToast } from '../ui/Toast'
@@ -23,13 +23,18 @@ function RateForm({ meal, meId, onClose }: { meal: Meal; meId: number; onClose: 
   const [draft, setDraft] = useState<Rating>(existing ?? DEFAULT_RATING)
 
   const save = useMutation({
-    mutationFn: () => api.rateMeal(meal.id, draft),
+    mutationFn: () => api.rateMeal(meal.id, draft, meal.name),
     onSuccess: (updated) => {
       qc.setQueryData(['meal', String(meal.id)], updated)
       qc.invalidateQueries({ queryKey: ['meals'] })
       onClose()
       const partnerDone = updated.ratings.filter((r) => r.user_id !== meId).every((r) => r.rating)
       toast(partnerDone ? 'Rating saved' : 'Rating saved — waiting for partner')
+    },
+    onError: (e) => {
+      if (!isQueued(e)) return
+      onClose()
+      toast(e.message)
     },
   })
   const remove = useMutation({
@@ -42,7 +47,7 @@ function RateForm({ meal, meId, onClose }: { meal: Meal; meId: number; onClose: 
     },
   })
   const set = (patch: Partial<Rating>) => setDraft((d) => ({ ...d, ...patch }))
-  const error = save.error ?? remove.error
+  const error = shownError(save.error) ?? remove.error
 
   return (
     <>

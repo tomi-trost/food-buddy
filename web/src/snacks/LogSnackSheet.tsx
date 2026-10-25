@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { PhotoInput } from '../add/PhotoInput'
 import { useFoodUpload } from '../add/upload'
-import { api, ApiError } from '../api/client'
+import { api, ApiError, isQueued, shownError } from '../api/client'
 import type { MealCard, Nutrients, SnackKind, SnackPer } from '../api/types'
 import { todayISO } from '../lib/dates'
 import { guessPieceG, piecesIn, type ProductSnack, productSnack, scannedAmount, unknownProduct } from '../lib/barcode'
@@ -77,6 +77,11 @@ function LogSnack({ onClose, scan, onOurs }: { onClose: () => void; scan: boolea
       for (const key of ['day', 'insights', 'meals', 'inventory', 'rewards']) qc.invalidateQueries({ queryKey: [key] })
       onClose()
       toast(`${logged.name} logged${logged.meal_id ? ' · in our snacks' : ''}${logged.treat ? ` · ${Math.round(logged.sugar)} g treat sugar` : ''}`)
+    },
+    onError: (e) => {
+      if (!isQueued(e)) return
+      onClose()
+      toast(e.message)
     },
   })
 
@@ -153,7 +158,7 @@ function LogSnack({ onClose, scan, onOurs }: { onClose: () => void; scan: boolea
           <span className="sp"><b>Save to our snacks</b><small className="sub">Under Meals → Snacks: log it again in one tap, rate it, keep it at home</small></span>
           <input type="checkbox" role="switch" className="switch" checked={save} onChange={(e) => setSave(e.target.checked)} />
         </label>
-        {log.error && <p className="error" role="alert">{log.error.message}</p>}
+        {shownError(log.error) && <p className="error" role="alert">{log.error!.message}</p>}
         <button className="btn" disabled={log.isPending || !valid || !draft.name.trim()} onClick={() => log.mutate(draft)}>Log snack</button>
         <button className="btn ghost" style={{ marginTop: 8 }} onClick={() => { setDraft(null); setSave(false); setScanning(!!scanned) }}>
           {scanned ? 'Scan another' : 'Pick another'}

@@ -4,6 +4,13 @@ export type Release = { id: string; notes: string[] }
 
 export const RELEASES: Release[] = [
   {
+    id: '2026-10-25-offline',
+    notes: [
+      'No signal? Logging food, photos, ratings, shopping ticks and fridge changes are now kept on your phone. They are sent when you are back online.',
+      'The bar at the top shows how many changes are waiting.',
+    ],
+  },
+  {
     id: '2026-10-25-save-photos',
     notes: ['Want your food photos in Photos too? Switch on Settings → Photos. Photos you take in the app then get a "Save photo to Photos" button while you check them. The steps there set up a "Food Buddy" album.'],
   },

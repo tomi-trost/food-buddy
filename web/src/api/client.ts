@@ -1,7 +1,8 @@
 import type {
   AnalysisJob, CatalogItem, CookIn, Day, Insights, LearnedFamily, LogEntry, Sources, LogPatch, Reward, SnackIn, HouseholdPatch, Ingredient, IngredientFromCode, Me, Meal, MealCard, MealCreate, MealKind, MealPatch, MealType, MePatch, Plan, PushConfig, PushKind, Suggestion, SnackLogged, PlanMode, Product, Rating, RegisterBody, Shopping, StockItem, WizardCell,
 } from './types'
-import { reportReachable } from '../lib/online'
+import { isOffline, reportReachable } from '../lib/online'
+import { drop, enqueue, fromForm, pending, toForm } from '../lib/outbox'
 import { shrinkPhoto } from '../lib/photoResize'
 
 const TOKEN_KEY = 'fb.token'
@@ -95,6 +96,69 @@ async function request(path: string, init: RequestInit = {}): Promise<Response> 
 
 const json = async <T>(path: string, init?: RequestInit) => (await request(path, init)).json() as Promise<T>
 
+/** No connection: the change waits on this phone (lib/outbox) and is sent when we're back. */
+export class Queued extends Error {
+  constructor() {
+    super("No connection: saved on this phone, it's sent when you're back online.")
+  }
+}
+export const isQueued = (e: unknown): boolean => e instanceof Queued
+/** An error worth showing: a change kept for later isn't one. */
+export const shownError = (e: Error | null | undefined): Error | null => (e && !isQueued(e) ? e : null)
+
+/** A change that can wait: sent now when we can, else kept for later. While older ones wait, it
+ *  waits behind them, so they arrive in the order they were made. A request that failed before
+ *  reaching the server is kept; one the server answered (even with an error) isn't. */
+async function queueable(path: string, init: RequestInit, label: string): Promise<Response> {
+  const keep = async (): Promise<never> => {
+    const body = init.body instanceof FormData ? { form: await fromForm(init.body) } : init.body ? { json: String(init.body) } : {}
+    await enqueue({ path, method: init.method ?? 'POST', label, ...body })
+    if (!isOffline()) void flushOutbox() // back already: send it with the rest
+    throw new Queued()
+  }
+  if (isOffline() || (await pending()).length) return keep()
+  try {
+    return await request(path, init)
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 0) return keep()
+    throw e
+  }
+}
+
+const queuedJson = async <T>(path: string, init: RequestInit, label: string) =>
+  (await queueable(path, init, label)).json() as Promise<T>
+
+export type FlushResult = { sent: number; failed: { label: string; message: string }[]; stopped: boolean }
+
+let flushing: Promise<FlushResult> | null = null
+
+/** Send what waits, oldest first. Stops (and tries again later) when the connection, the login or
+ *  the server is gone; a change the server turns down (gone, invalid) is dropped and reported. */
+export function flushOutbox(): Promise<FlushResult> {
+  flushing ??= (async () => {
+    const result: FlushResult = { sent: 0, failed: [], stopped: false }
+    for (const c of await pending()) {
+      try {
+        await request(c.path, { method: c.method, body: c.form ? toForm(c.form) : c.json })
+        await drop(c.id!)
+        result.sent += 1
+      } catch (e) {
+        if (e instanceof ApiError && e.status >= 400 && e.status < 500 && e.status !== 401) {
+          await drop(c.id!)
+          result.failed.push({ label: c.label, message: e.message })
+          continue
+        }
+        result.stopped = true
+        break
+      }
+    }
+    return result
+  })().finally(() => {
+    flushing = null
+  })
+  return flushing
+}
+
 export const api = {
   async login(email: string, password: string) {
     const { access_token } = await json<{ access_token: string }>('/auth/login', {
@@ -121,14 +185,15 @@ export const api = {
     form.append('kind', kind)
     if (meal?.type) form.append('meal_type', meal.type)
     if (meal?.saveOnly) form.append('save_only', 'true')
-    return await json<AnalysisJob>('/analyses', { method: 'POST', body: form })
+    const what = kind === 'label' ? 'Nutrition label photo' : `Photo of ${meal?.type ?? 'a meal'}`
+    return await queuedJson<AnalysisJob>('/analyses', { method: 'POST', body: form }, what)
   },
   /** Type a dish instead of snapping it; checked and posted like a photo. */
   describe: (text: string, meal?: { type: MealKind | null; saveOnly: boolean }) =>
-    json<AnalysisJob>('/analyses/text', {
+    queuedJson<AnalysisJob>('/analyses/text', {
       method: 'POST',
       body: JSON.stringify({ kind: 'meal', text, meal_type: meal?.type ?? null, save_only: meal?.saveOnly ?? false }),
-    }),
+    }, `“${text}”`),
   analysis: (id: number | string) => json<AnalysisJob>(`/analyses/${id}`),
   openAnalyses: () => json<AnalysisJob[]>('/analyses/open'),
   pushConfig: () => json<PushConfig>('/push'),
@@ -141,7 +206,7 @@ export const api = {
   pushPrefs: (off: PushKind[]) => json<PushConfig>('/push/prefs', { method: 'PUT', body: JSON.stringify({ off }) }),
   pushTest: () => json<{ sent: number }>('/push/test', { method: 'POST' }),
   rateAnalysis: (id: number, rating: Rating) =>
-    json<AnalysisJob>(`/analyses/${id}/rating`, { method: 'PUT', body: JSON.stringify(rating) }),
+    queuedJson<AnalysisJob>(`/analyses/${id}/rating`, { method: 'PUT', body: JSON.stringify(rating) }, 'Rating'),
   discardAnalysis: (id: number) => json<AnalysisJob>(`/analyses/${id}/discard`, { method: 'POST' }),
   reopenAnalysis: (id: number) => json<AnalysisJob>(`/analyses/${id}/reopen`, { method: 'POST' }),
   retryAnalysis: (id: number) => json<AnalysisJob>(`/analyses/${id}/retry`, { method: 'POST' }),
@@ -153,15 +218,15 @@ export const api = {
   createMeal: (body: MealCreate) => json<Meal>('/meals', { method: 'POST', body: JSON.stringify(body) }),
   meal: (id: number | string) => json<Meal>(`/meals/${id}`),
   meals: () => json<MealCard[]>('/meals'),
-  rateMeal: (id: number, rating: Rating) =>
-    json<Meal>(`/meals/${id}/rating`, { method: 'PUT', body: JSON.stringify(rating) }),
+  rateMeal: (id: number, rating: Rating, name = 'a meal') =>
+    queuedJson<Meal>(`/meals/${id}/rating`, { method: 'PUT', body: JSON.stringify(rating) }, `Rating of ${name}`),
   inventory: (today: string) => json<StockItem[]>(`/inventory?today=${today}`),
-  addStock: (ingredientId: number, today: string, grams?: number) =>
-    json<StockItem>('/inventory', { method: 'POST', body: JSON.stringify({ ingredient_id: ingredientId, today, grams }) }),
-  changeStock: (ingredientId: number, delta: number, today: string) =>
-    json<StockItem>(`/inventory/${ingredientId}?today=${today}`, { method: 'PATCH', body: JSON.stringify({ delta }) }),
-  removeStock: async (ingredientId: number, usedUp: boolean) => {
-    await request(`/inventory/${ingredientId}?used_up=${usedUp}`, { method: 'DELETE' })
+  addStock: (ingredientId: number, today: string, grams?: number, name = 'an ingredient') =>
+    queuedJson<StockItem>('/inventory', { method: 'POST', body: JSON.stringify({ ingredient_id: ingredientId, today, grams }) }, `Add ${name}`),
+  changeStock: (ingredientId: number, delta: number, today: string, name = 'an ingredient') =>
+    queuedJson<StockItem>(`/inventory/${ingredientId}?today=${today}`, { method: 'PATCH', body: JSON.stringify({ delta }) }, `Change ${name}`),
+  removeStock: async (ingredientId: number, usedUp: boolean, name = 'an ingredient') => {
+    await queueable(`/inventory/${ingredientId}?used_up=${usedUp}`, { method: 'DELETE' }, `Remove ${name}`)
   },
   cookable: () => json<MealCard[]>('/inventory/cookable'),
   patchMeal: (id: number, patch: MealPatch) =>
@@ -185,15 +250,16 @@ export const api = {
   undoMeal: (id: number) => json<{ analysis_id: number | null }>(`/meals/${id}/undo`, { method: 'POST' }),
   unrateMeal: (id: number) => json<Meal>(`/meals/${id}/rating`, { method: 'DELETE' }),
   day: (date: string) => json<Day>(`/day?date=${date}`),
-  editLog: (id: number, patch: LogPatch) => json<LogEntry>(`/log/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),
-  async removeLog(id: number) {
-    await request(`/log/${id}`, { method: 'DELETE' })
+  editLog: (id: number, patch: LogPatch, name = 'an entry') =>
+    queuedJson<LogEntry>(`/log/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }, `Change ${name}`),
+  async removeLog(id: number, name = 'an entry') {
+    await queueable(`/log/${id}`, { method: 'DELETE' }, `Remove ${name}`)
   },
   insights: (end: string, days = 7) => json<Insights>(`/insights?end=${end}&days=${days}`),
   insightSources: (end: string, days: number, userId: number) =>
     json<Sources>(`/insights/sources?end=${end}&days=${days}&user_id=${userId}`),
   snackCatalog: () => json<CatalogItem[]>('/snacks/catalog'),
-  logSnack: (body: SnackIn) => json<SnackLogged>('/snacks', { method: 'POST', body: JSON.stringify(body) }),
+  logSnack: (body: SnackIn) => queuedJson<SnackLogged>('/snacks', { method: 'POST', body: JSON.stringify(body) }, `Log ${body.name}`),
   product: (code: string) => json<Product>(`/barcode/${code}`),
   ingredientFromBarcode: (code: string, body: IngredientFromCode) =>
     json<Ingredient>(`/barcode/${code}/ingredient`, { method: 'POST', body: JSON.stringify(body) }),
@@ -213,12 +279,12 @@ export const api = {
     json<Plan>(`/plan/slots/${day}/${type}`, { method: 'PUT', body: JSON.stringify(body) }),
   approvePlan: () => json<Plan>('/plan/approve', { method: 'POST' }),
   shopping: () => json<Shopping>('/shopping'),
-  checkItem: (ingredientId: number, checked: boolean) =>
-    json<Shopping>(`/shopping/check/${ingredientId}`, { method: 'PUT', body: JSON.stringify({ checked }) }),
+  checkItem: (ingredientId: number, checked: boolean, name = 'an item') =>
+    queuedJson<Shopping>(`/shopping/check/${ingredientId}`, { method: 'PUT', body: JSON.stringify({ checked }) }, `${checked ? 'Tick' : 'Untick'} ${name}`),
   finishShopping: (today: string) =>
     json<{ added: number }>('/shopping/finish', { method: 'POST', body: JSON.stringify({ today }) }),
-  cookMeal: (id: number, body: CookIn) =>
-    json<Meal>(`/meals/${id}/cook`, { method: 'POST', body: JSON.stringify(body) }),
+  cookMeal: (id: number, body: CookIn, name = 'a meal') =>
+    queuedJson<Meal>(`/meals/${id}/cook`, { method: 'POST', body: JSON.stringify(body) }, `Log ${name}`),
   /** Photos need the auth header, so they're fetched as blobs instead of plain <img src>. */
   async photoBlob(url: string) {
     return (await request(url.replace(/^\/api/, ''))).blob()

@@ -28,5 +28,6 @@
 | [0027](0027-bought-and-eaten-out.md) | Bought / eaten-out food is logged, not added to our meals | accepted |
 | [0028](0028-dish-families.md) | Dish families group variations of the same dish | accepted |
 | [0029](0029-bundles.md) | Bundles: a plate can hold dishes of ours; aliases offer them | accepted |
+| [0030](0030-offline-write-queue.md) | Offline write queue: everyday changes wait on the phone | accepted |
 
 Template: Context · Decision · Alternatives · Consequences.

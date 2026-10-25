@@ -7,7 +7,7 @@ Status: idea · planned · done · dropped
 | 2026-10-04 | Pick the real stack (web + native): Expo/React Native vs Capacitor + web framework | done (React + Vite PWA, live; Capacitor APK deferred, 0017) |
 | 2026-10-04 | Which AI/vision API for dish + macro detection; nutrition DB source | done (`qwen3-vl:4b-instruct` on Oracle + USDA/Ciqual/OFF; 0018 accepted after the M3 second comparison) |
 | 2026-10-04 | Price estimation source (manual vs store price DB vs learned from past receipts) | open |
-| 2026-10-04 | Sync/auth between the two users (shared household, offline-first?) | done (household auth); offline write queue planned (next-up #7) |
+| 2026-10-04 | Sync/auth between the two users (shared household, offline-first?) | done (household auth); offline write queue done 2026-10-25 (0030) |
 | 2026-10-04 | Plan variety rules: avoid the same breakfast all week (shopping list currently balloons with repeats) | planned (next-up #5, optional: off unless chosen) |
 | 2026-10-04 | Choose which day the meal-prep batch is cooked; show a "prep session" entry in the plan | planned (next-up #5) |
 | 2026-10-04 | Weekly challenge rewards/streak history for the Versus tab | idea |
@@ -53,3 +53,4 @@ Status: idea · planned · done · dropped
 | 2026-10-24 | Count a dish as cooked when a plate holding it is cooked (its "cooked N×" / last cooked) | idea |
 | 2026-10-25 | **How long a meal keeps us full.** Per person and meal: the time until the next meal, and any snacks in between (count, kcal). Needs the real eating time on every log: photo posts use the post time; meals logged from Meals / "+" / "You too?" ask "when did you eat?" (default now; the food log has only a date today). Then a fullness graph per meal and dish family ("keeps you full ~4 h"), and a push some time after a meal ("Still full?" Yes / Getting hungry) to get the real hungry-again time, adjusted to each person. Links to the "How filling" slider and the menu generator | idea |
 | 2026-10-25 | Save the original photos to a "Food Buddy" album in Photos: a PWA can't write to Photos, so Settings switch → "Save photo" button via the share sheet + an iOS Shortcut that saves to the album | done 2026-10-25 (`lib/originals.ts`) |
+| 2026-10-25 | Open with data offline from a cold start (persist the React Query cache in IndexedDB) | idea |

@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
-import { api } from '../api/client'
+import { api, isQueued, shownError } from '../api/client'
 import type { MealKind } from '../api/types'
 import { OPEN_ANALYSES } from '../layout/PendingBanner'
 import { keepOriginal } from '../lib/originals'
@@ -25,6 +25,12 @@ export function useFoodUpload(onSent?: () => void) {
       toast('Reading the label… it shows up above the tabs when ready')
     }
   }
+  // no connection: it waits on this phone (lib/outbox) and the sheet closes as if sent
+  const kept = (e: Error, then: string) => {
+    if (!isQueued(e)) return
+    onSent?.()
+    toast(`No connection: kept on this phone. ${then}`)
+  }
   const photo = useMutation({
     // camera: the original can go to Photos later, when that's switched on in Settings
     mutationFn: ({ file, kind, meal }: { file: File; kind: PhotoKind; meal?: MealChoice; camera?: boolean }) =>
@@ -33,10 +39,12 @@ export function useFoodUpload(onSent?: () => void) {
       if (v.camera && v.kind === 'meal') await keepOriginal(job.id, v.file) // before the check screen looks for it
       sent(v.kind)(job)
     },
+    onError: (e) => kept(e, 'The photo uploads when you’re back online, then shows above the tabs.'),
   })
   const text = useMutation({
     mutationFn: ({ text, meal }: { text: string; meal?: MealChoice }) => api.describe(text, meal),
     onSuccess: (job) => sent('meal')(job),
+    onError: (e) => kept(e, 'It’s sent when you’re back online, then shows above the tabs.'),
   })
-  return { photo, text, busy: photo.isPending || text.isPending, error: photo.error ?? text.error }
+  return { photo, text, busy: photo.isPending || text.isPending, error: shownError(photo.error) ?? shownError(text.error) }
 }

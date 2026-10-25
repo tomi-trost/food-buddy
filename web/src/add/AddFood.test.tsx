@@ -5,6 +5,7 @@ import { tokenStore } from '../api/client'
 import { card, meal } from '../test/fixtures'
 import { jsonResponse, mockFetch, renderAt } from '../test/utils'
 import { dropOriginal, getOriginal, setSavePhotos } from '../lib/originals'
+import { pending } from '../lib/outbox'
 import { useAddFood } from './AddFood'
 
 const photo = () => new File(['x'], 'p.jpg', { type: 'image/jpeg' })
@@ -14,7 +15,7 @@ function Opener({ opts }: { opts?: Parameters<ReturnType<typeof useAddFood>>[0] 
   return <button onClick={() => open(opts)}>open</button>
 }
 
-function setup(opts?: Parameters<ReturnType<typeof useAddFood>>[0], handler = () => jsonResponse({ id: 9, status: 'queued' }, 202)) {
+function setup(opts?: Parameters<ReturnType<typeof useAddFood>>[0], handler: () => Response | Promise<Response> = () => jsonResponse({ id: 9, status: 'queued' }, 202)) {
   const fetch = mockFetch(handler)
   renderAt('/', (
     <>
@@ -75,6 +76,17 @@ describe('Add food sheet', () => {
     await screen.findByText('analysis page')
     expect((await getOriginal(9))?.name).toBe('food-buddy-9.jpg')
     await dropOriginal(9)
+  })
+
+  it('keeps a photo taken without a connection and closes the sheet', async () => {
+    const { fetch, sheet } = setup({ type: 'lunch' }, () => Promise.reject(new TypeError('Load failed')))
+    fireEvent.change(within(sheet).getByLabelText('Take photo'), { target: { files: [photo()] } })
+    expect(await screen.findByText(/No connection: kept on this phone. The photo uploads when you’re back online/)).toBeInTheDocument()
+    expect(screen.queryByRole('dialog', { name: 'Add food' })).not.toBeInTheDocument()
+    expect(screen.queryByText('analysis page')).not.toBeInTheDocument()
+    expect(fetch).toHaveBeenCalledTimes(1)
+    const [kept] = await pending()
+    expect([kept.path, kept.label, kept.form?.fields]).toEqual(['/analyses', 'Photo of lunch', [['kind', 'meal'], ['meal_type', 'lunch']]])
   })
 
   it('saves a library photo for later without a meal type, and "Our meals" needs a meal', async () => {

@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { useAddFood } from '../add/AddFood'
 import { SaveOriginal } from '../add/SaveOriginal'
-import { api, ApiError } from '../api/client'
+import { api, ApiError, isQueued, shownError } from '../api/client'
 import type { AnalysisJob, AnalysisResult, DishSuggestion, MealKind, Nutrients, Rating } from '../api/types'
 import { DiscardButton } from '../layout/discard'
 import { OPEN_ANALYSES } from '../layout/PendingBanner'
@@ -100,10 +100,11 @@ function Waiting({ job }: { job: AnalysisJob }) {
       update(updated)
       toast('Rating saved — it goes with the meal when you post it')
     },
+    onError: (e) => isQueued(e) && toast(e.message),
   })
   const retry = useMutation({ mutationFn: () => api.retryAnalysis(job.id), onSuccess: update })
   const failed = job.status === 'failed'
-  const error = [rate, retry].find((m) => m.isError)?.error
+  const error = shownError(rate.error) ?? retry.error
 
   return (
     <>

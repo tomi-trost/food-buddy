@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
-import { api, ApiError } from '../api/client'
+import { api, ApiError, isQueued, shownError } from '../api/client'
 import type { AnalysisJob, SnackKind, SnackPer, SnackResult } from '../api/types'
 import { DiscardButton } from '../layout/discard'
 import { OPEN_ANALYSES } from '../layout/PendingBanner'
@@ -125,6 +125,10 @@ function SnackForm({ analysisId, photoUrl, label, initial, close }: {
     },
     // Logged by the other person meanwhile: reload the job, the page then says so
     onError: (error) => {
+      if (isQueued(error)) {
+        navigate('/', { replace: true })
+        toast(error.message)
+      }
       if (error instanceof ApiError && error.status === 409) qc.invalidateQueries({ queryKey: ['analysis', String(analysisId)] })
     },
   })
@@ -189,7 +193,7 @@ function SnackForm({ analysisId, photoUrl, label, initial, close }: {
         <span className="sp"><b>Save to our snacks</b><small className="sub">Under Meals → Snacks: log it again in one tap, rate it, keep it at home</small></span>
         <input type="checkbox" role="switch" className="switch" checked={save} onChange={(e) => setSave(e.target.checked)} />
       </label>
-      {log.isError && <p className="error" role="alert">{log.error.message}</p>}
+      {shownError(log.error) && <p className="error" role="alert">{log.error!.message}</p>}
       <button className="btn" disabled={log.isPending || !valuesOk} onClick={() => log.mutate()}>Log snack</button>
     </>
   )
