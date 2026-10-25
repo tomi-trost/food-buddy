@@ -1,27 +1,7 @@
 import { useState } from 'react'
+import { FOOD } from '../lib/emoji'
 import { Sheet } from '../ui/Sheet'
 
-/** Food emoji with words to find them by. */
-const FOOD: [string, string][] = [
-  ['🍝', 'pasta spaghetti noodles'], ['🍜', 'ramen noodles soup pho'], ['🍲', 'stew pot curry goulash'], ['🥘', 'paella pan casserole'],
-  ['🍛', 'curry rice'], ['🍚', 'rice bowl'], ['🍙', 'rice ball onigiri'], ['🍣', 'sushi fish'], ['🍱', 'bento lunch box'],
-  ['🥗', 'salad greens bowl'], ['🥙', 'wrap pita kebab'], ['🌯', 'burrito wrap tortilla'], ['🌮', 'taco mexican'], ['🫔', 'tamale'],
-  ['🍕', 'pizza'], ['🍔', 'burger hamburger'], ['🌭', 'hot dog sausage'], ['🥪', 'sandwich toast panini'], ['🍟', 'fries chips potato'],
-  ['🥟', 'dumpling ravioli'], ['🫕', 'fondue'], ['🥣', 'bowl cereal oats porridge muesli granola'], ['🥞', 'pancakes crepes'],
-  ['🧇', 'waffle'], ['🥐', 'croissant pastry'], ['🥯', 'bagel'], ['🍞', 'bread loaf toast'], ['🥖', 'baguette bread'], ['🫓', 'flatbread focaccia'],
-  ['🥨', 'pretzel'], ['🧀', 'cheese'], ['🥚', 'egg'], ['🍳', 'fried egg breakfast omelette shakshuka'], ['🥓', 'bacon'],
-  ['🍗', 'chicken drumstick'], ['🍖', 'meat ribs'], ['🥩', 'steak beef meat'], ['🐟', 'fish'], ['🦐', 'shrimp prawn'], ['🦑', 'squid calamari'],
-  ['🫘', 'beans lentils chickpeas legumes'], ['🥜', 'peanuts nuts'], ['🌰', 'chestnut nut'], ['🥔', 'potato'], ['🍠', 'sweet potato'],
-  ['🥕', 'carrot'], ['🥦', 'broccoli vegetables'], ['🥬', 'greens spinach kale cabbage'], ['🥒', 'cucumber'], ['🫑', 'pepper paprika'],
-  ['🌶️', 'chili hot'], ['🍅', 'tomato'], ['🍆', 'eggplant aubergine'], ['🧅', 'onion'], ['🧄', 'garlic'], ['🍄', 'mushroom'], ['🌽', 'corn'],
-  ['🫛', 'peas'], ['🥑', 'avocado guacamole'], ['🫒', 'olive'], ['🎃', 'pumpkin squash'], ['🍎', 'apple'], ['🍐', 'pear'], ['🍊', 'orange'],
-  ['🍋', 'lemon'], ['🍌', 'banana'], ['🍉', 'watermelon'], ['🍇', 'grapes'], ['🍓', 'strawberry berries'], ['🫐', 'blueberries berries'],
-  ['🍒', 'cherries'], ['🍑', 'peach'], ['🥭', 'mango'], ['🍍', 'pineapple'], ['🥝', 'kiwi'], ['🥥', 'coconut'], ['🍦', 'ice cream'],
-  ['🍨', 'gelato ice cream'], ['🍧', 'sorbet shaved ice'], ['🍰', 'cake slice tiramisu'], ['🎂', 'birthday cake'], ['🧁', 'cupcake muffin'],
-  ['🥧', 'pie tart quiche'], ['🍮', 'pudding flan custard'], ['🍫', 'chocolate'], ['🍬', 'candy sweet'], ['🍪', 'cookie biscuit biscotti'],
-  ['🍩', 'donut'], ['🍯', 'honey'], ['🥛', 'milk'], ['🫖', 'tea'], ['☕', 'coffee espresso'], ['🧃', 'juice box'], ['🥤', 'soda drink smoothie'],
-  ['🧋', 'bubble tea'], ['🍺', 'beer'], ['🍷', 'wine'], ['🥂', 'prosecco champagne'], ['🍽️', 'plate meal dinner'],
-]
 
 /** Pick the emoji for a meal's card: tap one, search by word, or type any emoji. */
 export function EmojiPicker({ open, value, onPick, onClose }: { open: boolean; value: string; onPick: (emoji: string) => void; onClose: () => void }) {

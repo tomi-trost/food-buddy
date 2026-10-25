@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ING } from '../test/fixtures'
 import { stockStep } from './stock'
-import { amountStepper, formatAmount, roundAmount, toAmount, toGrams } from './units'
+import { amountStepper, formatAmount, rememberedSpoon, rememberSpoon, roundAmount, spoonGrams, spoonsOf, spoonsToGrams, toAmount, toGrams } from './units'
 
 const slice = { unit: 'slice' as const, unit_grams: 30 }
 const clove = { unit: 'clove' as const, unit_grams: 5 }
@@ -41,5 +41,29 @@ describe('units', () => {
     expect(stockStep(ING.eggs)).toBe(50) // one egg
     expect(stockStep(ING.oil)).toBe(91) // 100 ml
     expect(stockStep(ING.chicken)).toBe(50)
+  })
+})
+
+describe('spoons', () => {
+  const oats = { tbsp_g: 5 }
+  it('counts tablespoons and teaspoons (a third) in halves', () => {
+    expect(spoonGrams(oats, 'tbsp')).toBe(5)
+    expect(spoonGrams({ tbsp_g: 15 }, 'tsp')).toBe(5)
+    expect(spoonsToGrams(2, oats, 'tbsp')).toBe(10)
+    expect(spoonsToGrams(1, { tbsp_g: 14 }, 'tsp')).toBe(4.7)
+    expect(spoonsOf(12, oats, 'tbsp')).toBe(2.5)
+    expect(spoonsOf(0, oats, 'tbsp')).toBe(0.5) // never 0 spoons
+  })
+
+  it('remembers the spoon per ingredient, and forgets it', () => {
+    localStorage.clear()
+    expect(rememberedSpoon(20)).toBeNull()
+    rememberSpoon(20, 'tsp')
+    expect(rememberedSpoon(20)).toBe('tsp')
+    expect(rememberedSpoon(21)).toBeNull()
+    rememberSpoon(20, null)
+    expect(rememberedSpoon(20)).toBeNull()
+    localStorage.setItem('spoon:5', 'cup')
+    expect(rememberedSpoon(5)).toBeNull() // not a spoon we know
   })
 })

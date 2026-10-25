@@ -1,4 +1,5 @@
-import type { MealCard, MealKind, Origin, Rating, Slider } from '../api/types'
+import type { MealCard, MealKind, Nutrients, Origin, Rating, Slider } from '../api/types'
+import { NUTRIENT_KEYS, ZERO } from './macros'
 
 /** "Today" / "Yesterday" / "N days ago" between two YYYY-MM-DD dates. */
 export function ago(dateISO: string | null, todayISO: string): string {
@@ -63,7 +64,7 @@ export function pickable(cards: MealCard[], type: MealKind, query: string): Meal
       a.name.localeCompare(b.name))
 }
 
-export type Family = { family: string; meals: MealCard[]; best: number | null; top: MealCard[] } // top: collage
+export type Family = { family: string; meals: MealCard[]; best: number | null; top: MealCard[]; avg: Nutrients } // top: collage, avg: per portion
 
 const COLLAGE = 3
 
@@ -85,5 +86,31 @@ export function byFamily(cards: MealCard[]): Family[] {
     meals,
     best: meals.reduce<number | null>((b, m) => (m.taste !== null && (b === null || m.taste > b) ? m.taste : b), null),
     top: bestRated(meals),
+    avg: averagePortion(meals),
   })).sort((a, b) => Number(a.family === 'Other') - Number(b.family === 'Other') || b.meals.length - a.meals.length || a.family.localeCompare(b.family))
+}
+
+/** The family's average portion: each dish counts once, however often we made it. */
+export function averagePortion(meals: MealCard[]): Nutrients {
+  const out = { ...ZERO }
+  if (!meals.length) return out
+  for (const m of meals) for (const k of NUTRIENT_KEYS) out[k] += m.per_portion[k] / meals.length
+  return out
+}
+
+export type SplitPart = { key: 'protein' | 'carbs' | 'fat'; grams: number; pct: number }
+
+/** Where a portion's energy comes from (4 kcal per g protein and carbs, 9 per g fat), in whole
+ *  percent adding up to 100; [] when there's nothing to split. */
+export function energySplit(n: Nutrients): SplitPart[] {
+  const kcal = { protein: n.protein * 4, carbs: n.carbs * 4, fat: n.fat * 9 }
+  const total = kcal.protein + kcal.carbs + kcal.fat
+  if (total <= 0) return []
+  const keys = ['protein', 'carbs', 'fat'] as const
+  const raw = keys.map((k) => (kcal[k] / total) * 100)
+  const pct = raw.map(Math.floor)
+  // largest remainders get the leftover points, so the bar and labels add up to 100
+  const order = raw.map((r, i) => [r - pct[i], i]).sort((a, b) => b[0] - a[0])
+  for (let left = 100 - pct.reduce((a, b) => a + b, 0), j = 0; left > 0; left--, j++) pct[order[j][1]]++
+  return keys.map((key, i) => ({ key, grams: n[key], pct: pct[i] }))
 }

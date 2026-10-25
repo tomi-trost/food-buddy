@@ -41,3 +41,35 @@ export function amountStepper(u: Counted) {
   if (isCounted(u)) return { step: 1, min: 0.1, max: Math.max(1, Math.floor(5000 / per(u))), decimals: 1 }
   return { step: 25, min: 1, max: u.unit === 'ml' ? Math.floor(5000 / per(u)) : 5000, decimals: 1 }
 }
+
+/** Spoons, for counting without a scale: a level teaspoon is a third of a tablespoon. Only a way
+ *  to type the amount; it's still stored in grams. */
+export type Spoon = 'tsp' | 'tbsp'
+
+export const spoonGrams = (u: Pick<Ingredient, 'tbsp_g'>, spoon: Spoon) => (spoon === 'tbsp' ? u.tbsp_g : u.tbsp_g / 3)
+
+/** How many spoons the grams are, in halves (at least half a spoon). */
+export const spoonsOf = (grams: number, u: Pick<Ingredient, 'tbsp_g'>, spoon: Spoon) =>
+  Math.max(0.5, Math.round((grams / spoonGrams(u, spoon)) * 2) / 2)
+
+export const spoonsToGrams = (n: number, u: Pick<Ingredient, 'tbsp_g'>, spoon: Spoon) => Math.round(n * spoonGrams(u, spoon) * 10) / 10
+
+const SPOON_KEY = 'spoon:' // per device: the spoon we last counted this ingredient in
+
+export function rememberedSpoon(id: number): Spoon | null {
+  try {
+    const v = localStorage.getItem(SPOON_KEY + id)
+    return v === 'tsp' || v === 'tbsp' ? v : null
+  } catch {
+    return null
+  }
+}
+
+export function rememberSpoon(id: number, spoon: Spoon | null) {
+  try {
+    if (spoon) localStorage.setItem(SPOON_KEY + id, spoon)
+    else localStorage.removeItem(SPOON_KEY + id)
+  } catch {
+    // private mode: just not remembered
+  }
+}

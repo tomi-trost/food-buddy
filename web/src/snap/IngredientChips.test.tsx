@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { Route } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { tokenStore } from '../api/client'
-import { card, ING } from '../test/fixtures'
+import { card, ING, meal } from '../test/fixtures'
 import { jsonResponse, mockFetch, renderAt } from '../test/utils'
 import { IngredientChips } from './IngredientChips'
 import { type PlateItem, toComponents } from './plate'
@@ -18,7 +18,10 @@ function Harness() {
 
 const render = () => renderAt('/', <Route path="/" element={<Harness />} />)
 
-beforeEach(() => tokenStore.set('tok'))
+beforeEach(() => {
+  tokenStore.set('tok')
+  localStorage.clear()
+})
 
 describe('IngredientChips units', () => {
   it('counts eggs in pieces and oil in ml, storing grams', () => {
@@ -122,7 +125,7 @@ describe('IngredientChips dishes', () => {
 
     expect(screen.getByRole('button', { name: /Pancakes · 1 portion/ })).toBeInTheDocument()
     expect(JSON.parse(screen.getByRole('status').textContent!)).toEqual([{
-      new: { name: 'Pancakes', portions: 2, items: [{ ingredient_id: 23, grams: 100 }, { ingredient_id: 20, grams: 50 }] },
+      new: { name: 'Pancakes', portions: 2, items: [{ ingredient_id: 23, grams: 100 }, { ingredient_id: 20, grams: 50 }], emoji: '🥞' },
       portions: 1,
       aliases: ['pancakes'],
     }])
@@ -159,6 +162,78 @@ describe('IngredientChips dishes', () => {
     expect(within(ours).queryByText('Pancake plate')).not.toBeInTheDocument() // holds dishes itself
     fireEvent.click(within(ours).getByRole('button', { name: /Banana pancakes/ }))
     expect(screen.getByRole('button', { name: /Banana pancakes · 1 portion/ })).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('[{"meal_id":7,"portions":1,"aliases":["pancakes"]}]')
+  })
+
+  it('adds an ingredient we forgot to a new dish, and takes one out', async () => {
+    mockFetch((url) => jsonResponse(url.startsWith('/api/ingredients') ? [ING.rice] : []))
+    renderAt('/', <Route path="/" element={<BundleHarness start={swapped.slice(0, 2)} />} />)
+    fireEvent.click(screen.getByRole('button', { name: /make them their own dish/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Banana · 100 g/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Rolled oats · 50 g/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Make it its own dish (2)' }))
+    fireEvent.change(screen.getByLabelText('Dish name'), { target: { value: 'Banana pancakes' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Make dish' }))
+
+    fireEvent.click(screen.getByRole('button', { name: /Banana pancakes · 1 portion/ }))
+    const dish = () => screen.getByRole('dialog', { name: 'Edit dish' })
+    expect(within(dish()).getByLabelText('Emoji 🥞, change')).toBeInTheDocument() // from its name
+    fireEvent.click(within(dish()).getByRole('button', { name: /Add an ingredient/ }))
+    fireEvent.click(await within(dish()).findByRole('button', { name: /Rice \(cooked\)/ }))
+    const amount = within(dish()).getByRole('textbox', { name: 'amount' })
+    expect(amount).toHaveValue('15') // a tablespoon to start
+    fireEvent.focus(amount)
+    fireEvent.change(amount, { target: { value: '30' } })
+    fireEvent.blur(amount)
+    fireEvent.click(within(dish()).getByRole('button', { name: 'Add to Banana pancakes' }))
+
+    const list = within(dish()).getByLabelText("What's in Banana pancakes")
+    expect(within(list).getByText('Rice (cooked)')).toBeInTheDocument()
+    expect(within(dish()).getByText(/≈ 180 g/)).toBeInTheDocument()
+    expect(JSON.parse(screen.getByRole('status').textContent!)[0].new.items).toEqual([
+      { ingredient_id: 23, grams: 100 }, { ingredient_id: 20, grams: 50 }, { ingredient_id: 2, grams: 30 },
+    ])
+    fireEvent.click(within(list).getByRole('button', { name: 'Take Banana out of Banana pancakes' }))
+    expect(JSON.parse(screen.getByRole('status').textContent!)[0].new.items.map((i: { ingredient_id: number }) => i.ingredient_id)).toEqual([20, 2])
+  })
+
+  it('adds to one of our meals’ recipe in spoons, for every plate holding it', async () => {
+    const recipe = [{ ingredient: ING.banana, grams: 400 }, { ingredient: ING.oats, grams: 200 }]
+    const fetch = mockFetch((url, init) => {
+      if (url === '/api/meals/7' && init?.method === 'PATCH') {
+        const items = JSON.parse(String(init.body)).items as { ingredient_id: number; grams: number }[]
+        const all = [ING.banana, ING.oats, ING.rice]
+        return jsonResponse(meal({ id: 7, name: 'Banana pancakes', emoji: '🥞', portions: 4, cost: 2.4,
+          ingredients: items.map((i) => ({ ingredient: all.find((x) => x.id === i.ingredient_id)!, grams: i.grams })) }))
+      }
+      if (url === '/api/meals/7') return jsonResponse(meal({ id: 7, name: 'Banana pancakes', emoji: '🥞', portions: 4, cost: 2.4, ingredients: recipe }))
+      if (url === '/api/meals') return jsonResponse([card({ id: 7, name: 'Banana pancakes', emoji: '🥞', portion_g: 150, portions: 4 })])
+      return jsonResponse([ING.rice])
+    })
+    const unknown: PlateItem[] = [{ key: 'u', name: 'pancakes', grams: 150, ingredient: null }]
+    renderAt('/', <Route path="/" element={<BundleHarness start={unknown} />} />)
+    fireEvent.click(screen.getByRole('button', { name: /pancakes · 150 g/ }))
+    fireEvent.click(within(await screen.findByLabelText('Our meals')).getByRole('button', { name: /Banana pancakes/ }))
+
+    fireEvent.click(screen.getByRole('button', { name: /Banana pancakes · 1 portion/ }))
+    const dish = () => screen.getByRole('dialog', { name: 'Edit dish' })
+    expect(await within(dish()).findByText('Rolled oats')).toBeInTheDocument() // its recipe, loaded
+    fireEvent.click(within(dish()).getByRole('button', { name: /Add an ingredient/ }))
+    fireEvent.click(await within(dish()).findByRole('button', { name: /Rice \(cooked\)/ }))
+    fireEvent.click(within(dish()).getByRole('button', { name: /Count it in spoons/ }))
+    fireEvent.click(within(dish()).getByLabelText('More spoons'))
+    fireEvent.click(within(dish()).getByLabelText('More spoons')) // half steps: 2 tbsp = 30 g
+    expect(within(dish()).getByRole('textbox', { name: 'spoons' })).toHaveValue('2')
+    expect(within(dish()).getByText(/1 level tablespoon of rice \(cooked\) ≈ 15 g/)).toBeInTheDocument()
+    expect(within(dish()).getByText('Changes Banana pancakes in all our meals.')).toBeInTheDocument()
+    fireEvent.click(within(dish()).getByRole('button', { name: 'Add to Banana pancakes' }))
+
+    expect(await within(dish()).findByText('Rice (cooked)')).toBeInTheDocument()
+    const patch = fetch.mock.calls.find(([u, i]) => u === '/api/meals/7' && i?.method === 'PATCH')!
+    expect(JSON.parse(String(patch[1]!.body))).toEqual({ items: [
+      { ingredient_id: 23, grams: 400 }, { ingredient_id: 20, grams: 200 }, { ingredient_id: 2, grams: 120 }, // 30 g a portion × 4
+    ] })
+    expect(within(dish()).getByText(/≈ 180 g/)).toBeInTheDocument() // the plate still holds one portion
     expect(screen.getByRole('status')).toHaveTextContent('[{"meal_id":7,"portions":1,"aliases":["pancakes"]}]')
   })
 

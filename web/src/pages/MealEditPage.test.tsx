@@ -211,8 +211,16 @@ describe('MealEditPage', () => {
     const field = await screen.findByLabelText('Dish family')
     expect(field).toHaveValue('')
     expect(field).toHaveAttribute('placeholder', 'Rice & grains (guessed)')
-    await waitFor(() => expect(document.querySelectorAll('#families option')).toHaveLength(2)) // Pasta + ours, not Other
-    fireEvent.change(field, { target: { value: ' Bowls ' } })
+    fireEvent.focus(field) // tapping the field lists ours
+    const list = await screen.findByRole('listbox', { name: 'Our dish families' })
+    await waitFor(() => expect(within(list).getAllByRole('option').map((o) => o.textContent)).toEqual(['Pasta', 'Rice & grains'])) // not Other
+    fireEvent.change(field, { target: { value: 'ri' } }) // typing narrows it
+    expect(within(screen.getByRole('listbox')).getAllByRole('option').map((o) => o.textContent)).toEqual(['Rice & grains'])
+    fireEvent.mouseDown(screen.getByRole('option', { name: 'Rice & grains' }))
+    expect(field).toHaveValue('Rice & grains')
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+    fireEvent.change(field, { target: { value: ' Bowls ' } }) // or a new one
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument() // nothing like it yet
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
     await screen.findByText('meal page')
     expect(bodyOf(fetch, 'PATCH')!.body.family).toBe('Bowls')

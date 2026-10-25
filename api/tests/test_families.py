@@ -126,3 +126,55 @@ async def test_tell_a_family_to_stop_matching_a_word(client, auth, seeded, queue
     theirs = await client.put("/api/families/blocks", json=blocks, headers=stranger)
     assert theirs.status_code == 404
     assert (await client.get("/api/families", headers=stranger)).json() == []
+
+
+async def test_rename_a_family_moves_its_picked_and_guessed_meals(client, auth, seeded, queue):
+    for name in ("Broccoli chicken", "Chicken with broccoli"):
+        await plate(client, auth, seeded, name, "Chicken breast", "Broccoli", family="Mama's")
+    guessed = await plate(
+        client, auth, seeded, "Chicken broccoli bake", "Chicken breast", "Broccoli"
+    )
+    assert (guessed["family"], guessed["family_picked"]) == ("Mama's", False)
+    pasta = await plate(client, auth, seeded, "Pasta with pesto", "Broccoli")
+    blocks = {"name": "Mama's", "blocked_words": ["bake"], "blocked_ingredients": []}
+    await client.put("/api/families/blocks", json=blocks, headers=auth)
+
+    response = await client.put(
+        "/api/families/rename", json={"name": "Mama's", "to": " Grandma's "}, headers=auth
+    )
+    assert response.status_code == 200, response.text
+    assert response.json() == {"name": "Grandma's", "meals": 3}
+    cards = {c["name"]: c for c in (await client.get("/api/meals", headers=auth)).json()}
+    assert {cards[n]["family"] for n in ("Broccoli chicken", "Chicken broccoli bake")} == {
+        "Grandma's"
+    }
+    assert cards["Chicken broccoli bake"]["family_picked"] is True  # now ours
+    assert cards[pasta["name"]]["family"] == "Pasta"  # other families stay
+    [learned] = (await client.get("/api/families", headers=auth)).json()
+    assert (learned["name"], learned["members"]) == ("Grandma's", 3)
+
+    # a guessed built-in family can be renamed too; into one that exists merges them
+    merged = await client.put(
+        "/api/families/rename", json={"name": "Pasta", "to": "Grandma's"}, headers=auth
+    )
+    assert merged.json() == {"name": "Grandma's", "meals": 1}
+    families = (await client.get("/api/families", headers=auth)).json()
+    assert [(f["name"], f["members"]) for f in families] == [("Grandma's", 4)]
+
+
+async def test_rename_validation_and_other_households(client, auth, seeded, queue):
+    await plate(client, auth, seeded, "Pasta with pesto", "Broccoli")
+    blank = await client.put(
+        "/api/families/rename", json={"name": "Pasta", "to": "  "}, headers=auth
+    )
+    assert blank.status_code == 422
+    unknown = await client.put(
+        "/api/families/rename", json={"name": "Nope", "to": "X"}, headers=auth
+    )
+    assert unknown.status_code == 404
+    stranger = await register(client, email="x@example.com", household_name="Other")
+    theirs = await client.put(
+        "/api/families/rename", json={"name": "Pasta", "to": "X"}, headers=stranger
+    )
+    assert theirs.status_code == 404
+    assert (await client.get("/api/meals", headers=auth)).json()[0]["family"] == "Pasta"

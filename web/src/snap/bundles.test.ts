@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { card, ING, meal } from '../test/fixtures'
 import {
-  addDish, byWeight, dishPortions, fromMeal, makeDish, type PlateItem, plateNutrients, recipeCost, replaceIngredient, replaceWithDish,
+  addDish, addPart, byWeight, dishOfMeal, dishPortions, fromMeal, makeDish, type PlateItem, recipeItems, withDish, withParts, plateNutrients, recipeCost, replaceIngredient, replaceWithDish,
   splitDish, suggestDishName, toComponents, toMealCreate, usableIngredients,
 } from './plate'
 import { dishOptions } from '../ui/IngredientPicker'
@@ -42,7 +42,7 @@ describe('bundles: making a dish', () => {
     expect(items.map((i) => i.dish?.name ?? i.ingredient!.name)).toEqual(['Banana pancakes', 'Rice (cooked)'])
     const [dish] = items
     // "oats" only matched Rolled oats: not something the photo got wrong, so no alias
-    expect(dish.dish).toMatchObject({ id: null, emoji: '🍌', portionG: 150, made: 4, detected: ['pancakes'] })
+    expect(dish.dish).toMatchObject({ id: null, emoji: '🥞', portionG: 150, made: 4, detected: ['pancakes'] }) // the name's emoji
     expect(dishPortions(dish)).toBe(1)
     expect(plateNutrients(items).kcal).toBeCloseTo(plateNutrients(before).kcal)
     expect(recipeCost(items, 2)).toBeCloseTo(recipeCost(before, 2))
@@ -55,10 +55,29 @@ describe('bundles: making a dish', () => {
     expect(dish.dish!.parts.map((p) => p.grams)).toEqual([100, 50])
     expect(dishPortions(dish)).toBe(2)
     expect(toComponents([dish])).toEqual([{
-      new: { name: 'Pancakes', portions: 2, items: [{ ingredient_id: 23, grams: 100 }, { ingredient_id: 20, grams: 50 }] },
+      new: { name: 'Pancakes', portions: 2, items: [{ ingredient_id: 23, grams: 100 }, { ingredient_id: 20, grams: 50 }], emoji: '🥞' },
       portions: 2,
       aliases: ['pancakes'], // what the photo called it: offered as this dish next time
     }])
+  })
+
+  it('takes the heaviest ingredient’s emoji when the name names no food', () => {
+    const [dish] = makeDish(plate(), ['a', 'b'], 'Our Sunday thing', 4)
+    expect(dish.dish!.emoji).toBe(ING.banana.emoji)
+  })
+
+  it('adds an ingredient we forgot to a new dish: weight, values and cost follow', () => {
+    const [item, rice] = makeDish(plate(), ['a', 'b'], 'Pancakes', 4)
+    const parts = addPart(item.dish!.parts, ING.rice, 30)
+    expect(parts.map((p) => [p.ingredient.name, p.grams])).toEqual([['Banana', 100], ['Rolled oats', 50], ['Rice (cooked)', 30]])
+    expect(addPart(parts, ING.rice, 10).at(-1)!.grams).toBe(40) // adds up
+    const more = { ...item, ...withDish(item, withParts(item.dish!, parts)) }
+    expect(more.dish!.portionG).toBe(180)
+    expect(dishPortions(more)).toBe(1) // the plate still holds one portion
+    expect(plateNutrients([more]).kcal).toBeCloseTo(plateNutrients([item]).kcal + plateNutrients([{ ...rice, grams: 30 }]).kcal)
+    expect(more.dish!.costPerPortion).toBeCloseTo(item.dish!.costPerPortion + recipeCost([{ ...rice, grams: 30 }], 1))
+    const fewer = withParts(more.dish!, parts.slice(1))
+    expect(fewer.parts.map((p) => p.ingredient.name)).toEqual(['Rolled oats', 'Rice (cooked)'])
   })
 
   it('ignores an empty selection or one without ingredients', () => {
@@ -113,6 +132,20 @@ describe('bundles: our meals as dishes', () => {
     expect(toComponents(items)).toEqual([{ meal_id: 7, portions: 2 }])
   })
 
+  it('refreshes a dish after we added to its recipe, keeping the portions on the plate', () => {
+    const [item] = addDish(plate(), pancakes, 2).slice(-1)
+    const now = meal({ id: 7, name: 'Banana pancakes', emoji: '🥞', portions: 4, cost: 2.8,
+      ingredients: [{ ingredient: ING.banana, grams: 800 }, { ingredient: ING.oats, grams: 400 }, { ingredient: ING.rice, grams: 40 }] })
+    const dish = dishOfMeal(now, ['pancakes'])
+    expect(dish).toMatchObject({ id: 7, portionG: 310, made: 4, costPerPortion: 0.7, detected: ['pancakes'] })
+    expect(dish.parts.map((p) => p.grams)).toEqual([200, 100, 10])
+    expect(withDish(item, dish)).toMatchObject({ grams: 620 }) // still 2 portions
+    expect(recipeItems(addPart(dish.parts, ING.chicken, 25), 4)).toEqual([
+      { ingredient_id: ING.banana.id, grams: 800 }, { ingredient_id: ING.oats.id, grams: 400 },
+      { ingredient_id: ING.rice.id, grams: 40 }, { ingredient_id: ING.chicken.id, grams: 100 },
+    ])
+  })
+
   it('offers only our cooked meals that hold no dishes', () => {
     const meals = [
       pancakes,
@@ -136,7 +169,7 @@ describe('bundles: posting', () => {
     })
     expect(body.items).toEqual([{ ingredient_id: 2, grams: 200 }])
     expect(body.components).toEqual([{
-      new: { name: 'Pancakes', portions: 4, items: [{ ingredient_id: 23, grams: 100 }, { ingredient_id: 20, grams: 50 }] },
+      new: { name: 'Pancakes', portions: 4, items: [{ ingredient_id: 23, grams: 100 }, { ingredient_id: 20, grams: 50 }], emoji: '🥞' },
       portions: 1,
       aliases: ['pancakes'],
     }])

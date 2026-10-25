@@ -167,6 +167,8 @@ export const api = {
   patchMeal: (id: number, patch: MealPatch) =>
     json<Meal>(`/meals/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),
   families: () => json<LearnedFamily[]>('/families'),
+  renameFamily: (name: string, to: string) =>
+    json<{ name: string; meals: number }>('/families/rename', { method: 'PUT', body: JSON.stringify({ name, to }) }),
   setFamilyBlocks: (name: string, blocked_words: string[], blocked_ingredients: number[]) =>
     json<LearnedFamily>('/families/blocks', { method: 'PUT', body: JSON.stringify({ name, blocked_words, blocked_ingredients }) }),
   async setMealPhoto(id: number, file: File) {

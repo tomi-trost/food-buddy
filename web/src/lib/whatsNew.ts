@@ -4,6 +4,14 @@ export type Release = { id: string; notes: string[] }
 
 export const RELEASES: Release[] = [
   {
+    id: '2026-10-25-families-dishes-spoons',
+    notes: [
+      'Forgot something in one of your dishes? Tap the dish, then "Add an ingredient" under what is in it. It is added to that dish everywhere.',
+      'No scale? When you set an amount, tap "Count it in spoons" and count teaspoons or tablespoons. We work out the grams.',
+      'Open a dish family in Meals to see its average portion and where the energy comes from. "Family settings" renames it. Edit meal lists your families as you type.',
+    ],
+  },
+  {
     id: '2026-10-24-family-cards',
     notes: ['"By dish" in Meals shows each family as a big card with a collage of its three best-rated dishes.'],
   },

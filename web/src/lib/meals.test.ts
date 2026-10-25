@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Slider } from '../api/types'
 import { card } from '../test/fixtures'
-import { ago, byFamily, EFFORT_STEPS, feed, FILL_STEPS, fillTip, pickable, stepLabel } from './meals'
+import { ago, averagePortion, byFamily, EFFORT_STEPS, energySplit, feed, FILL_STEPS, fillTip, pickable, stepLabel } from './meals'
 
 describe('ago', () => {
   it('describes days since a date', () => {
@@ -109,5 +109,22 @@ describe('byFamily', () => {
     ])
     expect(pasta.top.map((m) => m.id)).toEqual([3, 4, 2])
     expect(byFamily([card({ id: 7, family: 'Eggs', taste: null })])[0].top.map((m) => m.id)).toEqual([7])
+  })
+})
+
+describe('family averages', () => {
+  const n = (kcal: number, protein: number, carbs: number, fat: number) => ({ kcal, protein, carbs, fat, fiber: 0, sugar: 0 })
+  it('averages a portion over the dishes, each counted once', () => {
+    expect(averagePortion([card({ per_portion: n(600, 20, 80, 20) }), card({ per_portion: n(400, 10, 70, 10) })])).toEqual(n(500, 15, 75, 15))
+    expect(averagePortion([])).toEqual(n(0, 0, 0, 0))
+  })
+
+  it('splits the energy into whole percent that add up to 100', () => {
+    const split = energySplit(n(0, 10, 10, 10)) // 40 + 40 + 90 kcal
+    expect(split.map((s) => s.pct)).toEqual([24, 23, 53])
+    expect(split.reduce((a, s) => a + s.pct, 0)).toBe(100)
+    expect(split[0]).toEqual({ key: 'protein', grams: 10, pct: 24 })
+    expect(energySplit(n(0, 0, 0, 10)).map((s) => s.pct)).toEqual([0, 0, 100])
+    expect(energySplit(n(120, 0, 0, 0))).toEqual([]) // nothing to split
   })
 })

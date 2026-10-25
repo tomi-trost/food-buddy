@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 from app.nutrition.models import Ingredient
-from app.nutrition.units import HOUSE_UNITS, Unit, unit_of
+from app.nutrition.units import HOUSE_UNITS, Unit, tbsp_grams, unit_of
 
 
 class NutrientsOut(BaseModel):
@@ -23,6 +23,7 @@ class IngredientOut(BaseModel):
     per100: NutrientsOut
     unit: Unit  # how amounts are shown/typed; still stored in grams
     unit_grams: float  # grams per piece/slice/clove, g per ml, or 1
+    tbsp_g: float  # one level tablespoon weighs this (a teaspoon is a third)
 
     @classmethod
     def of(cls, ing: Ingredient) -> "IngredientOut":
@@ -39,4 +40,5 @@ class IngredientOut(BaseModel):
             per100=NutrientsOut(**ing.per100.rounded()),
             unit=unit,
             unit_grams=unit_grams,
+            tbsp_g=tbsp_grams(ing.name, unit, unit_grams),
         )

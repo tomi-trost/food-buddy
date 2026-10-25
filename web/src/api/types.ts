@@ -19,6 +19,7 @@ export type Ingredient = {
   per100: Nutrients
   unit: 'g' | 'ml' | 'pc' | 'slice' | 'clove' // shown and typed like this; stored in grams
   unit_grams: number // grams per piece/slice/clove, g per ml, or 1
+  tbsp_g: number // one level tablespoon weighs this (a teaspoon is a third)
 }
 
 export type MealType = 'breakfast' | 'lunch' | 'dinner' // what the weekly plan fills
@@ -97,7 +98,7 @@ export type MealComponent = MealRef & {
  *  (`new.items` = grams for ONE portion of it, `new.portions` = portions made). */
 export type ComponentIn = {
   meal_id?: number
-  new?: { name: string; portions: number; items: { ingredient_id: number; grams: number }[] }
+  new?: { name: string; portions: number; items: { ingredient_id: number; grams: number }[]; emoji?: string }
   portions: number
   aliases?: string[] // what the photo called the items it took the place of
 }

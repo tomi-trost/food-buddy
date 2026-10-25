@@ -44,7 +44,7 @@ export function IngredientPicker({ onPick, hint = '', exclude = [], onPickDish, 
   if (scanning) return <ScanIngredient onPick={onPick} onCancel={() => setScanning(false)} />
   return (
     <>
-      <div className="sheet-sticky row" style={{ gap: 8 }}>
+      <div className="sheet-sticky row searchbar" style={{ gap: 8 }}>
         <label className="row card sp" style={{ padding: '4px 12px', margin: 0 }}>
           <Icon name="search" size={18} />
           <input

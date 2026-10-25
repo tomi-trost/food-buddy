@@ -6,7 +6,8 @@ import type { MealCard, MealKind } from '../api/types'
 import { MEAL_TYPE_SHORT } from '../lib/dates'
 import { useAddFood } from '../add/AddFood'
 import { CookMealSheet } from '../meals/CookSheet'
-import { FamilyLearned } from '../meals/FamilyLearned'
+import { FamilyMacros } from '../meals/FamilyMacros'
+import { FamilySettings } from '../meals/FamilySettings'
 import { byFamily, feed, type FeedSeg, type FeedSort, type FeedType, NEXT_SORT, ORIGIN_LABEL, SORT_LABEL } from '../lib/meals'
 import { KIND_LABEL, perLabel } from '../lib/snacks'
 import { Icon, type IconName } from '../ui/Icon'
@@ -25,6 +26,7 @@ export function MealsPage() {
   const sort = (params.get('sort') ?? 'rating') as FeedSort
   const grouped = params.get('group') === '1'
   const [open, setOpen] = useState<string[]>([]) // families shown open in the grouped view
+  const [settings, setSettings] = useState<string | null>(null) // family whose settings are open
   const learned = useQuery({ queryKey: ['families'], queryFn: api.families, enabled: grouped })
   const learnedOf = (name: string) => learned.data?.find((f) => f.name === name)
   const set = (key: string, value: string) =>
@@ -78,28 +80,47 @@ export function MealsPage() {
       </div>
       {cards.isError && <p className="error" role="alert">{cards.error.message}</p>}
       {grouped ? (
-        byFamily(list).map((f) => {
-          const shown = open.includes(f.family)
-          return (
-            <section key={f.family} className="family" aria-label={f.family}>
-              <button className="family-head" aria-expanded={shown}
-                onClick={() => setOpen(shown ? open.filter((x) => x !== f.family) : [...open, f.family])}>
-                <span className={`family-collage n${f.top.length}`} aria-hidden>
-                  {f.top.map((m) => <Photo key={m.id} url={m.photo_url} emoji={m.emoji} seed={m.id} alt="" />)}
-                </span>
-                <span className="family-info">
-                  <span className="sp">
-                    <b>{f.family}</b>
-                    <small>{f.meals.length} {f.meals.length === 1 ? 'dish' : 'variations'}{f.best !== null ? ` · best ★ ${Math.round(f.best * 10) / 10}` : ''}</small>
+        <div className={`families${open.length ? ' has-open' : ''}`}>
+          {byFamily(list).map((f) => {
+            const shown = open.includes(f.family)
+            return (
+              <section key={f.family} className={`family${shown ? ' open' : ''}`} aria-label={f.family}>
+                <button className="family-head" aria-expanded={shown}
+                  onClick={(e) => {
+                    setOpen(shown ? open.filter((x) => x !== f.family) : [...open, f.family])
+                    if (!shown) scrollToTop(e.currentTarget)
+                  }}>
+                  <span className={`family-collage n${f.top.length}`} aria-hidden>
+                    {f.top.map((m) => <Photo key={m.id} url={m.photo_url} emoji={m.emoji} seed={m.id} alt="" />)}
                   </span>
-                  <span className={`family-chev${shown ? ' open' : ''}`}><Icon name="chev" size={16} /></span>
-                </span>
-              </button>
-              {shown && learnedOf(f.family) && <FamilyLearned family={learnedOf(f.family)!} />}
-              {shown && <MealGrid list={f.meals} snacks={snacks} onLog={setLogging} />}
-            </section>
-          )
-        })
+                  <span className="family-info">
+                    <span className="sp">
+                      <b>{f.family}</b>
+                      <small>{f.meals.length} {f.meals.length === 1 ? 'dish' : 'variations'}{f.best !== null ? ` · best ★ ${Math.round(f.best * 10) / 10}` : ''}</small>
+                    </span>
+                    <span className={`family-chev${shown ? ' open' : ''}`}><Icon name="chev" size={16} /></span>
+                  </span>
+                </button>
+                {shown && (
+                  <div className="family-body">
+                    {f.family !== 'Other' && (
+                      <div className="family-tools">
+                        <button className="groupbtn" onClick={() => setSettings(f.family)} aria-label={`${f.family} settings`}>
+                          <Icon name="settings" size={16} /> Family settings
+                        </button>
+                      </div>
+                    )}
+                    <FamilyMacros family={f.family} avg={f.avg} dishes={f.meals.length} />
+                    <MealGrid list={f.meals} snacks={snacks} onLog={setLogging} />
+                  </div>
+                )}
+                <FamilySettings family={f.family} dishes={f.meals.length} learned={learnedOf(f.family)} open={settings === f.family}
+                  onClose={() => setSettings(null)}
+                  onRenamed={(to) => setOpen((o) => [...new Set(o.map((x) => (x === f.family ? to : x)))])} />
+              </section>
+            )
+          })}
+        </div>
       ) : <MealGrid list={list} snacks={snacks} onLog={setLogging} />}
       {cards.isSuccess && !list.length && (snacks ? (
         <div className="card" style={{ textAlign: 'center' }}>
@@ -117,11 +138,17 @@ export function MealsPage() {
   )
 }
 
+/** An opened family's card scrolls up so its dishes show below it. */
+function scrollToTop(el: HTMLElement) {
+  const smooth = !(typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches)
+  requestAnimationFrame(() => el.scrollIntoView?.({ behavior: smooth ? 'smooth' : 'auto', block: 'start' }))
+}
+
 function MealGrid({ list, snacks, onLog }: { list: MealCard[]; snacks: boolean; onLog: (id: number) => void }) {
   return (
     <div className="mealgrid">
-      {list.map((m) => (
-        <div key={m.id} className="mealcard-wrap">
+      {list.map((m, i) => (
+        <div key={m.id} className="mealcard-wrap" style={{ '--i': Math.min(i, 8) } as React.CSSProperties}>
           <Link to={`/meals/${m.id}`} className="mealcard">
             <div style={{ position: 'relative' }}>
               <Photo url={m.photo_url} emoji={m.emoji} seed={m.id} alt={m.name} />

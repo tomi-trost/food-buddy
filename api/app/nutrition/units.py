@@ -108,6 +108,22 @@ LIQUIDS: dict[str, float] = {
     "wine": 0.99,
     "cola": 1.04,
 }
+# One level tablespoon in grams, for counting spoons without a scale (a teaspoon is a third).
+# Liquids not listed use their density × 15 ml; anything else 15 g (about water).
+TBSP_ML = 15
+SPOONS: dict[str, float] = {
+    "flour": 8, "sugar": 12.5, "salt": 18, "cocoa powder": 7, "cinnamon": 8, "paprika": 7,
+    "cumin": 6, "turmeric": 9, "black pepper": 7, "oregano": 3, "thyme": 3, "chili flakes": 5,
+    "breadcrumbs": 7, "rolled oats": 5, "granola": 8, "cornflakes": 2, "couscous": 11,
+    "chia seeds": 12, "flax seeds": 10, "sesame seeds": 9, "sunflower seeds": 9,
+    "pumpkin seeds": 9, "almonds": 9, "walnuts": 7, "hazelnuts": 9, "pine nuts": 9,
+    "raisins": 9, "parmesan": 5, "grana padano": 5, "pecorino": 5, "butter": 14,
+    "olive oil": 13.5, "sunflower oil": 13.5, "honey": 21, "maple syrup": 20, "jam": 20,
+    "nutella": 19, "peanut butter": 16, "tahini": 15, "mayonnaise": 14, "ketchup": 17,
+    "mustard": 15, "pesto": 15, "red pesto": 15, "tomato paste": 16, "hummus": 15,
+    "greek yogurt": 15, "yogurt": 15, "sour cream": 15, "cream cheese": 15, "mascarpone": 15,
+    "ricotta": 15, "quark": 15, "creme fraiche": 15, "curry paste": 15, "capers": 9,
+}  # fmt: skip
 TABLES: list[tuple[Unit, dict[str, float]]] = [
     ("pc", PIECES), ("slice", SLICES), ("clove", CLOVES), ("ml", LIQUIDS),
 ]  # fmt: skip
@@ -125,3 +141,10 @@ def unit_of(name: str, curated: bool, own: tuple[str | None, float | None] = (No
             if key in table:
                 return unit, table[key]
     return "g", 1.0
+
+
+def tbsp_grams(name: str, unit: str, unit_grams: float) -> float:
+    """Grams in one level tablespoon of this ingredient (as we count it: `unit`)."""
+    if (g := SPOONS.get(name.strip().lower())) is not None:
+        return g
+    return round(TBSP_ML * unit_grams, 1) if unit == "ml" else float(TBSP_ML)

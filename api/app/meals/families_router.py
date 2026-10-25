@@ -4,7 +4,7 @@ from sqlalchemy import select
 
 from app.auth.deps import CurrentUser, Session
 from app.meals.families import Learned, household_families
-from app.meals.models import FamilyBlock
+from app.meals.models import FamilyBlock, Meal
 
 router = APIRouter(prefix="/families", tags=["meals"])
 
@@ -29,6 +29,16 @@ class BlocksIn(BaseModel):
     name: str = Field(min_length=1, max_length=40)
     blocked_words: list[str] = Field(default_factory=list, max_length=50)
     blocked_ingredients: list[int] = Field(default_factory=list, max_length=50)
+
+
+class RenameIn(BaseModel):
+    name: str = Field(min_length=1, max_length=40)
+    to: str = Field(min_length=1, max_length=40)
+
+
+class Renamed(BaseModel):
+    name: str
+    meals: int  # now picked into it
 
 
 def family_out(f: Learned) -> FamilyOut:
@@ -67,3 +77,43 @@ async def set_blocks(body: BlocksIn, user: CurrentUser, session: Session) -> Fam
     await session.commit()
     learned = (await household_families(session, user.household_id)).learned
     return family_out(next(f for f in learned if f.name == body.name))
+
+
+@router.put("/rename")
+async def rename_family(body: RenameIn, user: CurrentUser, session: Session) -> Renamed:
+    """Every meal in the family (picked or guessed) is put in `to`; one that's there already
+    merges them. What it was told to ignore moves along."""
+    to = body.to.strip()
+    if not to:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Give the family a name")
+    families = await household_families(session, user.household_id)
+    meals = [
+        m
+        for m in await session.scalars(select(Meal).where(Meal.household_id == user.household_id))
+        if families.of(m) == body.name
+    ]
+    if not meals:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "No meals of ours are in this family")
+    for m in meals:
+        m.family = to
+    blocks = {
+        b.name: b
+        for b in await session.scalars(
+            select(FamilyBlock).where(
+                FamilyBlock.household_id == user.household_id,
+                FamilyBlock.name.in_([body.name, to]),
+            )
+        )
+    }
+    old, there = blocks.get(body.name), blocks.get(to)
+    if old is not None and to != body.name:
+        if there is None:
+            old.name = to
+        else:
+            there.blocked_words = sorted({*there.blocked_words, *old.blocked_words})
+            there.blocked_ingredients = sorted(
+                {*there.blocked_ingredients, *old.blocked_ingredients}
+            )
+            await session.delete(old)
+    await session.commit()
+    return Renamed(name=to, meals=len(meals))

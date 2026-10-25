@@ -1,7 +1,8 @@
 import type { AnalysisResult, ComponentIn, DishSource, Ingredient, Meal, MealCreate, MealKind, MealPer, Nutrients, Origin, SnackKind } from '../api/types'
+import { guessEmoji } from '../lib/emoji'
 import { scale, sum } from '../lib/macros'
 
-type Part = { ingredient: Ingredient; grams: number }
+export type Part = { ingredient: Ingredient; grams: number }
 
 /** A dish of ours on the plate (bundle, #17): one of our meals, or a new one made here from some
  *  of the plate's ingredients ("Make it its own dish"), created when the plate is saved. */
@@ -101,18 +102,51 @@ export function makeDish(items: PlateItem[], keys: string[], name: string, made:
   const selected = items.filter((i) => keys.includes(i.key) && i.ingredient && !i.dish)
   if (!selected.length) return items
   const parts = selected.map((i) => ({ ingredient: i.ingredient!, grams: round(i.grams / platePortions, 0.1) }))
-  const portionG = parts.reduce((acc, p) => acc + p.grams, 0)
-  const asItems = parts.map((p, n) => ({ key: `p${n}`, name: p.ingredient.name, grams: p.grams, ingredient: p.ingredient }))
-  const dish: PlateDish = {
-    id: null, name: name.trim(), emoji: [...parts].sort((a, b) => b.grams - a.grams)[0].ingredient.emoji, portionG,
-    perPortion: plateNutrients(asItems), costPerPortion: recipeCost(asItems, 1), made, parts,
+  const dish = withParts({
+    id: null, name: name.trim(), emoji: guessEmoji(name) ?? [...parts].sort((a, b) => b.grams - a.grams)[0].ingredient.emoji,
+    portionG: 0, perPortion: plateNutrients([]), costPerPortion: 0, made, parts,
     detected: [...new Set(selected.flatMap((i) => (i.swappedFrom ? [i.swappedFrom] : [])))], // not "oats" → Rolled oats
-  }
+  }, parts)
   const at = items.findIndex((i) => i.key === selected[0].key)
   const rest = items.filter((i) => !selected.includes(i))
   const item = dishItem(dish, platePortions, `new-${items.length}-${Date.now()}`)
   return [...rest.slice(0, at), item, ...rest.slice(at)]
 }
+
+/** A new dish with these parts (grams for one portion): its weight, values and cost follow. */
+export function withParts(dish: PlateDish, parts: Part[]): PlateDish {
+  const asItems = parts.map((p, n) => ({ key: `p${n}`, name: p.ingredient.name, grams: p.grams, ingredient: p.ingredient }))
+  const portionG = parts.reduce((acc, p) => acc + p.grams, 0)
+  return { ...dish, parts, portionG: portionG > 0 ? portionG : 1, perPortion: plateNutrients(asItems), costPerPortion: recipeCost(asItems, 1) }
+}
+
+/** An ingredient we forgot, into the dish's parts (grams for one portion; adds up if it's there). */
+export function addPart(parts: Part[], ingredient: Ingredient, grams: number): Part[] {
+  const g = round(grams, 0.1)
+  if (parts.some((p) => p.ingredient.id === ingredient.id)) {
+    return parts.map((p) => (p.ingredient.id === ingredient.id ? { ...p, grams: round(p.grams + g, 0.1) } : p))
+  }
+  return [...parts, { ingredient, grams: g }]
+}
+
+/** One of our meals as a dish, as it is now (e.g. after we added to its recipe from a plate). */
+export function dishOfMeal(meal: Meal, detected: string[] = []): PlateDish {
+  const parts = meal.ingredients.map(({ ingredient, grams }) => ({ ingredient, grams: grams / meal.portions }))
+  const portionG = parts.reduce((acc, p) => acc + p.grams, 0)
+  return {
+    id: meal.id, name: meal.name, emoji: meal.emoji, portionG: portionG > 0 ? portionG : 1, perPortion: meal.per_portion,
+    costPerPortion: meal.cost / meal.portions, made: meal.portions, parts, detected,
+  }
+}
+
+/** The plate's item holding `dish` instead, with the same portions of it. */
+export function withDish(item: PlateItem, dish: PlateDish): Partial<PlateItem> {
+  return { name: dish.name, dish, grams: dishPortions(item) * dish.portionG }
+}
+
+/** The whole recipe of one of our meals for PATCH: one portion's parts × its portions. */
+export const recipeItems = (parts: Part[], portions: number) =>
+  parts.map((p) => ({ ingredient_id: p.ingredient.id, grams: round(p.grams * portions, 0.1) }))
 
 /** Back into its ingredients (for the dish's portions on the plate). */
 export function splitDish(items: PlateItem[], key: string): PlateItem[] {
@@ -145,7 +179,7 @@ export function toComponents(items: PlateItem[]): ComponentIn[] {
     const aliases = i.dish.detected.length ? { aliases: i.dish.detected } : {} // the dish is offered for these next time
     if (i.dish.id !== null) return [{ meal_id: i.dish.id, portions, ...aliases }]
     return [{
-      new: { name: i.dish.name.trim() || i.name, portions: i.dish.made, items: i.dish.parts.map((p) => ({ ingredient_id: p.ingredient.id, grams: p.grams })) },
+      new: { name: i.dish.name.trim() || i.name, portions: i.dish.made, items: i.dish.parts.map((p) => ({ ingredient_id: p.ingredient.id, grams: p.grams })), emoji: i.dish.emoji },
       portions,
       ...aliases,
     }]

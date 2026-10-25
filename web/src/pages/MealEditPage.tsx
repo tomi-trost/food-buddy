@@ -7,6 +7,7 @@ import { MEAL_TYPE_LABEL } from '../lib/dates'
 import { scale } from '../lib/macros'
 import { NutritionOverride } from '../meals/NutritionOverride'
 import { EmojiPicker } from '../meals/EmojiPicker'
+import { FamilyField } from '../meals/FamilyField'
 import { cleanSteps, StepsEditor } from '../meals/StepsEditor'
 import { SnackFields } from '../snap/Details'
 import { IngredientChips } from '../snap/IngredientChips'
@@ -114,13 +115,9 @@ function EditForm({ meal, close }: { meal: Meal; close: React.ReactNode }) {
       </div>
       <EmojiPicker open={picking} value={emoji} onPick={setEmoji} onClose={() => setPicking(false)} />
 
-      <label className="field" style={{ marginBottom: 6 }}>
-        Dish family
-        <input value={family} maxLength={40} list="families" placeholder={meal.family_picked ? 'Guess from the name' : `${meal.family} (guessed)`}
-          onChange={(e) => setFamily(e.target.value)} />
-        <datalist id="families">{families.map((f) => <option key={f} value={f} />)}</datalist>
-      </label>
-      <div className="sub" style={{ marginBottom: 14 }}>
+      <FamilyField value={family} onChange={setFamily} families={families}
+        placeholder={meal.family_picked ? 'Guess from the name' : `${meal.family} (guessed)`} />
+      <div className="sub" style={{ margin: '6px 0 14px' }}>
         Groups variations together in Meals (pasta with any sauce is Pasta). Leave it empty and we guess.
       </div>
 

@@ -17,7 +17,7 @@ import { jsonResponse, mockFetch, renderAt } from '../test/utils'
 const n = (kcal: number, sugar = 0) => ({ kcal, protein: 1, carbs: 10, fat: 2, fiber: 0, sugar })
 const cola: Ingredient = {
   id: 70, name: 'Coca-Cola', emoji: '🥤', category: 'Pantry', location: 'pantry', price_per_100g: 0,
-  per100: n(42, 10.6), unit: 'ml', unit_grams: 1,
+  per100: n(42, 10.6), unit: 'ml', unit_grams: 1, tbsp_g: 15,
 }
 const product = (over: Partial<Meal> = {}): Meal => meal({
   id: 7, name: 'Coca-Cola', emoji: '🥤', types: ['snack'], snack_kind: 'drink', per: '100ml', piece_g: null,

@@ -25,13 +25,13 @@ const n = (kcal: number, protein: number, carbs: number, fat: number, fiber = 0,
   ({ kcal, protein, carbs, fat, fiber, sugar })
 
 export const ING: Record<string, Ingredient> = {
-  chicken: { id: 1, name: 'Chicken breast', emoji: '🍗', category: 'Meat', location: 'fridge', price_per_100g: 0.9, per100: n(165, 31, 0, 3.6), unit: 'g', unit_grams: 1 },
-  rice: { id: 2, name: 'Rice (cooked)', emoji: '🍚', category: 'Pantry', location: 'pantry', price_per_100g: 0.2, per100: n(130, 2.7, 28, 0.3, 0.4), unit: 'g', unit_grams: 1 },
-  soy: { id: 4, name: 'Soy sauce', emoji: '🫙', category: 'Pantry', location: 'pantry', price_per_100g: 0.5, per100: n(60, 8, 5, 0, 0.8, 0.5), unit: 'g', unit_grams: 1 },
-  oil: { id: 5, name: 'Olive oil', emoji: '🫒', category: 'Pantry', location: 'pantry', price_per_100g: 0.8, per100: n(884, 0, 0, 100), unit: 'ml', unit_grams: 0.91 },
-  banana: { id: 23, name: 'Banana', emoji: '🍌', category: 'Produce', location: 'pantry', price_per_100g: 0.2, per100: n(89, 1.1, 23, 0.3, 2.6, 12), unit: 'g', unit_grams: 1 },
-  oats: { id: 20, name: 'Rolled oats', emoji: '🥣', category: 'Pantry', location: 'pantry', price_per_100g: 0.1, per100: n(389, 17, 66, 7, 10, 1), unit: 'g', unit_grams: 1 },
-  eggs: { id: 12, name: 'Eggs', emoji: '🥚', category: 'Dairy', location: 'fridge', price_per_100g: 0.6, per100: n(143, 13, 0.7, 9.5), unit: 'pc', unit_grams: 50 },
+  chicken: { id: 1, name: 'Chicken breast', emoji: '🍗', category: 'Meat', location: 'fridge', price_per_100g: 0.9, per100: n(165, 31, 0, 3.6), unit: 'g', unit_grams: 1, tbsp_g: 15 },
+  rice: { id: 2, name: 'Rice (cooked)', emoji: '🍚', category: 'Pantry', location: 'pantry', price_per_100g: 0.2, per100: n(130, 2.7, 28, 0.3, 0.4), unit: 'g', unit_grams: 1, tbsp_g: 15 },
+  soy: { id: 4, name: 'Soy sauce', emoji: '🫙', category: 'Pantry', location: 'pantry', price_per_100g: 0.5, per100: n(60, 8, 5, 0, 0.8, 0.5), unit: 'g', unit_grams: 1, tbsp_g: 15 },
+  oil: { id: 5, name: 'Olive oil', emoji: '🫒', category: 'Pantry', location: 'pantry', price_per_100g: 0.8, per100: n(884, 0, 0, 100), unit: 'ml', unit_grams: 0.91, tbsp_g: 13.5 },
+  banana: { id: 23, name: 'Banana', emoji: '🍌', category: 'Produce', location: 'pantry', price_per_100g: 0.2, per100: n(89, 1.1, 23, 0.3, 2.6, 12), unit: 'g', unit_grams: 1, tbsp_g: 15 },
+  oats: { id: 20, name: 'Rolled oats', emoji: '🥣', category: 'Pantry', location: 'pantry', price_per_100g: 0.1, per100: n(389, 17, 66, 7, 10, 1), unit: 'g', unit_grams: 1, tbsp_g: 5 },
+  eggs: { id: 12, name: 'Eggs', emoji: '🥚', category: 'Dairy', location: 'fridge', price_per_100g: 0.6, per100: n(143, 13, 0.7, 9.5), unit: 'pc', unit_grams: 50, tbsp_g: 15 },
 }
 
 export const analysisJob = (over: Partial<AnalysisJob> = {}): AnalysisJob => ({

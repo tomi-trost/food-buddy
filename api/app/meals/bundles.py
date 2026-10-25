@@ -127,7 +127,7 @@ async def _new_dish(session: AsyncSession, user: User, plate: Meal, new: NewComp
         household_id=user.household_id,
         created_by=user.id,
         name=new.name.strip(),
-        emoji=found[by_weight[0].ingredient_id].emoji or "🍽️",
+        emoji=new.emoji or found[by_weight[0].ingredient_id].emoji or "🍽️",
         types=list(plate.types),
         snack_kind=(plate.snack_kind or "savory") if snack else None,
         tags=[],

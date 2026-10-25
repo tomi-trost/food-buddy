@@ -386,3 +386,43 @@ async def test_the_weekly_shopping_list_buys_the_dishes_ingredients(
     need = {i["ingredient"]["name"]: i["need"] for i in shopping["items"]}
     # toast every morning: 7 batches of 2 portions, each with 2 of the smash's 2 portions
     assert need == {"Sourdough": 1120, "Eggs": 1400, "Avocado": 1400}
+
+
+async def test_a_new_dish_takes_the_emoji_we_picked(client, auth, seeded, queue):
+    data = await pancake_plate(seeded)
+    data["components"][0]["new"]["emoji"] = "🥞"
+    plate = await post(client, auth, data)
+    assert plate["components"][0]["emoji"] == "🥞"
+
+    data["components"][0]["new"]["emoji"] = "pancakes"
+    response = await client.post("/api/meals", json=data, headers=auth)
+    assert response.status_code == 422
+
+    del data["components"][0]["new"]["emoji"]  # none picked: the heaviest ingredient's
+    plate = await post(client, auth, data)
+    assert plate["components"][0]["emoji"] == "🍌"
+
+
+async def test_an_ingredient_we_forgot_goes_into_the_dish(client, auth, seeded, queue):
+    """Cream added to the pancakes' recipe from the plate: every plate holding them counts it."""
+    plate = await post(client, auth, await pancake_plate(seeded))
+    pancakes = await get(client, auth, plate["components"][0]["id"])
+    (cream,) = await ingredient_ids(seeded, "Cream")
+    await seeded.rollback()
+    items = [
+        {"ingredient_id": i["ingredient"]["id"], "grams": i["grams"]}
+        for i in pancakes["ingredients"]
+    ]
+    items.append({"ingredient_id": cream, "grams": 40})  # 10 g a portion
+    response = await client.patch(
+        f"/api/meals/{pancakes['id']}", json={"items": items}, headers=auth
+    )
+    assert response.status_code == 200, response.text
+    cream_kcal = 19.5  # 195 kcal / 100 g
+    after = await get(client, auth, plate["id"])
+    assert after["components"][0]["per_portion"]["kcal"] == pytest.approx(
+        PANCAKE_KCAL + cream_kcal, abs=2
+    )
+    assert after["per_portion"]["kcal"] == pytest.approx(
+        PANCAKE_KCAL + cream_kcal + AVOCADO_KCAL, abs=2
+    )

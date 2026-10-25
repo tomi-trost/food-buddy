@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react'
 import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Sheet } from './Sheet'
+import { StepSlider } from './Slider'
 import { starAt, Stars } from './Stars'
 import { Stepper } from './Stepper'
 import { TOAST_MS, ToastProvider, useToast } from './Toast'
@@ -219,6 +220,19 @@ describe('Sheet swipe', () => {
     fireEvent.touchMove(stars, { touches: [{ clientY: 200 }] })
     expect(screen.getByRole('dialog').style.transform).toBe('')
     fireEvent.touchEnd(stars, { touches: [] })
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it('stays put when a slightly diagonal drag starts on a rating slider', () => {
+    const onClose = vi.fn()
+    const steps = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
+    render(<Sheet open onClose={onClose} label="Test"><StepSlider label="How filling" value={0} steps={steps} onChange={() => {}} /></Sheet>)
+    const slider = screen.getByRole('slider', { name: 'How filling' })
+    fireEvent.touchStart(slider, { touches: [{ clientY: 100 }] })
+    fireEvent.touchMove(slider, { touches: [{ clientY: 190 }] })
+    expect(screen.getByRole('dialog').style.transform).toBe('')
+    now += 50
+    fireEvent.touchEnd(slider, { touches: [] })
     expect(onClose).not.toHaveBeenCalled()
   })
 

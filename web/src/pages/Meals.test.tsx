@@ -82,6 +82,7 @@ describe('MealsPage', () => {
     })
     renderAt('/meals?group=1', <Route path="/meals" element={<MealsPage />} />)
     fireEvent.click(await screen.findByRole('button', { name: /Mama's1 dish/ }))
+    fireEvent.click(screen.getByRole('button', { name: "Mama's settings" })) // it's in the family's settings
     const learned = await screen.findByLabelText("What Mama's matches")
     expect(learned).toHaveTextContent('Learned from your 2 picks')
     fireEvent.click(within(learned).getByRole('button', { name: 'Stop matching Broccoli' }))
@@ -89,8 +90,61 @@ describe('MealsPage', () => {
     fireEvent.click(within(learned).getByRole('button', { name: 'Match roasted again' }))
     await vi.waitFor(() => expect(put).toEqual({ name: "Mama's", blocked_words: [], blocked_ingredients: [] }))
 
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }))
     fireEvent.click(screen.getByRole('button', { name: /Weeknight1 dish/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Weeknight settings' }))
     expect(screen.getByText(/Put one more meal in “Weeknight”/)).toBeInTheDocument()
+  })
+
+  it('highlights an open family and shows its average portion', async () => {
+    const n = (kcal: number, protein: number, carbs: number, fat: number) => ({ kcal, protein, carbs, fat, fiber: 4, sugar: 2 })
+    mockFetch((url) => jsonResponse(url === '/api/families' ? [] : [
+      card({ id: 1, name: 'Pesto pasta', family: 'Pasta', per_portion: n(600, 20, 80, 20) }),
+      card({ id: 2, name: 'Pasta pomodoro', family: 'Pasta', per_portion: n(400, 10, 70, 10) }),
+      card({ id: 3, name: 'Something', family: 'Other' }),
+    ]))
+    renderAt('/meals?group=1', <Route path="/meals" element={<MealsPage />} />)
+    const head = await screen.findByRole('button', { name: /Pasta2 variations/ })
+    fireEvent.click(head)
+    const pasta = screen.getByRole('region', { name: 'Pasta' })
+    expect(pasta).toHaveClass('family', 'open')
+    expect(pasta.parentElement).toHaveClass('has-open') // the other families step back
+    const avg = within(pasta).getByRole('region', { name: 'Average portion of Pasta' })
+    expect(avg).toHaveTextContent('500 kcal')
+    expect(avg).toHaveTextContent('of its 2 dishes · fiber 4 g')
+    // 15 g protein (60 kcal), 75 g carbs (300), 15 g fat (135): 495 kcal from macros
+    expect(within(avg).getByRole('img')).toHaveAccessibleName('Energy from Protein 12 %, Carbs 61 %, Fat 27 %')
+    expect(avg).toHaveTextContent('Protein 15 g · 12 %')
+
+    fireEvent.click(screen.getByRole('button', { name: /Other1 dish/ }))
+    expect(screen.queryByRole('button', { name: 'Other settings' })).not.toBeInTheDocument() // nothing to set up
+  })
+
+  it('renames a family from its settings and keeps it open', async () => {
+    let renamed: unknown
+    let family = 'Pasta'
+    mockFetch((url, init) => {
+      if (url === '/api/families/rename') {
+        renamed = JSON.parse(String(init!.body))
+        family = 'Pasta & noodles'
+        return jsonResponse({ name: family, meals: 1 })
+      }
+      if (url === '/api/families') return jsonResponse([])
+      return jsonResponse([card({ id: 1, name: 'Pesto pasta', family })])
+    })
+    renderAt('/meals?group=1', <Route path="/meals" element={<MealsPage />} />)
+    fireEvent.click(await screen.findByRole('button', { name: /Pasta1 dish/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Pasta settings' }))
+    const sheet = screen.getByRole('dialog', { name: 'Family settings' })
+    expect(within(sheet).getByText(/Grouped by our built-in rules/)).toBeInTheDocument()
+    const rename = within(sheet).getByRole('button', { name: 'Rename' })
+    expect(rename).toBeDisabled() // same name
+    fireEvent.change(within(sheet).getByLabelText('Name'), { target: { value: ' Pasta & noodles ' } })
+    fireEvent.click(rename)
+    await vi.waitFor(() => expect(renamed).toEqual({ name: 'Pasta', to: 'Pasta & noodles' }))
+    const open = await screen.findByRole('region', { name: 'Pasta & noodles' })
+    expect(open).toHaveClass('open')
+    expect(screen.queryByRole('dialog', { name: 'Family settings' })).not.toBeInTheDocument()
   })
 
   it('invites the first snap when there are no meals', async () => {

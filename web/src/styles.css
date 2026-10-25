@@ -192,14 +192,41 @@ svg text { fill: var(--ink2); font-size: 11px; }
 .family-chev { color: var(--ink2); display: flex; transition: transform .2s; }
 .family-chev.open { transform: rotate(90deg); }
 .family .mealgrid { margin-top: 10px; }
+/* An open family: tinted halo and accent edge; the others step back; its dishes slide in */
+.family { border-radius: var(--r); transition: box-shadow .3s, background .3s; scroll-margin-top: 12px; }
+.family-head { transition: border-color .3s, box-shadow .3s, opacity .3s; }
+.has-open .family:not(.open) .family-head { opacity: .62; }
+.family.open { background: color-mix(in srgb, var(--accent) 8%, transparent); box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 8%, transparent); margin-bottom: 18px; }
+.family.open .family-head { border-color: var(--accent); box-shadow: 0 8px 22px rgba(0, 0, 0, 0.12); }
+.family-body { animation: family-open .38s cubic-bezier(.2, .8, .2, 1) both; transform-origin: top; padding-bottom: 4px; }
+.family-body .mealcard-wrap { animation: family-card .42s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--i, 0) * 45ms + 90ms); }
+@keyframes family-open { from { opacity: 0; transform: translateY(-10px) scaleY(.97); } }
+@keyframes family-card { from { opacity: 0; transform: translateY(14px); } }
+.family-tools { display: flex; justify-content: flex-end; margin: 10px 0; }
+.family-macros { margin: 10px 0 0; }
+.family-kcal { font-size: 20px; } .family-kcal small { font-size: 13px; color: var(--ink2); font-weight: 500; }
+.macro-split { display: flex; gap: 2px; height: 12px; margin-top: 12px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+.macro-split i { flex-basis: 0; min-width: 0; transition: flex-grow .8s cubic-bezier(.2, .8, .2, 1); }
+.macro-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 8px; font-size: 13px; color: var(--ink2); }
+.macro-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.macro-legend i { width: 10px; height: 10px; border-radius: 3px; }
+.macro-legend b { color: var(--ink); font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .family-body, .family-body .mealcard-wrap { animation: none; } .macro-split i { transition: none; } }
 .family-learned { margin: 10px 2px 0; }
 .chip.off { text-decoration: line-through; color: var(--ink2); background: none; border: 1px dashed var(--line2); }
+
+/* Dish family field: the list of our families opens under it */
+.combo { position: relative; }
+.combo-list { position: absolute; left: 0; right: 0; top: 100%; z-index: 5; margin: 4px 0 0; padding: 4px; list-style: none; max-height: 240px; overflow-y: auto;
+  background: var(--surface); border: 1px solid var(--line2); border-radius: var(--r2); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14); }
+.combo-list li { min-height: 44px; display: flex; align-items: center; padding: 0 10px; border-radius: var(--r2); cursor: pointer; }
+.combo-list li:active { background: var(--surface2); }
 
 /* Emoji picker + the emoji button in Edit meal */
 .emoji-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(48px, 1fr)); gap: 4px; }
 .emoji-grid button { height: 48px; font-size: 28px; border-radius: var(--r2); background: none; border: 0; }
 .emoji-grid button[aria-pressed='true'] { background: var(--surface2); box-shadow: inset 0 0 0 2px var(--accent); }
-.emoji-pick { flex: none; width: 52px; height: 52px; font-size: 30px; border-radius: var(--r); background: var(--surface2); border: 1px solid var(--line); }
+.emoji-pick { flex: none; width: 46px; height: 46px; font-size: 26px; padding: 0; line-height: 1; border-radius: var(--r); background: var(--surface2); border: 1px solid var(--line); }
 .photo-add { position: absolute; right: 10px; bottom: 10px; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px;
   border-radius: 999px; background: var(--surface); color: var(--ink); font-size: 13px; font-weight: 600; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18); cursor: pointer; }
 
@@ -270,6 +297,9 @@ svg text { fill: var(--ink2); font-size: 11px; }
 /* contain: scrolling past the sheet's ends doesn't move the page behind */
 .sheet { background: var(--bg); width: 100%; max-width: 480px; max-height: 88%; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; border-radius: 16px 16px 0 0; padding: 8px 18px calc(28px + env(safe-area-inset-bottom)); transition: transform 0.2s ease; }
 html.sheet-open, html.sheet-open body { overflow: hidden; overscroll-behavior: none; }
+/* Search box + barcode button: the button as tall as the box */
+.searchbar > .icon { height: auto; align-self: stretch; width: 56px; }
+.spoon-pick .mini button { min-height: 40px; padding: 4px 14px; font-size: 14px; }
 .sheet-sticky { position: sticky; top: -8px; z-index: 1; background: var(--bg); margin: -8px 0 0; padding: 8px 0; }
 .grab { width: 36px; height: 4px; border-radius: 2px; background: var(--line2); margin: 4px auto 12px; }
 .toast { position: fixed; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; bottom: calc(var(--tabbar-h) + 24px + env(safe-area-inset-bottom)); background: var(--ink); color: var(--bg); border-radius: var(--r); padding: 12px 14px; z-index: 30; display: flex; gap: 10px; align-items: center; }

@@ -19,6 +19,7 @@ async def test_search_returns_metadata_and_respects_limit(client, auth, seeded):
         "per100",
         "unit",
         "unit_grams",
+        "tbsp_g",
     }
     assert first["per100"]["kcal"] == 160
     assert (first["unit"], first["unit_grams"]) == ("pc", 150)  # an avocado is counted
@@ -41,6 +42,20 @@ async def test_units_pieces_slices_cloves_and_ml(client, auth, seeded):
     assert unit_of("  EGGS ", curated=True) == ("pc", 50)
     # the long USDA/Ciqual rows aren't listed: "Milk" there would be a different product
     assert unit_of("Milk", curated=False) == ("g", 1.0)
+
+
+async def test_a_tablespoon_of_each_ingredient(client, auth, seeded):
+    from app.nutrition.units import tbsp_grams
+
+    found = {
+        i["name"]: i["tbsp_g"]
+        for i in (await client.get("/api/ingredients?limit=100", headers=auth)).json()
+    }
+    assert found["Rolled oats"] == 5  # from the spoon table
+    assert found["Milk"] == 15.5  # a liquid: its density × 15 ml
+    assert found["Broccoli"] == 15  # nothing known: about water
+    assert tbsp_grams(" Butter ", "g", 1) == 14
+    assert tbsp_grams("Oat milk", "ml", 1.03) == 15.5
 
 
 async def test_search_requires_auth_and_handles_special_chars(client, auth, seeded):

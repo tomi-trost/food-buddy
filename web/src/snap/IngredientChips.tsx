@@ -1,12 +1,18 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import type { Ingredient, MealCard } from '../api/types'
-import { scale } from '../lib/macros'
-import { amountStepper, formatAmount, isCounted, roundAmount, toAmount, toGrams, unitLabel } from '../lib/units'
+import { api } from '../api/client'
+import type { Ingredient, MealCard, MealPatch } from '../api/types'
+import { formatAmount, isCounted } from '../lib/units'
+import { EmojiPicker } from '../meals/EmojiPicker'
 import { Icon } from '../ui/Icon'
 import { IngredientPicker } from '../ui/IngredientPicker'
 import { Sheet } from '../ui/Sheet'
 import { Stepper } from '../ui/Stepper'
-import { addDish, addIngredient, dishPortions, portionsLabel, makeDish, type PlateItem, replaceIngredient, replaceWithDish, splitDish, suggestDishName } from './plate'
+import { AmountFields } from './AmountFields'
+import {
+  addDish, addIngredient, addPart, dishOfMeal, dishPortions, portionsLabel, makeDish, type Part, type PlateItem, recipeItems, replaceIngredient,
+  replaceWithDish, splitDish, suggestDishName, withDish, withParts,
+} from './plate'
 import { UnitSwitch } from './UnitSwitch'
 
 type SheetState = { kind: 'edit'; key: string } | { kind: 'replace'; key: string } | { kind: 'add' } | { kind: 'dish'; key: string } | { kind: 'make' } | null
@@ -118,18 +124,7 @@ export function IngredientChips({ items, setItems, amountLabel = 'on the plate',
               <UnitSwitch ingredient={open.ingredient}
                 onChange={(updated) => setItems((list) => list.map((i) => (i.ingredient?.id === updated.id ? { ...i, ingredient: updated } : i)))} />
             </div>
-            <div className="card row">
-              <span className="sp">Amount</span>
-              <Stepper label="amount" {...amountStepper(open.ingredient)}
-                value={roundAmount(toAmount(open.grams, open.ingredient), open.ingredient)}
-                unit={` ${unitLabel(open.ingredient, 2)}`}
-                onChange={(a) => update(open.key, { grams: toGrams(a, open.ingredient!) })} />
-            </div>
-            <div className="sub" style={{ marginBottom: 12 }}>
-              {open.ingredient.unit !== 'g' && <>≈ {Math.round(open.grams)} g · </>}
-              {Math.round(scale(open.ingredient.per100, open.grams).kcal)} kcal
-              {isCounted(open.ingredient) && <> · 1 {unitLabel(open.ingredient)} ≈ {open.ingredient.unit_grams} g</>}
-            </div>
+            <AmountFields key={open.key} ingredient={open.ingredient} grams={open.grams} onChange={(grams) => update(open.key, { grams })} />
             <button className="btn ghost" onClick={() => setSheet({ kind: 'replace', key: open.key })}>
               <Icon name="swap" size={18} /> Replace with another ingredient
             </button>
@@ -208,7 +203,13 @@ function MakeDishForm({ selected, platePortions, onMake, onCancel }: {
   )
 }
 
-/** A dish on the plate: how many portions, what's in it; a new one can still be renamed or split. */
+/** A forgotten ingredient starts at one piece, else one tablespoon, a portion. */
+const startGrams = (i: Ingredient) => (isCounted(i) ? i.unit_grams : i.tbsp_g)
+
+type DishMode = { kind: 'view' } | { kind: 'pick' } | { kind: 'amount'; ingredient: Ingredient; grams: number }
+
+/** A dish on the plate: how many portions, what's in it (add one we forgot, take one out), its emoji;
+ *  a new one can still be renamed or split. One of our meals changes for every plate holding it. */
 function DishForm({ item, update, onSplit, onRemove, onClose }: {
   item: PlateItem
   update: (patch: Partial<PlateItem>) => void
@@ -216,20 +217,72 @@ function DishForm({ item, update, onSplit, onRemove, onClose }: {
   onRemove: () => void
   onClose: () => void
 }) {
+  const qc = useQueryClient()
   const dish = item.dish!
   const portions = dishPortions(item)
   const isNew = dish.id === null
+  const [mode, setMode] = useState<DishMode>({ kind: 'view' })
+  const [picking, setPicking] = useState(false)
+  const ours = useQuery({ queryKey: ['meal', String(dish.id)], queryFn: () => api.meal(dish.id!), enabled: !isNew })
+  const parts = isNew ? dish.parts : ours.data ? dishOfMeal(ours.data).parts : dish.parts
+  const save = useMutation({
+    mutationFn: (patch: MealPatch) => api.patchMeal(dish.id!, patch),
+    onSuccess: (m) => {
+      qc.setQueryData(['meal', String(m.id)], m)
+      for (const key of ['meals', 'day', 'insights', 'plan']) qc.invalidateQueries({ queryKey: [key] })
+      update(withDish(item, dishOfMeal(m, dish.detected)))
+      setMode({ kind: 'view' })
+    },
+  })
+  const setParts = (next: Part[]) => {
+    if (isNew) {
+      update(withDish(item, withParts(dish, next)))
+      setMode({ kind: 'view' })
+    } else if (ours.data) save.mutate({ items: recipeItems(next, ours.data.portions) })
+  }
+  const setEmoji = (emoji: string) => (isNew ? update({ dish: { ...dish, emoji } }) : save.mutate({ emoji }))
+
+  if (mode.kind === 'pick') {
+    return (
+      <>
+        <h1>Add to {dish.name}</h1>
+        <IngredientPicker exclude={parts.map((p) => p.ingredient.id)}
+          onPick={(ingredient) => setMode({ kind: 'amount', ingredient, grams: startGrams(ingredient) * portions })} />
+        <button className="btn ghost" style={{ marginTop: 8 }} onClick={() => setMode({ kind: 'view' })}>Cancel</button>
+      </>
+    )
+  }
+  if (mode.kind === 'amount') {
+    const { ingredient, grams } = mode
+    return (
+      <>
+        <h1>{ingredient.emoji} {ingredient.name}</h1>
+        <div className="sub" style={{ marginBottom: 12 }}>How much went into the {portionsLabel(portions)} of {dish.name} on this plate</div>
+        <AmountFields ingredient={ingredient} grams={grams} onChange={(g) => setMode({ ...mode, grams: g })} />
+        {!isNew && <p className="sub">Changes {dish.name} in all our meals.</p>}
+        {save.isError && <p className="error" role="alert">{save.error.message}</p>}
+        <button className="btn" disabled={save.isPending || grams <= 0} onClick={() => setParts(addPart(parts, ingredient, grams / portions))}>
+          {save.isPending ? 'Saving…' : `Add to ${dish.name}`}
+        </button>
+        <button className="btn ghost" style={{ marginTop: 8 }} onClick={() => setMode({ kind: 'pick' })}>Back</button>
+      </>
+    )
+  }
   return (
     <>
-      <h1>{dish.emoji} {dish.name}</h1>
-      <div className="sub">{isNew ? `New dish · ${dish.made} portions made · saved with this meal` : 'One of our meals'}</div>
+      <div className="row" style={{ alignItems: 'center' }}>
+        <button type="button" className="emoji-pick" aria-label={`Emoji ${dish.emoji}, change`} disabled={save.isPending} onClick={() => setPicking(true)}>{dish.emoji}</button>
+        <h1 className="sp" style={{ margin: 0 }}>{dish.name}</h1>
+      </div>
+      <EmojiPicker open={picking} value={dish.emoji} onPick={setEmoji} onClose={() => setPicking(false)} />
+      <div className="sub" style={{ marginTop: 6 }}>{isNew ? `New dish · ${dish.made} portions made · saved with this meal` : 'One of our meals'}</div>
       {isNew && (
         <label className="field" style={{ margin: '12px 0' }}>
           Dish name
           <input value={dish.name} maxLength={120} onChange={(e) => update({ name: e.target.value, dish: { ...dish, name: e.target.value } })} />
         </label>
       )}
-      <div className="card row">
+      <div className="card row" style={{ marginTop: 12 }}>
         <span className="sp">Portions</span>
         <Stepper label="dish portions" value={Math.round(portions * 100) / 100} step={0.5} min={0.5} max={40}
           onChange={(p) => update({ grams: p * dish.portionG })} />
@@ -237,20 +290,29 @@ function DishForm({ item, update, onSplit, onRemove, onClose }: {
       <div className="sub" style={{ marginBottom: 12 }}>
         ≈ {Math.round(item.grams)} g · {Math.round(dish.perPortion.kcal * portions)} kcal
       </div>
-      {dish.parts.length > 0 && (
-        <details className="card">
-          <summary>What's in it</summary>
-          <div className="list">
-            {dish.parts.map((p) => (
-              <div key={p.ingredient.id}>
-                <span>{p.ingredient.emoji}</span>
-                <span className="sp">{p.ingredient.name}</span>
-                <span className="sub">{formatAmount(p.grams * portions, p.ingredient)}</span>
-              </div>
-            ))}
+      <h3>What's in it</h3>
+      <div className="list" aria-label={`What's in ${dish.name}`}>
+        {parts.map((p) => (
+          <div key={p.ingredient.id}>
+            <span>{p.ingredient.emoji}</span>
+            <span className="sp">{p.ingredient.name}</span>
+            <span className="sub">{formatAmount(p.grams * portions, p.ingredient)}</span>
+            {parts.length > 1 && (
+              <button type="button" className="icon" style={{ width: 36, height: 36 }} aria-label={`Take ${p.ingredient.name} out of ${dish.name}`}
+                disabled={save.isPending} onClick={() => setParts(parts.filter((x) => x !== p))}>
+                <Icon name="close" size={14} />
+              </button>
+            )}
           </div>
-        </details>
-      )}
+        ))}
+        <button type="button" style={{ width: '100%', textAlign: 'left', color: 'var(--accent)' }} disabled={!isNew && !ours.data}
+          onClick={() => setMode({ kind: 'pick' })}>
+          <Icon name="plus" size={18} /><span className="sp">Add an ingredient</span>
+        </button>
+      </div>
+      {!isNew && ours.isPending && <p className="sub">Loading its recipe…</p>}
+      {!isNew && <p className="sub">Adding or taking out changes {dish.name} in all our meals.</p>}
+      {save.isError && <p className="error" role="alert">{save.error.message}</p>}
       {dish.parts.length > 0 && (
         <button className="btn ghost" onClick={onSplit}><Icon name="swap" size={18} /> Back to separate ingredients</button>
       )}

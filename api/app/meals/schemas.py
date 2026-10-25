@@ -32,6 +32,12 @@ def _unique_ingredients(items: list[ItemIn] | None) -> list[ItemIn] | None:
     return items
 
 
+def _one_emoji(emoji: str | None) -> str | None:
+    if emoji is not None and (not emoji.strip() or emoji.isascii()):
+        raise ValueError("pick an emoji")
+    return emoji.strip() if emoji else emoji
+
+
 class NewComponent(BaseModel):
     """ "Make it its own dish": some of the plate's ingredients become a meal of ours.
     `items` are grams for ONE portion of it; `portions` = how many portions we made."""
@@ -39,8 +45,10 @@ class NewComponent(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     portions: int = Field(ge=1, le=20)
     items: list[ItemIn] = Field(min_length=1, max_length=40)
+    emoji: str | None = Field(default=None, min_length=1, max_length=8)  # else the heaviest's
 
     _items = field_validator("items")(_unique_ingredients)
+    _emoji = field_validator("emoji")(_one_emoji)
 
 
 Alias = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=80)]
@@ -195,12 +203,7 @@ class MealPatch(BaseModel):
             raise ValueError("A piece weight comes with counting in pieces")
         return self
 
-    @field_validator("emoji")
-    @classmethod
-    def _one_symbol(cls, emoji: str | None) -> str | None:
-        if emoji is not None and (not emoji.strip() or emoji.isascii()):
-            raise ValueError("pick an emoji")
-        return emoji.strip() if emoji else emoji
+    _emoji = field_validator("emoji")(_one_emoji)
 
     @field_validator("steps")
     @classmethod
