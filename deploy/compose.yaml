@@ -73,7 +73,8 @@ services:
       - models:/root/.ollama
 
   cloudflared:
-    image: cloudflare/cloudflared:latest
+    # pinned: deploy.sh never pulls, so :latest froze at the first pull (bump the tag to upgrade)
+    image: cloudflare/cloudflared:2026.10.5
     profiles: [tunnel]
     restart: unless-stopped
     command: tunnel --no-autoupdate run
